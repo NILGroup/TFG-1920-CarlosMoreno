@@ -1,2 +1,2 @@
 # TFG-1920-CarlosMoreno
-Repositorio para el Trabajo de Fin de Grado e Carlos Moreno Morera
+Repositorio para el Trabajo de Fin de Grado de Carlos Moreno Morera
