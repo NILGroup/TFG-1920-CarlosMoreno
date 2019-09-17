@@ -88,9 +88,8 @@ constantes,guionado,Cascaras/bibliografia,config%
 %
 \ifpdf\hypersetup{%
     pdftitle = {\titulo},
-    pdfsubject = {Plantilla de Tesis},
-    pdfkeywords = {Plantilla, LaTeX, tesis, trabajo de
-      investigación, trabajo de Master},
+    pdfsubject = {Memoria de TFG},
+    pdfkeywords = {Memoria, LaTeX, TFG, IRIS, trabajo de Grado},
     pdfauthor = {\textcopyright\ \autor},
     pdfcreator = {\LaTeX\ con el paquete \flqq hyperref\frqq},
     pdfproducer = {pdfeTeX-0.\the\pdftexversion\pdftexrevision},
@@ -122,7 +121,7 @@ constantes,guionado,Cascaras/bibliografia,config%
 \include{Cascaras/abstract}
 % Si el trabajo se escribe en inglés, comentar esta línea y descomentar
 % otra igual que hay justo antes de \end{document}
-\end{otherlanguage}
+%\end{otherlanguage}
 
 \ifx\generatoc\undefined
 \else
@@ -147,10 +146,10 @@ constantes,guionado,Cascaras/bibliografia,config%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Si el TFM se escribe en inglés, comentar las siguientes líneas 
 % porque no es necesario incluir nuevamente las Conclusiones en inglés
-\begin{otherlanguage}{english}
-\include{Capitulos/Introduction}
-\include{Capitulos/ConclusionsFutureWork}
-\end{otherlanguage}
+%\begin{otherlanguage}{english}
+%\include{Capitulos/Introduction}
+%\include{Capitulos/ConclusionsFutureWork}
+%\end{otherlanguage}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %
@@ -207,5 +206,5 @@ constantes,guionado,Cascaras/bibliografia,config%
 % Final
 %
 \include{Cascaras/fin}
-%\end{otherlanguage}
+\end{otherlanguage}
 \end{document}
