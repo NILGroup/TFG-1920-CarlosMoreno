@@ -14,7 +14,7 @@ def main():
     authInst = auth.auth(SCOPES, CLIENT_SECRET_FILE)
     service = build('gmail', 'v1', credentials=authInst.get_credentials())
 
-    #Creation of an sendGmail instance
+    #Creation of a sendGmail instance
     sendInst = SendGmail.sendGmail(service)
     message = sendInst.create_message_with_attachment('ferrerromualda@gmail.com',
             'pepitosuarezgerminio@gmail.com', 'Test 1',
