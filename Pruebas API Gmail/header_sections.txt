@@ -1,0 +1,9 @@
+0.- MIME-Version
+1.- Date
+2.- References
+3.- In-Reply-To
+4.- Message-ID
+5.- Subject
+6.- From
+7.- To
+8.- Content-Type

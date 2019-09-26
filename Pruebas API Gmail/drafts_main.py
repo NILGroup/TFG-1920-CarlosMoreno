@@ -8,7 +8,7 @@ CLIENT_SECRET_FILE = 'credentials.json'
 
 def main():
     """
-    Send an email from a Gmail account
+    Create drafts in a Gmail account
     """
     #Creation of an auth instance
     authInst = auth.auth(SCOPES, CLIENT_SECRET_FILE)
