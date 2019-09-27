@@ -13,11 +13,10 @@ class sendGmail:
     def __init__(self, service):
         self.service = service
 
-    def create_message(self, sender, to, subject, message_text):
+    def create_message(self, to, subject, message_text):
       """Create a message for an email.
     
       Args:
-        sender: Email address of the sender.
         to: Email address of the receiver.
         subject: The subject of the email message.
         message_text: The text of the email message.
@@ -26,16 +25,15 @@ class sendGmail:
         An object containing a base64url encoded email object.
       """
       message = MIMEText(message_text)
-      message['to'] = to
-      message['from'] = sender
-      message['subject'] = subject
+      message['To'] = to
+      message['From'] = self.service.users().getProfile(userId = 'me').execute()['emailAddress']
+      message['Subject'] = subject
       return {'raw': base64.urlsafe_b64encode(message.as_bytes())}
 
-    def create_message_with_attachment(self, sender, to, subject, message_text, file):
+    def create_message_with_attachment(self, to, subject, message_text, file):
       """Create a message for an email.
     
       Args:
-        sender: Email address of the sender.
         to: Email address of the receiver.
         subject: The subject of the email message.
         message_text: The text of the email message.
@@ -45,9 +43,9 @@ class sendGmail:
         An object containing a base64url encoded email object.
       """
       message = MIMEMultipart()
-      message['to'] = to
-      message['from'] = sender
-      message['subject'] = subject
+      message['To'] = to
+      message['From'] = self.service.users().getProfile(userId = 'me').execute()['emailAddress']
+      message['Subject'] = subject
     
       msg = MIMEText(message_text)
       message.attach(msg)

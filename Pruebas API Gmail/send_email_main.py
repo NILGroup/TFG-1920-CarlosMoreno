@@ -16,9 +16,8 @@ def main():
 
     #Creation of a sendGmail instance
     sendInst = SendGmail.sendGmail(service)
-    message = sendInst.create_message_with_attachment('ferrerromualda@gmail.com',
-            'pepitosuarezgerminio@gmail.com', 'Test 1',
-            'Hi there, this is the first email sent with Python', 'foto_a_enviar.jpg')
+    message = sendInst.create_message_with_attachment('pepitosuarezgerminio@gmail.com',
+        'Test 1', 'Hi there, this is the first email sent with Python', 'foto_a_enviar.jpg')
     sendInst.send_message('me', message)
 
 if __name__ == '__main__':

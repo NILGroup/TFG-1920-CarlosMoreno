@@ -24,24 +24,21 @@ class email_threads:
                         print('Message id: %s' % tdata['messages'][i]['id'])
 
                         #Export sections of the list headers
-                        arch = open('header_sections.txt', 'w')
+                        head_sect = {}
                         for j in range (0, len(tdata['messages'][i]['payload']['headers'])):
-                            arch.write('%d.- %s\n' % (j, tdata['messages'][i]['payload']['headers'][j]['name']))
-                        arch.close()
+                            head_sect[tdata['messages'][i]['payload']['headers'][j]['name']] = j
 
-                        print('Message %s: %s'
-                              % (tdata['messages'][i]['payload']['headers'][17]['name'],
-                                 tdata['messages'][i]['payload']['headers'][17]['value']))
-                        print('Message %s: %s'
-                              % (tdata['messages'][i]['payload']['headers'][21]['name'],
-                                 tdata['messages'][i]['payload']['headers'][21]['value']))
-                        print('Message %s: %s'
-                              % (tdata['messages'][i]['payload']['headers'][20]['name'],
-                                 tdata['messages'][i]['payload']['headers'][20]['value']))
-                        print('Message %s: %s'
-                              % (tdata['messages'][i]['payload']['headers'][18]['name'],
-                                tdata['messages'][i]['payload']['headers'][18]['value']))
-                        print('Attachment: %s' % tdata['messages'][i]['payload']['filename'])
+                        payload_h = tdata['messages'][i]['payload']['headers']
+                        print('Message from: %s' % payload_h[head_sect['From']]['value'])
+                        print('Message to: %s' % payload_h[head_sect['To']]['value'])
+                        print('Message subject: %s' % payload_h[head_sect['Subject']]['value'])
+                        #It is less reliable than tdata['message'][i]['internalDate']
+                        print('Message date: %s' % payload_h[head_sect['Date']]['value'])
+
+                        head_sect.clear()
+
+                        if (tdata['messages'][i]['payload']['filename']):
+                            print('Attachment: %s' % tdata['messages'][i]['payload']['filename'])
                         message = self.service.users().messages().get(userId=user_id,
                                 id=tdata['messages'][i]['id'], format='raw').execute()
                         print('Message text: %s' %

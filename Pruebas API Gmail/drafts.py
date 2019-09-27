@@ -20,9 +20,9 @@ class drafts:
         An object containing a base64url encoded email object.
       """
       message = MIMEText(message_text)
-      message['to'] = to
-      message['from'] = sender
-      message['subject'] = subject
+      message['To'] = to
+      message['From'] = sender
+      message['Subject'] = subject
       return {'raw': base64.urlsafe_b64encode(message.as_bytes()).decode()}
 
     def create_draft(self, user_id, message_body):
