@@ -1,5 +1,6 @@
 from __future__ import print_function
 import base64
+import email
 
 class email_threads:
     def __init__(self, service):
@@ -41,9 +42,14 @@ class email_threads:
                             print('Attachment: %s' % tdata['messages'][i]['payload']['filename'])
                         message = self.service.users().messages().get(userId=user_id,
                                 id=tdata['messages'][i]['id'], format='raw').execute()
-                        print('Message text: %s' %
-                                base64.urlsafe_b64decode(message['raw'].encode('ASCII')))
+                        msg_str = base64.urlsafe_b64decode(message['raw'].encode('ASCII')).decode('utf-8')
+                        mime_msg = email.message_from_string(msg_str)
+                        if (mime_msg.is_multipart()):
+                            for payload in mime_msg.get_payload():
+                                print(payload.get_payload())
+                        else:
+                            print(mime_msg.get_payload())
                         print('------------')
                         print('------------')
 
-                        #No consigo obtener solo el texto del mensaje
+                        #El texto presenta problemas con las tildes
