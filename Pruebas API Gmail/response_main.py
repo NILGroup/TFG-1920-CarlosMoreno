@@ -16,7 +16,10 @@ def main():
 
     #Creation of a thread instance
     mailInst = messages.email_messages(service)
-    mailInst.get_message_list()
+    msg_list = mailInst.get_message_list()
+    ind_msg = int(input('¿Qué mensaje desea responder? '))
+    mailInst.reply_message(message_id = msg_list[ind_msg]['id'],
+        message_text = 'Hi Romualda,\nThanks for your message, this is an authomatic reply')
 
 if __name__ == '__main__':
     main()

@@ -22,13 +22,13 @@ class email_threads:
                     print('- %s (%d msgs)' % (subject, nmsgs))
                     for i in range(0, nmsgs):
                         print('Message id: %s' % tdata['messages'][i]['id'])
+                        payload_h = tdata['messages'][i]['payload']['headers']
 
                         #Export sections of the list headers
                         head_sect = {}
-                        for j in range (0, len(tdata['messages'][i]['payload']['headers'])):
-                            head_sect[tdata['messages'][i]['payload']['headers'][j]['name']] = j
+                        for j in range (0, len(payload_h)):
+                            head_sect[payload_h[j]['name']] = j
 
-                        payload_h = tdata['messages'][i]['payload']['headers']
                         print('Message from: %s' % payload_h[head_sect['From']]['value'])
                         print('Message to: %s' % payload_h[head_sect['To']]['value'])
                         print('Message subject: %s' % payload_h[head_sect['Subject']]['value'])
@@ -42,10 +42,8 @@ class email_threads:
                         message = self.service.users().messages().get(userId=user_id,
                                 id=tdata['messages'][i]['id'], format='raw').execute()
                         print('Message text: %s' %
-                              base64.urlsafe_b64decode(message['raw'].encode('ASCII')))
+                                base64.urlsafe_b64decode(message['raw'].encode('ASCII')))
                         print('------------')
                         print('------------')
 
-
-                        #La posición del header depende del mensaje enviado por eso me da error
                         #No consigo obtener solo el texto del mensaje
