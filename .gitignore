@@ -243,3 +243,6 @@ TSWLatexianTemp*
 
 # Cache of python enviroment
 *__pycache__
+
+# Authetication file
+*token.pickle
