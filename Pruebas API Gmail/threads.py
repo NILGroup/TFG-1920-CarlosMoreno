@@ -46,7 +46,7 @@ class email_threads:
 
     def _print_attachments(self, message):
         file_names = []
-        for p in message['payload']['parts']:
+        for p in message['payload'].get('parts', []):
             if p['filename']:
                 file_names.append(p['filename'])
 
