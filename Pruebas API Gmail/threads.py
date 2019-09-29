@@ -7,6 +7,55 @@ class email_threads:
     def __init__(self, service):
         self.service = service
 
+    def _print_body_message(self, message):
+        msg_str = base64.urlsafe_b64decode(message['raw'].encode('ASCII')).decode('utf-8')
+        mime_msg = email.message_from_string(msg_str)
+        text = None
+        if (mime_msg.is_multipart()):
+            print('MIME message is multipart')
+            html = ""
+            for part in mime_msg.get_payload():
+                print ("%s, %s" % (part.get_content_type(), part.get_content_charset()))
+
+                if text is None and part.get_content_charset() is None:
+                    # We cannot know the character set, so return decoded "something"
+                    text = part.get_payload()
+                    if part['Content-Transfer-Encoding'] == 'quoted-printable':
+                        text = quopri.decodestring(text).decode('utf-8')
+                elif text is None:
+                    if part.get_content_type() == 'text/plain':
+                        text = part.get_payload();
+                        if part['Content-Transfer-Encoding'] == 'quoted-printable':
+                            text = quopri.decodestring(text).decode('utf-8')
+                        text = 'Message text: ' + text
+                    elif part.get_content_type() == 'text/html':
+                        html = part.get_payload();
+                        if part['Content-Transfer-Encoding'] == 'quoted-printable':
+                            html = quopri.decodestring(text).decode('utf-8')
+                        html = 'Message hmtl: ' + html
+            if text is not None:
+                print(text)
+            else:
+                print(html)
+        else:
+            print('Mime message is not multipart')
+            text = mime_msg.get_payload()
+            if mime_msg['Content-Transfer-Encoding'] == 'quoted-printable':
+                text = quopri.decodestring(text).decode('utf-8')
+            print('Message text: %s' % text)
+
+    def _print_attachments(self, message):
+        file_names = []
+        for p in message['payload']['parts']:
+            if p['filename']:
+                file_names.append(p['filename'])
+
+        if (len(file_names) > 0):
+            file = file_names[0]
+            for i in range(1, len(file_names)):
+                file += ', ' + file_names[i]
+            print('Attachment: %s' % file)
+
     def show_chatty_threads(self, user_id='me'):
         threads = self.service.users().threads().list(userId=user_id).execute().get('threads', [])
         for thread in threads:
@@ -39,46 +88,16 @@ class email_threads:
 
                         head_sect.clear()
 
-                        if (tdata['messages'][i]['payload']['filename']):
-                            print('Attachment: %s' % tdata['messages'][i]['payload']['filename'])
+                        self._print_attachments(message = tdata['messages'][i])
+
                         message = self.service.users().messages().get(userId=user_id,
                                 id=tdata['messages'][i]['id'], format='raw').execute()
-                        msg_str = base64.urlsafe_b64decode(message['raw'].encode('ASCII')).decode('utf-8')
-                        mime_msg = email.message_from_string(msg_str)
-                        text = None
-                        if (mime_msg.is_multipart()):
-                            print('MIME message is multipart')
-                            html = ""
-                            for part in mime_msg.get_payload():
-                                print ("%s, %s" % (part.get_content_type(), part.get_content_charset()))
-
-                                if text is None and part.get_content_charset() is None:
-                                    # We cannot know the character set, so return decoded "something"
-                                    text = part.get_payload()
-                                    if part['Content-Transfer-Encoding'] == 'quoted-printable':
-                                        text = quopri.decodestring(text).decode('utf-8')
-                                elif text is None:
-                                    if part.get_content_type() == 'text/plain':
-                                        text = part.get_payload();
-                                        if part['Content-Transfer-Encoding'] == 'quoted-printable':
-                                            text = quopri.decodestring(text).decode('utf-8')
-                                        text = 'Message text: ' + text
-                                    elif part.get_content_type() == 'text/html':
-                                        html = part.get_payload();
-                                        if part['Content-Transfer-Encoding'] == 'quoted-printable':
-                                            html = quopri.decodestring(text).decode('utf-8')
-                                        html = 'Message hmtl: ' + html
-                            if text is not None:
-                                print(text)
-                            else:
-                                print(html)
-                        else:
-                            print('Mime message is not multipart')
-                            text = mime_msg.get_payload()
-                            if mime_msg['Content-Transfer-Encoding'] == 'quoted-printable':
-                                text = quopri.decodestring(text).decode('utf-8')
-                            print('Message text: %s' % text)
+                        self._print_body_message(message = message)
                         print('------------')
                         print('------------')
 
-                        #No obtiene el nombre del archivo adjunto
+                        # Cuando respondes a un mensaje en un hilo google copia el
+                            # mensaje respondido justo debajo. Este texto copiado
+                            # aparece en el cuerpo del mensaje
+                        # Cuando envías un mensaje google internamente asigna \n que
+                            # se mantienen cuando se extrae y decodifica.
