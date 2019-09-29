@@ -1,6 +1,7 @@
 from __future__ import print_function
 import base64
 import email
+import quopri
 
 class email_threads:
     def __init__(self, service):
@@ -44,12 +45,40 @@ class email_threads:
                                 id=tdata['messages'][i]['id'], format='raw').execute()
                         msg_str = base64.urlsafe_b64decode(message['raw'].encode('ASCII')).decode('utf-8')
                         mime_msg = email.message_from_string(msg_str)
+                        text = None
                         if (mime_msg.is_multipart()):
-                            for payload in mime_msg.get_payload():
-                                print(payload.get_payload())
+                            print('MIME message is multipart')
+                            html = ""
+                            for part in mime_msg.get_payload():
+                                print ("%s, %s" % (part.get_content_type(), part.get_content_charset()))
+
+                                if text is None and part.get_content_charset() is None:
+                                    # We cannot know the character set, so return decoded "something"
+                                    text = part.get_payload()
+                                    if part['Content-Transfer-Encoding'] == 'quoted-printable':
+                                        text = quopri.decodestring(text).decode('utf-8')
+                                elif text is None:
+                                    if part.get_content_type() == 'text/plain':
+                                        text = part.get_payload();
+                                        if part['Content-Transfer-Encoding'] == 'quoted-printable':
+                                            text = quopri.decodestring(text).decode('utf-8')
+                                        text = 'Message text: ' + text
+                                    elif part.get_content_type() == 'text/html':
+                                        html = part.get_payload();
+                                        if part['Content-Transfer-Encoding'] == 'quoted-printable':
+                                            html = quopri.decodestring(text).decode('utf-8')
+                                        html = 'Message hmtl: ' + html
+                            if text is not None:
+                                print(text)
+                            else:
+                                print(html)
                         else:
-                            print(mime_msg.get_payload())
+                            print('Mime message is not multipart')
+                            text = mime_msg.get_payload()
+                            if mime_msg['Content-Transfer-Encoding'] == 'quoted-printable':
+                                text = quopri.decodestring(text).decode('utf-8')
+                            print('Message text: %s' % text)
                         print('------------')
                         print('------------')
 
-                        #El texto presenta problemas con las tildes
+                        #No obtiene el nombre del archivo adjunto
