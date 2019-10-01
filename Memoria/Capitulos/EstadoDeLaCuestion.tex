@@ -4,11 +4,11 @@
 \section{Gmail API}
 In order to be able to read and send emails, it is necessary to access to the user's email data. For this reason, the different ways to obtain this information were studied. One of them is the Gmail API, which allows developers to perform all the actions we needed in an easy way.
 
-Gmail API can be used in several programming languages such as Python, PHP, Go, Java, .NET, \ldots Due to the greater number of examples in the starting guides of \cite{gmailAPI} and the previous knowledge that was already had of it, Python was chosen for the first contact with this implement.
+Gmail API can be used in several programming languages such as Python, PHP, Go, Java, .NET, \ldots Due to the greater number of examples in the starting guides of the Gmail API \citep{gmailAPI} and the previous knowledge that was already had of it, Python was chosen for the first contact with this implement.
 
-The following is a step-by-step explanation of what is necessary to do to access the user's Gmail account, create a message, send an email previously created, create and update a draft, reply a received message (for this it is necessary to know how to create an email) and read important information of message threads and individual emails, such as who is the sender, who will received the message, the subject, the date, the email's body, the attached files, \ldtos
+The following is a step-by-step explanation of what is necessary to do to access the user's Gmail account, create a message, send an email previously created, create and update a draft, reply a received message (for this it is necessary to know how to create an email) and read important information of message threads and individual emails, such as who is the sender, who will received the message, the subject, the date, the email's body, the attached files, \ldots
 
 \subsection{OAuth 2.0 Protocol}
-%Breve introducción a OAuth
+Gmail API, as it also happens in the case of other Google APIs, uses OAuth 2.0 protocol \citep{oauth} to handle authentication and authorization. As will be seen later in this section, it is needed to be in possession of OAuth 2.0 client credentials from the Google API Console for having the appropriate permissions to use the Gmail API.
 
-The Google API Console also known as Google Console Developer\footnote{\url{https://console.developers.google.com/}}, built into Google Cloud Platform, makes possible an authorized access to a user's Gmail data. In order to achieve it, having a Google account is a prerequisite, because it will be necessary to access to this platform.
+The Google API Console also known as Google Console Developer\footnote{\url{https://console.developers.google.com/}}, built into Google Cloud Platform, makes possible an authorized access to a user's Gmail data. In order to achieve it, having a Google account is a prerequisite, because it will be necessary to access to this platform. Once this website has been accessed,
