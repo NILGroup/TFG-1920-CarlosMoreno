@@ -17,8 +17,6 @@ Before starting the development of the implementation of the OAuth 2.0 protocol 
 
 There are many ways to obtain the necessary permissions for accessing to the user's emails data following the OAuth 2.0 protocol. As this is a first contact with the Gmail API only with the intention of knowing the possibilities it offers to us and its advantages and disadvantages of using it in our future implementation of our virtual assistant, we are going to develop a simple script which is using a class very useful for local development and applications that are installed on a desktop operating system. The class \textit{InstalledAppFlow}, in \textit{google\_auth\_oauthlib.flow} \citep{oauthlib}, is a \textit{Flow} subclass (which belongs to the same library). Thanks to this last class we have mentioned, \textit{InstalledAppFlow} uses a \textit{requests\_oauthlib.OAuth2Session} instance at \textit{oauth2session} to perform all of the OAuth 2.0 logic. Besides it also inherits from \textit{Flow} the class method \textit{from\_client\_secrets\_file} which creates a \textit{Flow} instance from a Google client secrets file (this file will be the .json file that we obtained through the Google API Console) and a list of OAuth 2.0 Scopes \citep{oauth-scopes}, which are a mechanism  in OAuth 2.0 to limit an application's access to a user's account. An application can request one or more scopes, this information is then presented to the user in the consent screen, and the access token issued to the application will be limited to the scopes granted (we will use the Gmail API OAuth 2.0 Scope which allows us to read, compose, send, and permanently delete all your email).
 
-After constructing an \textit{InstalledAppFlow}, we can invoke the class method \textit{run\_local\_server} which instructs the user to open the authorization URL in the browser and will attempt to automatically open it. This function will start a local web server to listen for the authorization response. Once there is a reply, the authorization server will redirect the user's browser to the local web server. As we can see in \ref{fig:oauth}, the web server will get the authorization code from the response and shutdown, that code is then exchanged for a token.
-
 \begin{figure}[h]
 	\centering%
 	\includegraphics[width = 0.5\textwidth]{Imagenes/Bitmap/webflow.png}%
@@ -27,11 +25,53 @@ After constructing an \textit{InstalledAppFlow}, we can invoke the class method 
 	\label{fig:oauth}
 \end{figure}
 
+After constructing an \textit{InstalledAppFlow} by calling \textit{from\_client\_secrets\_file} as we have explained, we can invoke the class method \textit{run\_local\_server} which instructs the user to open the authorization URL in the browser and will attempt to automatically open it. This function will start a local web server to listen for the authorization response. Once there is a reply, the authorization server will redirect the user's browser to the local web server. As we can see in \ref{fig:oauth}, the web server will get the authorization code from the response and shutdown, that code is then exchanged for a token.
+
 Then, we will be in possession of the OAuth 2.0 credentials for the user \citep{oauth2.credentials} which we are going to use for accessing the user's Gmail account. In summary, it is possible to obtain the necessary permissions from the user and to follow the OAuth 2.0 protocol, by executing these instructions (written in Python):
 
-\begin{minted}{python}
+\begin{python}
 from google_auth_oauthlib.flow import InstalledAppFlow
 
-flow = InstalledAppFlow.from_client_secrets_file('credentials.json', '['https://mail.google.com/']')
-creds = flow.run_local_server(port=0)
-\end{minted}
+# Create a flow instance
+flow = InstalledAppFlow.from_client_secrets_file('credentials.json', 
+	['https://mail.google.com/'])
+# Obtain OAuth 2.0 credentials for the user
+creds = flow.run_local_server(port = 0)
+\end{python}
+
+Now, we are able to call Gmail API by using the token (which is stored in the variable \textit{creds}). However, before starting working on the email data, we should save the OAuth 2.0 credentials since otherwise the user would need to go through the consent screen every time the application is opened. To prevent the latter from happening, to differentiate access from mail management and consequently to reuse as much code as possible; we have implemented the following class \pythoninline{auth} with a main method \pythoninline{get_credentials}:
+
+\begin{pythonnum}
+import pickle
+import os.path
+from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.transport.requests import Request
+	
+class auth:
+	def __init__(self, SCOPES, CLIENT_SECRET_FILE):
+		self.SCOPES = SCOPES
+		self.CLIENT_SECRET_FILE = CLIENT_SECRET_FILE
+	
+	def get_credentials(self):
+		"""
+		Obtains valid credentials for accessing Gmail API
+		"""
+		creds = None
+		# The file token.pickle stores the user's access and refresh tokens.
+		if os.path.exists('token.pickle'):
+			with open('token.pickle', 'rb') as token:
+				creds = pickle.load(token)
+		# If there are no (valid) credentials available, let the user log in.
+		if not creds or not creds.valid:
+			if creds and creds.expired and creds.refresh_token:
+				creds.refresh(Request())
+			else:
+				flow = InstalledAppFlow.from_client_secrets_file(
+					self.CLIENT_SECRET_FILE, self.SCOPES)
+				creds = flow.run_local_server(port=0)
+			# Create token.pickle and save the credentials for the next run
+			with open('token.pickle', 'wb') as token:
+				pickle.dump(creds, token)
+		return creds
+
+\end{pythonnum}
