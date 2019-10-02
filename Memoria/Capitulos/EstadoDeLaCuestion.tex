@@ -39,7 +39,7 @@ flow = InstalledAppFlow.from_client_secrets_file('credentials.json',
 creds = flow.run_local_server(port = 0)
 \end{python}
 
-Now, we are able to call Gmail API by using the token (which is stored in the variable \textit{creds}). However, before starting working on the email data, we should save the OAuth 2.0 credentials since otherwise the user would need to go through the consent screen every time the application is opened. To prevent the latter from happening, to differentiate access from mail management and consequently to reuse as much code as possible; we have implemented the following class \pythoninline{auth} with a main method \pythoninline{get_credentials}:
+Now, we are able to call Gmail API by using the token (which is stored in the variable \textit{creds}). However, before starting working on the email data, we should save the OAuth 2.0 credentials since otherwise the user would need to go through the consent screen every time the application is opened. To prevent the latter from happening, to differentiate access from mail management and consequently to reuse as much code as possible; we have implemented the following class \pythoninline{auth}, in \textit{auth.py}, with a main method \pythoninline{get_credentials}:
 
 \begin{pythonnum}
 import pickle
@@ -75,3 +75,12 @@ class auth:
 		return creds
 
 \end{pythonnum}
+
+As we can observe in line 17 within \pythoninline{get_credentials} method, at first we check if the file called \textit{token.pickle} exists, and in that case, it is opened and its information is stored in the variable \textit{creds}. Thus, we avoid to force the user to open the authorization screen. By contrast, as we have seen before, if it does not exists, we obtain the credentials by calling the class methods \textit{from\_client\_secrets\_file} and \textit{run\_local\_server} (it is written between lines 25 and 30).
+
+There is another case that is also reflected in the code above (in lines 23 and 24): the credentials are expired (it is possible to check it by executing \textit{creds.expired}) and they can be refreshed (the OAuth 2.0 refresh token is \textit{creds.refresh\_token}) \citep{oauth2.credentials}. In this situation, we will refresh the access token by invoking the method known as \textit{refresh} and by giving it a \textit{Request} object \citep{request-lib} from \textit{google.auth.transport.requests} as the function parameter which used to make HTTP requests.
+
+\subsection{Building a Gmail Resource}
+%Sí que tiene autor: https://googleapis.github.io/google-api-python-client/docs/epy/googleapiclient.discovery-pysrc.html#build
+
+%https://developers.google.com/gmail/api/v1/reference
