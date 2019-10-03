@@ -1,14 +1,14 @@
 \chapter{State of the Art}
 \label{cap:estadoDeLaCuestion}
 
-\section{Gmail API}
+\section{Gmail API}\label{sect:gmailapi}
 In order to be able to read and send emails, it is necessary to access to the user's email data. For this reason, the different ways to obtain this information were studied. One of them is the Gmail API, which allows developers to perform all the actions we need in an easy way.
 
 Gmail API can be used in several programming languages such as Python, PHP, Go, Java, .NET, \ldots Due to the greater number of examples in the starting guides of the Gmail API \citep{gmailAPI} and the previous knowledge that was already had of it, Python was chosen for the first contact with this implement.
 
 The following is a step-by-step explanation of what is necessary to do to access the user's Gmail account, create a message, send an email previously created, create and update a draft, reply a received message (for this it is necessary to know how to create an email) and read important information of message threads and individual emails (such as who is the sender, who will received the message, the subject, the date, the email's body, the attached files, \ldots).
 
-\subsection{OAuth 2.0 Protocol}
+\subsection{OAuth 2.0 Protocol}\label{ssect:oauth}
 Gmail API, as it also happens in the case of other Google APIs, uses OAuth 2.0 protocol \citep{oauth} to handle authentication and authorization. As it will be seen later in this section, it is needed to be in possession of OAuth 2.0 client credentials from the Google API Console for having the appropriate permissions to use the Gmail API.
 
 The Google API Console, also known as Google Console Developer\footnote{\url{https://console.developers.google.com/}}, built into Google Cloud Platform, makes possible an authorized access to a user's Gmail data. In order to achieve it, having a Google account is a prerequisite because it will be necessary to access to this platform. Once this web has been accessed, at first we have to create a new development project by clicking in ``New Project'' in the control panel (which is the main tab of the Google Console Developer and the one that opens by default when you access it). When we have already created a project, we will enable the API we are going to work with, in this case the Gmail API. To do this we will look for it in the search engine that we can find in the library of APIs of this platform. Now we can apply for the credentials we need. Accessing to the ``Credentials'' tab and clicking on ``Create Credentials'' will lead us to an easy questionnaire about what type of credentials we prefer that we have to answer by basing on what type of application we are building. Then we must download the .json file and save it in the folder we are going to work in.
@@ -39,7 +39,7 @@ flow = InstalledAppFlow.from_client_secrets_file('credentials.json',
 creds = flow.run_local_server(port = 0)
 \end{python}
 
-Now, we are able to call Gmail API by using the token (which is stored in the variable \textit{creds}). However, before starting working on the email data, we should save the OAuth 2.0 credentials since otherwise the user would need to go through the consent screen every time the application is opened. To prevent the latter from happening, to differentiate access from mail management and consequently to reuse as much code as possible; we have implemented the following class \pythoninline{auth}, in \textit{auth.py}, with a main method \pythoninline{get_credentials}:
+Now, we are able to call Gmail API by using the token (which is stored in the variable \textit{creds}). However, before starting working on the email data, we should save the OAuth 2.0 credentials since otherwise the user would need to go through the consent screen every time the application is opened. To prevent the latter from happening, to differentiate access from mail management and consequently to reuse as much code as possible; we have implemented the following class \textit{auth}, in \textit{auth.py}, with a main method \textit{get\_credentials}:
 
 \begin{pythonnum}
 import pickle
@@ -57,11 +57,11 @@ class auth:
 		Obtains valid credentials for accessing Gmail API
 		"""
 		creds = None
-		# The file token.pickle stores the user's access and refresh tokens.
+		# The file token.pickle stores the user's access and refresh tokens
 		if os.path.exists('token.pickle'):
 			with open('token.pickle', 'rb') as token:
 				creds = pickle.load(token)
-		# If there are no (valid) credentials available, let the user log in.
+		# If there are no (valid) credentials available, let the user log in
 		if not creds or not creds.valid:
 			if creds and creds.expired and creds.refresh_token:
 				creds.refresh(Request())
@@ -76,10 +76,29 @@ class auth:
 
 \end{pythonnum}
 
-As we can observe in line 17 within \pythoninline{get_credentials} method, at first we check if the file called \textit{token.pickle} exists, and in that case, it is opened and its information is stored in the variable \textit{creds}. Thus, we avoid to force the user to open the authorization screen. By contrast, as we have seen before, if it does not exists, we obtain the credentials by calling the class methods \textit{from\_client\_secrets\_file} and \textit{run\_local\_server} (it is written between lines 25 and 30).
+As we can observe in line 17 within \textit{get\_credentials} method, at first we check if the file called \textit{token.pickle} exists, and in that case, it is opened and its information is stored in the variable \textit{creds}. Thus, we avoid to force the user to open the authorization screen. By contrast, as we have seen before, if it does not exists, we obtain the credentials by calling the class methods \textit{from\_client\_secrets\_file} and \textit{run\_local\_server} (it is written between lines 25 and 30).
 
 There is another case that is also reflected in the code above (in lines 23 and 24): the credentials are expired (it is possible to check it by executing \textit{creds.expired}) and they can be refreshed (the OAuth 2.0 refresh token is \textit{creds.refresh\_token}) \citep{oauth2.credentials}. In this situation, we will refresh the access token by invoking the method known as \textit{refresh} and by giving it a \textit{Request} object \citep{request-lib} from \textit{google.auth.transport.requests} as the function parameter which used to make HTTP requests.
 
 \subsection{Building a Gmail Resource}
-At this point, with the OAuth 2.0 credentials, we are able to call the Gmail API. For this purpose, it is necessary to construct a resource \citep[/v1/reference]{gmailAPI} for interacting with the API. The \textit{build} method, from \textit{googleapiclient.discovery} library \citep{build-module}, create that object. As we will see later, this resource will lead us to manage emails, drafts, threads and everything we will like to do.
-%https://developers.google.com/gmail/api/v1/reference
+At this point, with the OAuth 2.0 credentials, we are able to call the Gmail API. For this purpose, it is necessary to construct a resource \citep[/v1/reference]{gmailAPI} for interacting with the API. The \textit{build} method, from \textit{googleapiclient.discovery} library \citep{build-module}, create that object. As we will see later, this resource will lead us to manage emails, drafts, threads and everything we will like to do with the user's Gmail data. This is why, using the \textit{auth.py} file explained in \ref{ssect:oauth}, we are going to start every user session with the instructions below (or their equivalents in the language we are using):
+
+\begin{python}
+from googleapiclient.discovery import build
+import auth
+
+SCOPES = ['https://mail.google.com/']
+CLIENT_SECRET_FILE = 'credentials.json'
+
+# Creation of an auth instance
+authInst = auth.auth(SCOPES, CLIENT_SECRET_FILE)
+# Constructing the resource API object
+service = build('gmail', 'v1', credentials = authInst.get_credentials())
+\end{python}
+
+Henceforth, we will use the \textit{service} variable to relate it with the resource object created by the \textit{build} method.
+
+\subsection{Message class}
+In most of the operations we are going to execute, it will be essential the correct management of messages. Therefore, knowing how the emails are represented in Gmail API and how to use them is imperative to understand how to work with this API. For this reason, in this section we are going to delve into the \textit{Message} resource of the Gmail API, its structure and its methods.
+
+Regardless of which programming language is used,

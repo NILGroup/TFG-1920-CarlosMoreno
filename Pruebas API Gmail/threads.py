@@ -22,16 +22,22 @@ class email_threads:
                     text = part.get_payload()
                     if part['Content-Transfer-Encoding'] == 'quoted-printable':
                         text = quopri.decodestring(text).decode('utf-8')
+                    elif part['Content-Transfer-Encoding'] == 'base64':
+                        text = base64.urlsafe_b64decode(text).decode('utf-8')
                 elif text is None:
                     if part.get_content_type() == 'text/plain':
                         text = part.get_payload();
                         if part['Content-Transfer-Encoding'] == 'quoted-printable':
                             text = quopri.decodestring(text).decode('utf-8')
+                        elif part['Content-Transfer-Encoding'] == 'base64':
+                            text = base64.urlsafe_b64decode(text).decode('utf-8')
                         text = 'Message text: ' + text
                     elif part.get_content_type() == 'text/html':
                         html = part.get_payload();
                         if part['Content-Transfer-Encoding'] == 'quoted-printable':
-                            html = quopri.decodestring(text).decode('utf-8')
+                            html = quopri.decodestring(html).decode('utf-8')
+                        elif part['Content-Transfer-Encoding'] == 'base64':
+                            html = base64.urlsafe_b64decode(html).decode('utf-8')
                         html = 'Message hmtl: ' + html
             if text is not None:
                 print(text)
@@ -42,6 +48,8 @@ class email_threads:
             text = mime_msg.get_payload()
             if mime_msg['Content-Transfer-Encoding'] == 'quoted-printable':
                 text = quopri.decodestring(text).decode('utf-8')
+            elif mime_msg['Content-Transfer-Encoding'] == 'base64':
+                text = base64.urlsafe_b64decode(text).decode('utf-8')
             print('Message text: %s' % text)
 
     def _print_attachments(self, message):
