@@ -98,13 +98,39 @@ service = build('gmail', 'v1', credentials = authInst.get_credentials())
 
 Henceforth, we will use the \textit{service} variable to relate it with the resource object created by the \textit{build} method.
 
-\subsection{Messages resource}
-In most of the operations we are going to execute, it will be essential the correct management of messages. Therefore, knowing how the emails are represented in Gmail API and how to use them is imperative to understand how to work with this API. For this reason, in this section we are going to delve into the \textit{Message} resource of the Gmail API, its structure and its methods.
+\subsection{Users resource}\label{ssect:userres}
+The \textit{build} method could be called for obtaining any resource of any Google API (by giving it the suitable parameters). Our specific \textit{service} created\footnote{\url{http://googleapis.github.io/google-api-python-client/docs/dyn/gmail\_v1.html}} has an important instance method that we are going to invoke for every execution: \textit{users()} method. It returns what is known as users resource \citep[/v1/reference/users]{gmailAPI}.
 
-Regardless of which programming language is used, \textit{Message} resource \citep[/v1/reference/users/messages]{gmailAPI} internally has a dictionary structure. The more important (for us) keys of this data structure are (at least the most useful keys for our purpose):
+The users resource has also instance methods, which return other Gmail API resources that we are going to need, such as \textit{drafts()}, \textit{labels()}, \textit{messages()} and \textit{threads()} which return drafts, labels, messages and threads resources respectively. Moreover, it possesses the three methods that we explain hereunder (we must remember that for being able to execute any method that we are going to explain in this and next sections, it is necessary to have the appropriate authorization with at least one of the required scopes that we can look up in its documentation):
+
+\begin{itemize}
+	\item\textit{getProfile(userId)}: it returns an object with a dictionary structure as it follows:
+	\begin{python}
+	{
+	'threadsTotal' : integer # Total number of threads in the mailbox
+	'emailAddress' : string # User's email address
+	'historyId' : string # ID of the mailbox's current history record
+	'messagesTotal' : integer # Total number of messages in the mailbox
+	}
+	\end{python}
+	The parameter is a string with the user's email address. If we remember the authentication process, at no time we ask the user about the email address because we decided to let the Google API functions to handle all that procedure. Therefore we have no way to know this information. Nevertheless, the special string value \textit{'me'} can be used to indicate the authenticated user. For knowing the required scopes for invoking this function look up in \cite[/v1/reference/users/getProfile]{gmailAPI}.
+	\item\textit{stop(userId)}: stop receiving push notifications for the given user mailbox. As it happens with \textit{getProfile}, the parameter is a string with the user's email address, but it is possible to use the especial string value \textit{'me'}.
+	\item\textit{whatch(userId, body)}: set up or update a push notification watch on the given user mailbox.
+\end{itemize}
+
+As we are going to call only the \textit{getProfile} method, we have described on details this first function and we have just given an idea about what the rest of them do. Now, in next sections, we are going to explain all the resources we can create with the user resource.
+
+\subsection{Labels resource}
+As we have seen in the explanation of users resource (section \ref{ssect:userres}), we can obtain labels resource \citep[/v1/reference/users/labels]{gmailAPI} by invoking \textit{labels()} instance method of our users resource, that is to say, by using our \textit{service} variable, the instruction \textit{service.users().labels()} will return the label resource.
+
+\subsection{Messages resource}
+In most of the operations we are going to execute, it will be essential the correct management of messages. Therefore, knowing how the emails are represented in Gmail API and how to use them is imperative to understand how to work with this API. For this reason, in this section we are going to delve into the message resource of the Gmail API, its structure and its methods.
+
+Regardless of which programming language is used, message resource \citep[/v1/reference/users/messages]{gmailAPI} internally has a dictionary structure. The more important (for us) keys of this data structure are (at least the most useful keys for our purpose):
 \begin{itemize}
 	\item\textit{id}: an immutable string which identifies the message.
-	\item\textit{threadId}: we will explain the thread resource in \ref{ssect:threads} and we will see that a thread is composed of different messages that share common characteristics. The value of this field is a string which represent the id of the thread the message belongs to.
+	\item\textit{threadId}: we will explain the thread resource in \ref{ssect:threads} and we will see that a thread is composed of different messages that share common characteristics. The value of this field is a string which represent the identifier of the thread the message belongs to.
+	\item\textit{text}
 \end{itemize}
 
 \subsection{Threads resource}\label{ssect:threads}
