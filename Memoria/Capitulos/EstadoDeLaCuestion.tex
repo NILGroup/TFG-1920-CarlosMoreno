@@ -239,9 +239,29 @@ As any other resource we have studied and we will study, messages resource has a
 \end{itemize}
 
 \subsubsection{MIME} \label{sssect:mime}
+MIME (Multipurpose Internet Mail Extensions) is an Internet standard for the exchange of several file types (text, audio, video, etc.) which provides support to text with characters other than ASCII, non-text attachments, body messages with numerous pars (known as multi-part messages) and headers information with characters other than ASCII. Each data type has a different name in MIME. This names follows the format: type/subtype (both type and subtype are strings), in such a way that the first denotes the general data category and the second the specific type of that information. The values that the type can take are:
 
-\subsubsection{Base64} \label{sssect:base64}
+\begin{itemize}
+	\item\textit{text}: means that the content is simple text. Subtypes like \textit{html}, \textit{xml} and \textit{plain} can follow this type.
+	\item\textit{multipart}: indicates that the message has numerous parts with independent data. Subtypes like \textit{form-data} and \textit{digest} can follow this type.
+	\item\textit{message}: it is used to encapsulate an existing message, for example when we want to reply a email and add the previous message. Subtypes like \textit{partial} and \textit{rfc822} can follow this type.
+	\item\textit{image}: means that the content is an image. Subtypes like \textit{png}, \textit{jpeg} and \textit{gif} can follow this type.
+	\item\textit{audio}: indicates that the content is an audio. Subtypes like \textit{mp3} and \textit{32kadpcm} can follow this type.
+	\item\textit{video}: denotes that the content is an video. Subtypes like \textit{mpeg} and \textit{avi} can follow this type.
+	\item\textit{application}: it is used for application data that could be binary. Subtypes like \textit{json} and \textit{pdf} can follow this type.
+\end{itemize}
+
+MIME has several headers which are in all emails sent with this standard. Most important of them are the following:
+
+\begin{itemize}
+	\item\textit{Content-type}: the value of this header is the type and subtype of the message with the same structure that we have explained before. For example \textit{Content-Type: text/plain} means that the message is a plain text.
+\end{itemize}
+
+\subsubsection{Base64} \label{sssect:base64} %Poner antes que MIME
 
 \subsection{Attachments resource} \label{ssect:attres}
 
 \subsection{Threads resource}\label{ssect:threads}
+
+%Drafts resource
+%Limitaciones de la API
