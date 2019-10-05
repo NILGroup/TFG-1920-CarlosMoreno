@@ -212,8 +212,30 @@ As any other resource we have studied and we will study, messages resource has a
 		\item\textit{id}: the identifier string of the message to retrieve.
 		\item\textit{userId}: the user's email address. As it happens with the \textit{getProfile} method of the users resource (see section \ref{ssect:userres}), the special string value \textit{'me'} can be used to indicate the authenticated user.
 		\item\textit{format} (optional parameter): the format to return the message in. Acceptable values are: \textit{'full'} (return the full email data with body content parsed in the \textit{payload} field and the \textit{raw} field is not used), \textit{'metadata'} (returns only email message identifier, labels and email headers), \textit{'minimal'} (returns only email message identifier and labels) and \textit{'raw'} (returns the full email message data with the body content in the \textit{raw} field as a base64url (see section \ref{sssect:base64}) encoded string and the \textit{payload} field is not used).
-		\item\textit{metadataHeaders}: it is only used when the format parameter takes the punctual value of \textit{'metadata'}.
+		\item\textit{metadataHeaders} (optional parameter): it is only used when the format parameter takes the punctual value of \textit{'metadata'}. It is a string list where we have to insert the headers we want to be included.
 	\end{itemize}
+	For knowing the required scopes for invoking this function look up in \cite[/v1/reference/users/messages/get]{gmailAPI}
+	\item\textit{list(userId, includeSpamTrash = false, labelIds = None, maxResults = None, pageToken = None, q = None)}: returns a resource with the following structure:
+	\begin{python}
+		{
+		'messages' : [ users.messages resource ],
+		'nextPageToken' : string,
+		'resultSizeEstimate' : unsigned integer
+		}
+	\end{python}
+	As it happens with the \textit{list} method of the labels resource (see section \ref{ssect:labres}), \textit{'messages'} list does not contain all of a message information (for obtaining the full email data we can use \textit{get} method). Each element of this list only contains the \textit{id} and \textit{threadId} field.
+	
+	The parameters of this method are:
+	\begin{itemize}
+		\item\textit{userId}: user's email address (we can use the special string value \textit{'me'}).
+		\item\textit{includeSpamTrash} (optional parameter): boolean parameter which determines if it includes messages with the labels \textit{SPAM} and \textit{TRASH} in the result of the operation.
+		\item\textit{labelIds} (optional parameter): it is a list which let us filter the messages by only returning emails with labels that match all of the identifiers that belong to this list.
+		\item\textit{maxResults} (optional parameter): an integer which determines the maximum number of messages to return.
+		\item\textit{pageToken} (optional parameter): string which specifies a page of results.
+		\item\textit{q} (optional parameter): string which let us do an specific query (with the same query format as the Gmail search box) and filter the messages by only returning emails that match with it.
+	\end{itemize}
+	For knowing the required scopes for invoking this function look up in \cite[/v1/reference/users/messages/list]{gmailAPI}
+	\item\textit{send(userId, body = None, media\_body = None, media\_mime\_type = None)}: 
 \end{itemize}
 
 \subsubsection{MIME} \label{sssect:mime}
