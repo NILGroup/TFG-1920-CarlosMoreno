@@ -107,9 +107,9 @@ The users resource has also instance methods, which return other Gmail API resou
 	\item\textit{getProfile(userId)}: it returns an object with a dictionary structure as it follows:
 	\begin{python}
 	{
-	'threadsTotal' : integer # Total number of threads in the mailbox
-	'emailAddress' : string # User's email address
-	'historyId' : string # ID of the mailbox's current history record
+	'threadsTotal' : integer, # Total number of threads in the mailbox
+	'emailAddress' : string, # User's email address
+	'historyId' : string, # ID of the mailbox's current history record
 	'messagesTotal' : integer # Total number of messages in the mailbox
 	}
 	\end{python}
@@ -120,17 +120,106 @@ The users resource has also instance methods, which return other Gmail API resou
 
 As we are going to call only the \textit{getProfile} method, we have described on details this first function and we have just given an idea about what the rest of them do. Now, in next sections, we are going to explain all the resources we can create with the user resource.
 
-\subsection{Labels resource}
+\subsection{Labels resource}\label{ssect:labres}
 As we have seen in the explanation of users resource (section \ref{ssect:userres}), we can obtain labels resource \citep[/v1/reference/users/labels]{gmailAPI} by invoking \textit{labels()} instance method of our users resource, that is to say, by using our \textit{service} variable, the instruction \textit{service.users().labels()} will return the label resource.
 
-\subsection{Messages resource}
-In most of the operations we are going to execute, it will be essential the correct management of messages. Therefore, knowing how the emails are represented in Gmail API and how to use them is imperative to understand how to work with this API. For this reason, in this section we are going to delve into the message resource of the Gmail API, its structure and its methods.
+Labels are used to categorize messages and threads within the user's mailbox. They have a dictionary structure and their representation is what we can observe hereunder:
 
-Regardless of which programming language is used, message resource \citep[/v1/reference/users/messages]{gmailAPI} internally has a dictionary structure. The more important (for us) keys of this data structure are (at least the most useful keys for our purpose):
+\begin{python}
+{
+'id' : string, # The immutable identifier of the label
+'name' : string, # The display name
+# The visibility of messages in the Gmail web interface
+'messageListVisibility' : string,
+'labelListVisibility' : string, # The visibility of label
+'type' : string, # The owner type of the label ('system' or 'user')
+'messagesTotal' : integer, # Total number of messages with the label
+'messagesUnread' : integer, # Number of unread messages with the label
+'threadsTotal' : integer, # Total number of threads with the label
+'threadsUnread' : integer, # Number of unread threads with the label
+'color' : {
+	'textColor' : string, # Text color of the label, represented as hex string
+	'backgroundColor' : string # Background color represented as hex string #RRGGBB
+	}
+}
+\end{python}
+
+The important fields we are going to need are the \textit{name} and the \textit{type}. Labels with \textit{system} type, such as \textit{INBOX}, \textit{SENT}, \textit{DRAFTS} and \textit{UNREAD}, are internally created and cannot be added, modified or deleted.
+
+In order to obtain a label object, we will use the methods of this resource: create, delete, get, list, patch and update. In this manner, for example, we can store a label object by calling the next instructions:
+
+\begin{python}
+labels = service.users().labels()
+labelList = labels.list(userId = 'me').execute()
+label = labels.get(id = labelList[0]['id'], userId = 'me')
+\end{python}
+
+It is necessary to use the \textit{get} method because, as we can look up in \cite[/v1/reference/users/labels/list]{gmailAPI}, the \textit{list} method only contains an \textit{id}, \textit{name}, \textit{messageListVisibility}, \textit{labelListVisibility} and \textit{type} of each label.
+
+\subsection{Messages resource}
+In most of the operations we are going to execute, it will be essential the correct management of messages. Therefore, knowing how the emails are represented in Gmail API and how to use them is imperative to understand how to work with this API. For this reason, in this section we are going to delve into the messages resource of the Gmail API, its structure and its methods. As we saw in section \ref{ssect:userres}, we can access to this resource by invoking the \textit{messages()} method when we have a users resource.
+
+\subsubsection{Resource representation}
+
+Regardless of which programming language is used, messages resource \citep[/v1/reference/users/messages]{gmailAPI} internally has a dictionary structure as we can see down below:
+
+\begin{python}
+{
+'id' : string,
+'threadId' : string,
+'labelIds' : [ string ],
+'snippet' : string,
+'historyId' : unsigned long,
+'internalDate' : long,
+'payload' : {
+	'partId' : string,
+	'mimeType' : string,
+	'filename' : string,
+	'headers' : [
+		{
+		'name' : string,
+		'value' : string
+		}
+	],
+	'body' : users.messages.attachments resource,
+	'parts' : [ (MessagePart) ]
+	},
+'sizeEstimate' : integer,
+'raw' : bytes
+}
+\end{python}
+
+The more important keys (for us) of this data structure are (at least the most useful keys for our purpose):
 \begin{itemize}
 	\item\textit{id}: an immutable string which identifies the message.
 	\item\textit{threadId}: we will explain the thread resource in \ref{ssect:threads} and we will see that a thread is composed of different messages that share common characteristics. The value of this field is a string which represent the identifier of the thread the message belongs to.
-	\item\textit{text}
+	\item\textit{labelIds}: a list of the identifiers of labels (see section \ref{ssect:labres}) applied to the message.
+	\item\textit{payload}: as we can see in the resource representation above, it has a dictionary data structure. The \textit{payload} field is the parsed email structure in the message parts. The more important keys of the \textit{payload} field are:
+	\begin{itemize}
+		\item\textit{headers}: a list of headers. It contains the standard RFC 2822 \citep{rfc2822} email headers such as \textit{To}, \textit{From}, \textit{Subject} and \textit{Date}. Each header has a \textit{name} field, which is the name of the header (for example \textit{From}), and a \textit{value} field, which is the value of the header (following the same example as with the \textit{name} field: \textit{example@gmail.com} could be the value).
+		\item\textit{parts}: a list which contains the different child MIME message parts (we will delve into this field in section \ref{sssect:mime}).
+	\end{itemize}
+	\item\textit{raw}: the entire email message in an RFC 2822 \citep{rfc2822} formatted and base64url (see section \ref{sssect:base64}) encoded string.
 \end{itemize}
+
+\subsubsection{Methods}
+As any other resource we have studied and we will study, messages resource has a lot of methods, many of whom we are going to call for our purposes. We will limit ourselves to describing the methods we are going to use:
+
+\begin{itemize}
+	\item\textit{attachments()}: returns the attachments resource (see section \ref{ssect:attres})
+	\item\textit{get(userId, id, format = 'full', metadataHeaders = None)}: if successful, this method returns the requested messages resource. Its parameters are:
+	\begin{itemize}
+		\item\textit{id}: the identifier string of the message to retrieve.
+		\item\textit{userId}: the user's email address. As it happens with the \textit{getProfile} method of the users resource (see section \ref{ssect:userres}), the special string value \textit{'me'} can be used to indicate the authenticated user.
+		\item\textit{format} (optional parameter): the format to return the message in. Acceptable values are: \textit{'full'} (return the full email data with body content parsed in the \textit{payload} field and the \textit{raw} field is not used), \textit{'metadata'} (returns only email message identifier, labels and email headers), \textit{'minimal'} (returns only email message identifier and labels) and \textit{'raw'} (returns the full email message data with the body content in the \textit{raw} field as a base64url (see section \ref{sssect:base64}) encoded string and the \textit{payload} field is not used).
+		\item\textit{metadataHeaders}: it is only used when the format parameter takes the punctual value of \textit{'metadata'}.
+	\end{itemize}
+\end{itemize}
+
+\subsubsection{MIME} \label{sssect:mime}
+
+\subsubsection{Base64} \label{sssect:base64}
+
+\subsection{Attachments resource} \label{ssect:attres}
 
 \subsection{Threads resource}\label{ssect:threads}

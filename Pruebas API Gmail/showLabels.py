@@ -42,7 +42,8 @@ def main():
     else:
         print('Labels:')
         for label in labels:
-            print(label['name'])
+            if (label['type'] == 'system'):
+                print(label['name'])
 
 if __name__ == '__main__':
     main()
