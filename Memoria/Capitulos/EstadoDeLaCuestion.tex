@@ -239,7 +239,7 @@ As any other resource we have studied and we will study, messages resource has a
 \end{itemize}
 
 \subsubsection{MIME} \label{sssect:mime}
-MIME (Multipurpose Internet Mail Extensions) is an Internet standard for the exchange of several file types (text, audio, video, etc.) which provides support to text with characters other than ASCII, non-text attachments, body messages with numerous pars (known as multi-part messages) and headers information with characters other than ASCII. Each data type has a different name in MIME. This names follows the format: type/subtype (both type and subtype are strings), in such a way that the first denotes the general data category and the second the specific type of that information. The values that the type can take are:
+MIME, whose acronym stands for Multipurpose Internet Mail Extensions \citep{wikimime}, is an Internet standard for the exchange of several file types (text, audio, video, etc.) which provides support to text with characters other than ASCII, non-text attachments, body messages with numerous pars (known as multi-part messages) and headers information with characters other than ASCII. Each data type has a different name in MIME. This names follows the format: type/subtype (both type and subtype are strings), in such a way that the first denotes the general data category and the second the specific type of that information. The values that the type can take are:
 
 \begin{itemize}
 	\item\textit{text}: means that the content is simple text. Subtypes like \textit{html}, \textit{xml} and \textit{plain} can follow this type.
@@ -249,12 +249,13 @@ MIME (Multipurpose Internet Mail Extensions) is an Internet standard for the exc
 	\item\textit{audio}: indicates that the content is an audio. Subtypes like \textit{mp3} and \textit{32kadpcm} can follow this type.
 	\item\textit{video}: denotes that the content is an video. Subtypes like \textit{mpeg} and \textit{avi} can follow this type.
 	\item\textit{application}: it is used for application data that could be binary. Subtypes like \textit{json} and \textit{pdf} can follow this type.
+	\item\textit{font}: means that the content is a file which defines a font format. Subtypes like \textit{woff} and \textit{ttf} can follow this type.
 \end{itemize}
 
 MIME has several headers which are in all emails sent with this standard. Most important of them are the following:
 
 \begin{itemize}
-	\item\textit{Content-type}: the value of this header is the type and subtype of the message with the same structure that we have explained before. For example \textit{Content-Type: text/plain} means that the message is a plain text.
+	\item\textit{Content-type}: the value of this header is the type and subtype of the message with the same structure that we have explained before. For example \textit{Content-Type: text/plain} means that the message is a plain text. By using the type \textit{multipart} make the creation of messages with parts and subparts organized in a tree structure (in which leaf nodes can belong to any type and the rest of them can belong to any multipart subtype variety) possible \citep{rfcmimemult}. A feasible composition of a message with a part with plain text and other non-text parts could be constructed by using \textit{multipart/mixed} as the root node
 \end{itemize}
 
 \subsubsection{Base64} \label{sssect:base64} %Poner antes que MIME
