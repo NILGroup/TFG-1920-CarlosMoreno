@@ -272,7 +272,7 @@ MIME has several headers which are in all emails sent with this standard. Most i
 	\end{lstlisting}
 	As we have said, this syntax is different from the used in the email example of the figure \ref{fig:content-type}. This results from the fact that, in HTTP, the header we find in that figure (\textit{Content-Disposition: attachment}) is usually used for instructing the client to show the response body as a downloadable file. As we can observe, it has a \textit{filename} field which is used for establishing the default file name when the user is going to download it.
 	
-	\item\textit{Content-Transfer-Encoding}: 
+	\item\textit{Content-Transfer-Encoding}: when we want to send some files in a message, sometimes they are represented as 8-bit character or binary data, which are not allowed in some protocols. On this account, it is necessary to have a standard that indicates how we should re-encoding such data into a 7-bit short-line format. The Content-Transfer-Encoding header \citep{w3cte} will tell the client which transformation has been used for being able to transport that data.
 \end{itemize}
 
 \subsubsection{Base64} \label{sssect:base64} %Poner antes que MIME
