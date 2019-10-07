@@ -159,7 +159,7 @@ It is necessary to use the \textit{get} method because, as we can look up in \ci
 \subsection{Messages resource}
 In most of the operations we are going to execute, it will be essential the correct management of messages. Therefore, knowing how the emails are represented in Gmail API and how to use them is imperative to understand how to work with this API. For this reason, in this section we are going to delve into the messages resource of the Gmail API, its structure and its methods. As we saw in section \ref{ssect:userres}, we can access to this resource by invoking the \textit{messages()} method when we have a users resource.
 
-\subsubsection{Resource representation}
+\subsubsection{Resource representation}\label{sssect:msgresrep}
 
 Regardless of which programming language is used, messages resource \citep[/v1/reference/users/messages]{gmailAPI} internally has a dictionary structure as we can see down below:
 
@@ -280,6 +280,7 @@ MIME has several headers which are in all emails sent with this standard. Most i
 \end{itemize}
 
 \subsubsection{Base64} \label{sssect:base64}
+As we have seen, in the field \textit{raw} of the messages resource (see section \ref{sssect:msgresrep}) the entire email message has to be encoded using base64url. Base64 \citep{wikibase64} is a group of binary-to-text encoding schemes which represent binary data as a sequence of ASCII printable characters. It makes use of a radix-64 to translate each character. Indeed all the Base64 variants (like base64url) utilise the characters range A-Z, a-z and 0-9 in that order for the first 62 digits.
 
 \subsubsection{Quoted-printable} \label{sssect:quot-p}
 
