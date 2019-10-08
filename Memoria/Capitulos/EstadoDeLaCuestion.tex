@@ -285,6 +285,7 @@ As we have seen, in the field \textit{raw} of the messages resource (see section
 If we try to apply standard base64 in a URL encoder, it will translate the characters '+' and '/' to its hexadecimal representation ('+' = '\%2B' y '/' = '\%2F'). This will cause a conflict in heterogeneous systems or if we use it in data base storage, because of the character '\%' produced by the encoder (it is a special symbol of ANSI SQL). This is why modified Base64 for URL variants exists (such as base64url in \cite{rfc4648}), where the '=' character has no usefulness and the '+' and '/' symbols are replaced by '-' and '\_' respectively. Besides it has no impact on the size of encoded lines.
 
 \subsubsection{Quoted-printable} \label{sssect:quot-p}
+Other binary-to-text encoding that could be used in the content of a MIME message is the quoted-printable encoding \citep{wikiquotprint}.
 
 \subsection{Attachments resource} \label{ssect:attres}
 
