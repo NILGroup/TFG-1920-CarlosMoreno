@@ -18,7 +18,8 @@ Este repositorio consta de varios directorios que se enumeran y explican a conti
 	+ response_main.py: utilizando la clase anterior y la clase _auth_ , inicia una sesión de usuario, lista los mensajes de su bandeja de entrada, selecciona uno y lo responde con un mensaje prestablecido por defecto.
 	+ threads.py: implementa la clase _email_threads_ la cual posee un único método público ( _show_chatty_threads_ ) el cual muestra todos los hilos que está conformados por más de dos mensajes y posean un asunto.
 	+ threads_main.py: utilizando las clases _email_threads_ y _auth_, inicia una sesión de usuario y muestra todos los hilos de correos electrónicos.
-3. **Pruebas SMTP**: este directorio contiene diversos scripts .py escritos en python que recopilan distintas formas de acceder a una cuenta de Gmail sin utilizar su API (usando las librerías imaplib y smtplib):
+3. **Pruebas SMTP**: este directorio contiene diversos scripts .py escritos en python que recopilan distintas formas de acceder a una cuenta de Gmail sin utilizar su API (usando las librerías imaplib, smtplib y poplib):
 	+ open_unread_msg.py: implementa el acceso y lectura de los mensajes no leídos con imaplib, es decir, utilizando el protocolo IMAP.
 	+ send_email_smtp.py: implementa el acceso y envío de mensajes con smtplib, es decir, utilizando el protocolo SMTP.
-	+ config.py: declara las constantes utilizadas en el script anterior.
+	+ read_msg_pop.py: implementa el acceso y lectura de los mensajes con poplib, es decir, utilizando el protocolo POP.
+	+ config.py: declara las constantes utilizadas en los dos scripts anteriores.
