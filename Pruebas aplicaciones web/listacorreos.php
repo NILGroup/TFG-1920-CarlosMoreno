@@ -6,7 +6,7 @@
 	<body>
 	<h1>Lista de correos electrónicos del usuario</h1>
 	<?php
-			$command = escapeshellcmd('python3 /listacorreos.py');
+			$command = escapeshellcmd('listacorreos.py');
 			//output variable is a dictionary with the emails
 			$output = json_decode(shell_exec($command), true);
 			echo '<table>';
