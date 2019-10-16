@@ -6,8 +6,6 @@ Este repositorio consta de varios directorios que se enumeran y explican a conti
 
 1. **Memoria** : directorio donde se encuentra el documento LaTeX donde se desarrolla toda la documentación del proyecto IRIS como Trabajo de Fin del Grado en Ingeniería en Informática de Carlos Moreno Morera.
 2. **Pruebas API Gmail** : este directorio contiene diversos scripts .py escritos en python que recopilan las funciones más básicas para trabajar con la API de Gmail. Los archivos que en él se encuentran son los siguientes:
-
-	+ credentials.json: credenciales obtenidas de la [Consola de desarrollo de Google](https://console.developers.google.com) para poder acceder a la API con el proyecto creado previamente en la misma plataforma.
 	+ showLabels.py: script que inicia una sesión de usuario y muestra las etiquetas que este usuario posee en su cuenta de correo
 	+ auth.py: implementa la clase _auth_ la cual obtiene credenciales válidas gracias al método _get_credentials_ para poder acceder a la cuenta de gmail del usuario. Este script generará un archivo token.pickle que permite mantener la sesión iniciada.
 	+ SendGmail.py: implementa la clase _sendGmail_ la cual permite crear mensajes simples y con archivos adjuntos con sus métodos _create_message_ y _create_message_with_attachment_ , respectivamente. Además, una vez se obtiene un objeto mensaje, se puede enviar gracias a _send_message_ .
@@ -23,3 +21,4 @@ Este repositorio consta de varios directorios que se enumeran y explican a conti
 	+ send_email_smtp.py: implementa el acceso y envío de mensajes con smtplib, es decir, utilizando el protocolo SMTP.
 	+ read_msg_pop.py: implementa el acceso y lectura de los mensajes con poplib, es decir, utilizando el protocolo POP.
 	+ config.py: declara las constantes utilizadas en los dos scripts anteriores.
+4. **Pruebas aplicacciones web**: este directorio contiene diversos ficheros (.html, .php y .py) que al ejecutarlos en un servidor levantan una aplicación web que muestra al usuarios los mensajes de su bandeja de entrada.

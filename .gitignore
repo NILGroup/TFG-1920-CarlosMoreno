@@ -246,3 +246,6 @@ TSWLatexianTemp*
 
 # Authetication file
 *token.pickle
+
+# Personal credentials for accesing to the api
+*credentials.json
