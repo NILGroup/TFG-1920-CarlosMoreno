@@ -55,11 +55,20 @@ def get_text_content(msg_parts):
 
     return text
 
-def clean_decoded_text(text): #Se carga todos los saltos de línea (cambiar)
+def clean_decoded_text(text):
     new_text = ""
-    for c in text:
-        if (c != '\\' and c != '\r' and c != '\n'):
-            new_text = new_text + c
+    i = 0
+    n = len(text)
+    while i < n:
+        if (text[i] == '\r' and (i + 1 < n) and text[i + 1] == '\n'):
+            i = i + 2
+            while((i + 1 < n) and text[i] == '\r' and text[i + 1] == '\n'):
+                new_text = new_text + text[i] + text[i + 1]
+                i = i + 2
+        else:
+            new_text = new_text + text[i]
+            i = i + 1
+
     return new_text
 
 def get_message_text(message):
@@ -69,8 +78,8 @@ def get_message_text(message):
     else:
         mimetype = get_Content_Type(message['payload'])
 
-    if mimetype.startswith('multipart/mixed'):
-        return clean_decoded_text(get_text_content('parts'))
+    if mimetype.startswith('multipart/'):
+        return clean_decoded_text(get_text_content(message['payload']['parts']))
     elif (mimetype.startswith('text/plain') and 'body' in message['payload']
     and 'data' in message['payload']['body']):
         return clean_decoded_text(base64.urlsafe_b64decode(

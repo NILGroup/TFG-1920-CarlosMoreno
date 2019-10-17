@@ -14,7 +14,7 @@ authInst = auth.auth(SCOPES, CLIENT_SECRET_FILE)
 service = build('gmail', 'v1', credentials=authInst.get_credentials())
 
 #Le estás dando el id del primer mensaje thread no del mensaje (cambiar)
-msg = service.users().messages().get(userId = 'me', id = sys.argv[1])
+msg = service.users().messages().get(userId = 'me', id = sys.argv[1]).execute()
 subject = ""
 sender = ""
 for header in msg['payload']['headers']:
