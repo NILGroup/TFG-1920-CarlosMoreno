@@ -196,6 +196,7 @@ The more important keys (for us) of this data structure are (at least the most u
 	\item\textit{labelIds}: a list of the identifiers of labels (see section \ref{ssect:labres}) applied to the message.
 	\item\textit{payload}: as we can see in the resource representation above, it has a dictionary data structure. The \textit{payload} field is the parsed email structure in the message parts. The more important keys of the \textit{payload} field are:
 	\begin{itemize}
+		\item\textit{mimeType}: the MIME type (see the explanation of \textit{Content-Type} header in section \ref{sssect:mime}) of the message part.
 		\item\textit{headers}: a list of headers. It contains the standard RFC 2822 \citep{rfc2822} email headers such as \textit{To}, \textit{From}, \textit{Subject} and \textit{Date}. Each header has a \textit{name} field, which is the name of the header (for example \textit{From}), and a \textit{value} field, which is the value of the header (following the same example as with the \textit{name} field: \textit{example@gmail.com} could be the value).
 		\item\textit{parts}: a list which contains the different child MIME message parts (we will delve into this field in section \ref{sssect:mime}).
 	\end{itemize}
