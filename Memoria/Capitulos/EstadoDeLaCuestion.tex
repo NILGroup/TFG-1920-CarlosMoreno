@@ -6,7 +6,7 @@ In order to be able to read and send emails, it is necessary to access to the us
 
 Gmail API can be used in several programming languages such as Python, PHP, Go, Java, .NET, \ldots Due to the greater number of examples in the starting guides of the Gmail API \citep{gmailAPI} and the previous knowledge that was already had of it, Python was chosen for the first contact with this technology.
 
-The following is a step-by-step explanation of what is necessary to do to access the user's Gmail account, create a message, send an email previously created, create and update a draft, reply a received message (for this it is necessary to know how to create an email) and read important information of message threads and individual emails (such as who is the sender, who has received the message, the subject, the date, the email's body, the attached files, \ldots).
+The following is a step-by-step explanation of what is necessary to know to access the user's Gmail account, create a message, send an email previously created, create and update a draft, reply a received message (for this it is necessary to know how to create an email) and read important information of message threads and individual emails (such as who is the sender, who has received the message, the subject, the date, the email's body, the attached files, \ldots).
 
 \subsection{OAuth 2.0 Protocol}\label{ssect:oauth}
 Gmail API, as it also happens in the case of other Google APIs, uses OAuth 2.0 protocol \citep{oauth} to handle authentication and authorization. As it will be seen later in this section, it is needed to be in possession of OAuth 2.0 client credentials from the Google API Console for having the appropriate permissions to use the Gmail API.
@@ -101,7 +101,7 @@ Henceforth, we will use the \textit{service} variable to relate it with the reso
 \subsection{Users resource}\label{ssect:userres}
 The \textit{build} method could be called for obtaining any resource of any Google API (by giving it the suitable parameters). Our specific \textit{service} created\footnote{\url{http://googleapis.github.io/google-api-python-client/docs/dyn/gmail\_v1.html}} has an important instance method that we are going to invoke for every execution: \textit{users()} method. It returns what is known as users resource \citep[/v1/reference/users]{gmailAPI}.
 
-The users resource has also instance methods, which return other Gmail API resources that we are going to need, such as \textit{drafts()}, \textit{labels()}, \textit{messages()} and \textit{threads()} which return drafts, labels, messages and threads resources respectively. Moreover, it possesses the three methods that we explain hereunder (we must remember that for being able to execute any method that we are going to explain in this and next sections, it is necessary to have the appropriate authorization with at least one of the required scopes that we can look up in its documentation):
+The users resource has also instance methods, which return other Gmail API resources that we are going to need, such as \textit{drafts()} (see section \ref{ssect:drafts}), \textit{labels()} (see section \ref{ssect:labres}), \textit{messages()} (see section \ref{ssect:msgres}) and \textit{threads()} (see section \ref{ssect:threads}) which return drafts, labels, messages and threads resources respectively. Moreover, it possesses the three methods that we explain hereunder (we must remember that for being able to execute any method that we are going to explain in this and next sections, it is necessary to have the appropriate authorization with at least one of the required scopes that we can look up in its documentation):
 
 \begin{itemize}
 	\item\textit{getProfile(userId)}: it returns an object with a dictionary structure as it follows:
@@ -156,7 +156,7 @@ label = labels.get(id = labelList[0]['id'], userId = 'me')
 
 It is necessary to use the \textit{get} method because, as we can look up in \cite[/v1/reference/users/labels/list]{gmailAPI}, the \textit{list} method only contains an \textit{id}, \textit{name}, \textit{messageListVisibility}, \textit{labelListVisibility} and \textit{type} of each label, whereas the \textit{get} method returns the label resource with all the information.
 
-\subsection{Messages resource}
+\subsection{Messages resource}\label{ssect:msgres}
 In most of the operations we are going to execute, it will be essential the correct management of messages. Therefore, knowing how the emails are represented in Gmail API and how to use them is imperative to understand how to work with this API. For this reason, in this section we are going to delve into the messages resource of the Gmail API, its structure and its methods. As we saw in section \ref{ssect:userres}, we can access to this resource by invoking the \textit{messages()} method when we have a users resource.
 
 \subsubsection{Resource representation}\label{sssect:msgresrep}
@@ -203,11 +203,11 @@ The more important keys (for us) of this data structure are (at least the most u
 	\item\textit{raw}: the entire email message in an RFC 2822 \citep{rfc2822} formatted and base64url (see section \ref{sssect:base64}) encoded string.
 \end{itemize}
 
-\subsubsection{Methods}
-As any other resource we have studied and we will study, messages resource has a lot of methods, many of whom we are going to call for our purposes. We will limit ourselves to describing the methods we are going to use:
+\subsubsection{Methods}\label{sssect:msgmethods}
+As any other resource we have studied and we will study, messages resource has a lot of methods, many of whom we are going to call for our purposes. We will limit ourselves to describing the methods we may need to use:
 
 \begin{itemize}
-	\item\textit{attachments()}: returns the attachments resource (see section \ref{ssect:attres})
+	\item\textit{attachments()}: returns the attachments resource (for more information about this resource that we will not explain due to the lack of usefulness for our purpose, to look up \cite[/v1/reference/users/messages/attachments]{gmailAPI} is recommended).
 	\item\textit{get(userId, id, format = 'full', metadataHeaders = None)}: if successful, this method returns the requested messages resource. Its parameters are:
 	\begin{itemize}
 		\item\textit{id}: the identifier string of the message we are looking for.
@@ -215,7 +215,7 @@ As any other resource we have studied and we will study, messages resource has a
 		\item\textit{format} (optional parameter): the format in which we want the message returned. This field can take the following punctual values: \textit{'full'} (returns the entirely email data with body content parsed in the \textit{payload} messages resource field and the \textit{raw} field is empty), \textit{'metadata'} (returns only an email message with its identifier, email headers and labels), \textit{'minimal'} (returns only an email message with its identifier and labels) and \textit{'raw'} (returns the entirely email message data with the body content in the \textit{raw} messages resource field as a base64url (see section \ref{sssect:base64}) encoded string and the \textit{payload} field is empty).
 		\item\textit{metadataHeaders} (optional parameter): it is only used when the format parameter takes the punctual value of \textit{'metadata'}. It is a string list where we have to insert the headers we want to be included.
 	\end{itemize}
-	For knowing the required scopes for invoking this function look up in \cite[/v1/reference/users/messages/get]{gmailAPI}
+	For knowing the required scopes for invoking this function look up in \cite[/v1/reference/users/messages/get]{gmailAPI}.
 	\item\textit{list(userId, includeSpamTrash = false, labelIds = None, maxResults = None, pageToken = None, q = None)}: returns a resource with the following structure:
 	\begin{python}
 		{
@@ -235,8 +235,8 @@ As any other resource we have studied and we will study, messages resource has a
 		\item\textit{pageToken} (optional parameter): string which specifies a page of results.
 		\item\textit{q} (optional parameter): string which let us do an specific query (with the same query format as the Gmail search box) and filter the messages by only returning emails that match with it.
 	\end{itemize}
-	For knowing the required scopes for invoking this function look up in \cite[/v1/reference/users/messages/list]{gmailAPI}
-	\item\textit{send(userId, body = None, media\_body = None, media\_mime\_type = None)}: it sends the given message to the email addresses specified in the \textit{To}, \textit{Cc} and \textit{Bcc} headers. The first two parameters are the only ones we will use. The first (\textit{userId}) is the user's email address (we can use the special string value \textit{'me'}) and the second is the message we want to send in an RFC 2822 \citep{rfc2822} formatted. For knowing the required scopes for invoking this function look up in \cite[/v1/reference/users/messages/send]{gmailAPI}
+	For knowing the required scopes for invoking this function look up in \cite[/v1/reference/users/messages/list]{gmailAPI}.
+	\item\textit{send(userId, body = None, media\_body = None, media\_mime\_type = None)}: it sends the given message to the email addresses specified in the \textit{To}, \textit{Cc} and \textit{Bcc} headers. The first two parameters are the only ones we will use. The first (\textit{userId}) is the user's email address (we can use the special string value \textit{'me'}) and the second is the message we want to send in an RFC 2822 \citep{rfc2822} formatted. For knowing the required scopes for invoking this function look up in \cite[/v1/reference/users/messages/send]{gmailAPI}.
 \end{itemize}
 
 \subsubsection{MIME} \label{sssect:mime}
@@ -281,20 +281,46 @@ MIME has several headers which are in all emails sent with this standard. Most i
 \end{itemize}
 
 \subsubsection{Base64} \label{sssect:base64}
-As we have seen, in the field \textit{raw} of the messages resource (see section \ref{sssect:msgresrep}) the entire email message has to be encoded using base64url; and, as we have studied when we learnt how the MIME standard (see section \ref{sssect:mime}) is, we can find email whose content encoding is base64. Base64 \citep{wikibase64, rfc4648} is a group of reversible binary-to-text encoding schemes which represent binary data as a sequence of ASCII printable characters. It makes use of a radix-64 to translate each character, because 64 is the more power of two than can be represented using only printable ASCII characters. Indeed all the Base64 variants (like base64url) utilise the characters range A-Z, a-z and 0-9 in that order for the first 62 digits, but the chosen symbol for the last two digits are very different between them. In particular, MIME (see section \ref{sssect:mime}) specification, stablished in RFC 2045 \citep{rfc2045}, describes base64 based on  Privacy-enhanced Electronic Mail (PEM) protocol \citep{wikipem, rfc7468}, which means that the last two characters are '+' and '/' and the symbol '=' is used for output padding suffix. In the same way, MIME does not stablish a fixed size for the base64 encoded lines, by contrast it specifies a maximun size of 76 characters.
+As we have seen, in the field \textit{raw} of the messages resource (see section \ref{sssect:msgresrep}) the entire email message has to be encoded using base64url; and, as we have studied when we learnt how the MIME standard (see section \ref{sssect:mime}) is, we can find email whose content encoding is base64. Base64 \citep{wikibase64, rfc4648} is a group of reversible binary-to-text encoding schemes which represent binary data as a sequence of ASCII printable characters. It makes use of a radix-64 to translate each character, because 64 is the more power of two than can be represented using only printable ASCII characters. Indeed all the Base64 variants (like base64url) utilise the characters range A-Z, a-z and 0-9 in that order for the first 62 digits, but the chosen symbol for the last two digits are very different between them. In particular, MIME (see section \ref{sssect:mime}) specification, established in RFC 2045 \citep{rfc2045}, describes base64 based on  Privacy-enhanced Electronic Mail (PEM) protocol \citep{wikipem, rfc7468}, which means that the last two characters are '+' and '/' and the symbol '=' is used for output padding suffix. In the same way, MIME does not stablish a fixed size for the base64 encoded lines, by contrast it specifies a maximum size of 76 characters.
 
 If we try to apply standard base64 in a URL encoder, it will translate the characters '+' and '/' to its hexadecimal representation ('+' = '\%2B' y '/' = '\%2F'). This will cause a conflict in heterogeneous systems or if we use it in data base storage, because of the character '\%' produced by the encoder (it is a special symbol of ANSI SQL). This is why modified Base64 for URL variants exists (such as base64url in \cite{rfc4648}), where the '=' character has no usefulness and the '+' and '/' symbols are replaced by '-' and '\_' respectively. Besides it has no impact on the size of encoded lines.
 
 \subsubsection{Quoted-printable} \label{sssect:quot-p}
-Other reversible binary-to-text encoding that could be used in the content of a MIME message is the quoted-printable encoding \citep{wikiquotprint, rfc1521}. Making use of printable characters (such as alphanumeric and '=') proved capable of transmiting 8 bit data over a 7 bit protocol. Unlike base64, if the original message is mostly composed of ASCII characters, the encoded text is enough readable and compact.
+Other reversible binary-to-text encoding that could be used in the content of a MIME message is the quoted-printable encoding \citep{wikiquotprint, rfc1521}. Making use of printable characters (such as alphanumeric and '=') proved capable of transmitting 8 bit data over a 7 bit protocol. Unlike base64, if the original message is mostly composed of ASCII characters, the encoded text is enough readable and compact.
 
 Each byte could be represented via two hexadecimal character. On this basis, the '=' symbol followed by two hexadecimal digits are enough to encode all the characters except the printable ASCII ones and the end of line. For example, if we want to represent the 12th ASCII character we can encode it as '=0C' or if the equality symbol (whose decimal value is 61) is in our original message, it could be encoded as '=3D' (note that despite being a printable ascii character it must be encoded as it is a special character in this encoding). This is how quoted-printable encodes the different characters.
 
-In respect of the maximun line size, as it happens with the MIME specification of the base64 (see section \ref{sssect:base64}), it is 76 characters each encoded line. To achieve this goal and still be able to decode the text getting the original message, quoted-printable adds \textit{soft line breaks} at the end of the line consisting of the '=' symbol and it does not modify the encoded text.
-
-\subsection{Attachments resource} \label{ssect:attres}
+In respect of the maximum line size, as it happens with the MIME specification of the base64 (see section \ref{sssect:base64}), it is 76 characters each encoded line. To achieve this goal and still be able to decode the text getting the original message, quoted-printable adds \textit{soft line breaks} at the end of the line consisting of the '=' symbol and it does not modify the encoded text.
 
 \subsection{Threads resource}\label{ssect:threads}
+When we access to our inbox, we are actually seeing the inbox threads instead of the messages resource. Every message, even if it is an only email without a reply, is enclosed in a thread resource \citep[/v1/reference/users/threads]{gmailAPI} which is essentially a list, perhaps unitary, of messages resources. In fact, as we can observe in the following resource representation, in its dictionary structure it has a list of messages resources:
 
-%Drafts resource
-%Limitaciones de la API
+\begin{python}
+	{
+		'id' : string, # The identifier of the thread
+		'snippet' : string, # A short part of the text
+		'historyId' : unsigned long,
+		'messages' : [ users.messages resource ]
+	}
+\end{python}
+
+The most important methods of this resource are:
+\begin{itemize}
+	\item\textit{get(userId, id, format = 'full', metadataHeaders = None)}: if successful, this method returns the requested threads resource. In respect of the parameters, they are defined in the same way as in \textit{get} messages resource method (see section \ref{sssect:msgmethods}) with the exception of the parameter \textit{format}, whose only difference is that it does not accept the \textit{'raw'} value. For knowing the required scopes for invoking this function look up in \cite[/v1/reference/users/threads/get]{gmailAPI}.
+	\item\textit{list(userId, includeSpamTrash = False, labelIds = None, maxResults = None, pageToken = None, q = None)}: if successful, it returns a dictionary structure analogous to the view in the \textit{list} message resource method (see section \ref{sssect:msgmethods}). Needless to say, instead of returning a messages resource list it will give us a threads resource list, which does not contain the complete information of each thread (for example each element of the list has not a list of messages resource). Full thread data can be fetched using the previous method. The parameters of this method are defined in the same way as the \textit{list} messages resource method. For knowing the required scopes for invoking this function look up in \cite[/v1/reference/users/threads/list]{gmailAPI}.
+\end{itemize}
+
+\subsection{Drafts resource}\label{ssect:drafts}
+The last Gmail API resource we will study is the most easy to understand after knowing all the structures related with emails that we have explained in the above sections: the drafts resource \citep[/v1/reference/users/drafts]{gmailAPI}. Its representation is very simple:
+
+\begin{python}
+	{
+		'id' : string # The immutable identifier of the draft
+		'message' : users.messages resource
+	}
+\end{python}
+
+As we can observe, a draft is virtually a messages resource with an identifier. Indeed, in order to create a new draft with the \textit{DRAFT} label we must create a MIME message (see section \ref{sssect:mime}) as we have to do when we want to send a new email by using the \textit{send} messages resource method. Then it is necessary to invoke the drafts resource method \textit{create(userId, body = None, media\_body = None, media\_mime\_type = None)} by giving the value \textit{'me'} and the message created to the first to parameters.
+
+\subsection{API Usage Limits}
+
