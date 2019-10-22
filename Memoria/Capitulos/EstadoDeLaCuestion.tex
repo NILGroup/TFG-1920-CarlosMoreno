@@ -323,4 +323,4 @@ The last Gmail API resource we will study is the most easy to understand after k
 As we can observe, a draft is virtually a messages resource with an identifier. Indeed, in order to create a new draft with the \textit{DRAFT} label we must create a MIME message (see section \ref{sssect:mime}) as we have to do when we want to send a new email by using the \textit{send} messages resource method. Then it is necessary to invoke the drafts resource method \textit{create(userId, body = None, media\_body = None, media\_mime\_type = None)} by giving the value \textit{'me'} and the message created to the first to parameters.
 
 \subsection{API Usage Limits}
-
+One factor to be taken into account is the limitations of the Gmail API which could become a drawback in the application development. It has a limit on the daily usage and on the per-user rate. However, both are acceptable for the type of software we want to build on: 1,000,000,000 quota units per day and 250 quota units per user per second.
