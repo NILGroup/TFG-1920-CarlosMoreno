@@ -323,4 +323,27 @@ The last Gmail API resource we will study is the most easy to understand after k
 As we can observe, a draft is virtually a messages resource with an identifier. Indeed, in order to create a new draft with the \textit{DRAFT} label we must create a MIME message (see section \ref{sssect:mime}) as we have to do when we want to send a new email by using the \textit{send} messages resource method. Then it is necessary to invoke the drafts resource method \textit{create(userId, body = None, media\_body = None, media\_mime\_type = None)} by giving the value \textit{'me'} and the message created to the first to parameters.
 
 \subsection{API Usage Limits}
-One factor to be taken into account is the limitations of the Gmail API which could become a drawback in the application development. It has a limit on the daily usage and on the per-user rate. However, both are acceptable for the type of software we want to build on: 1,000,000,000 quota units per day and 250 quota units per user per second.
+One factor to be taken into account is the limitations of the Gmail API \citep[/v1/reference/quota]{gmailAPI} which could become a drawback in the application development. It has a limit on the daily usage and on the per-user rate. In order to measure the usage rate, ``quota units'' are defined depending on the method invoked. In table \ref{tab:quotaUnits} we can consult the value of some methods in quota units (we have selected the more important methods for our purpose, for knowing the quota units of other methods it is recommended to look up \cite[/v1/reference/quota]{gmailAPI}).
+
+\begin{table}[h]
+	\centering
+	\begin{tabular}{|l c r|}
+		\hline
+		\textbf{Method} & \textbf{Section where the method is explained} & \textbf{Quota units} \\
+		\hline\hline
+		\textit{drafts.create} & \ref{ssect:drafts} & 10\\ \hline
+		\textit{getProfile} & \ref{ssect:userres} & 1\\ \hline
+		\textit{messages.get} & \ref{sssect:msgmethods} & 5\\ \hline
+		\textit{messages.list} & \ref{sssect:msgmethods} & 5\\ \hline
+		\textit{messages.send} & \ref{sssect:msgmethods} & 100\\ \hline
+		\textit{threads.get} & \ref{ssect:threads} & 10\\ \hline
+		\textit{threads.list} & \ref{ssect:threads} & 10\\ \hline
+	\end{tabular}
+	\caption{Main methods' quota units}
+	\label{tab:quotaUnits}
+\end{table}
+
+However, both daily usage limit and per-user rate limit are acceptable for the type of software we want to build on: 1,000,000,000 quota units per day and 250 quota units per user per second. Therefore there are no constraints (for our purpose) that make it difficult for us to use this API.
+
+\section{Electronic Mail Protocols}
+Another way to read, send emails and access to the user's email data is by directly using the communication protocol for electronic mail transmission and the internet standard protocol to retrieve email messages from a mail server over a TCP/IP connection.
