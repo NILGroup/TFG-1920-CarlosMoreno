@@ -1,6 +1,7 @@
 from googleapiclient.discovery import build
 import config
 import auth
+import analyser
 
 def main():
     """
@@ -8,7 +9,8 @@ def main():
     """
     #Creation of a Gmail resource
     service = build('gmail', 'v1',
-        credentials = auth.get_credentials(config.SCOPES, config.CLIENT_SECRET_FILE))
+                    credentials = auth.get_credentials(config.SCOPES, config.CREDS))
+
 
 
 if __name__ == '__main__':

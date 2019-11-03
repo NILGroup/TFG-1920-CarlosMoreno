@@ -5,7 +5,7 @@ from google.auth.transport.requests import Request
 
 def get_credentials(scopes, client_secret_file):
     """
-    Obtains valid credentials for accessing Gmail API
+    Obtains valid credentials for accessing user's Gmail data
     """
     creds = None
     # The file token.pickle stores the user's access and refresh tokens, and is
