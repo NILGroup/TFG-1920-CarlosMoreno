@@ -1,10 +1,15 @@
-import time
+import abc
 import quotaunits as qu
+from abc import ABC
+from abc import ABCMeta
+from time import time
+from time import sleep
 
-class Extractor:
+class Extractor(ABC):
     """
-    The Extractor object performs the task of extracting sent messages from
-    the user by accessing Gmail API.
+    The Extractor abstract class performs the task of extracting sent messages 
+    or sent threads (it will materialize in the daughters classes ) from the 
+    user by accessing Gmail API.
     
     Parameters:
         service: Gmail API resource with an Gmail user session opened.
@@ -20,13 +25,14 @@ class Extractor:
             init_time moment.
     """
     def __init__(self, service, quota):
+        __metaclass__ = ABCMeta
         self.service = service
         self.quota = quota
         self.quota_sec = qu.QUOTA_UNITS_PER_SECOND
-        self.init_time = time.time()
-        self.last_req_time = time.time()
+        self.init_time = time()
+        self.last_req_time = time()
 
-    def __update_attributes(self, req_quota):
+    def update_attributes(self, req_quota):
         """
         Update the quota, quota_sec and last_req_time attributes of this class
         after making a Gmail API request with the req_quota quota units.
@@ -35,11 +41,11 @@ class Extractor:
             req_quota (int): quota units of the Gmail API request that has just
                 been made.
         """
-        self.last_req_time = time.time()
+        self.last_req_time = time()
         self.quota = self.quota - req_quota
         self.quota_sec = self.quota_sec - req_quota
 
-    def __wait_for_request(self, req_quota):
+    def wait_for_request(self, req_quota):
         """
         Avoid exceeding Gmail API quota units per second by waiting for the time
         needed to make the request with req_quota quota units. Besides this
@@ -51,88 +57,51 @@ class Extractor:
                 to be made.
         """
         slept = False
-        t_now = time.time()
+        t_now = time()
         # If we are going to exceed the quota units per second in this last second
         # or the init_time attribute is not updated
         if ((t_now - self.init_time <= 1 and req_quota >= self.quota_sec)
             or (t_now - self.init_time > 1 and t_now - self.last_req_time <= 1)):
             slept = True
-            time.sleep(1.1 - (t_now - self.last_req_time))
+            sleep(1.1 - (t_now - self.last_req_time))
 
         if slept or (t_now - self.init_time > 1):
             self.quota_sec = qu.QUOTA_UNITS_PER_SECOND
-            self.init_time = time.time()
-            self.last_req_time = time.time()
+            self.init_time = time()
+            self.last_req_time = time()
 
-    def __min_qu(self, msg_extract):
-        """
-        Obtains the minimum quota units to continue extraction depending on the
-        resource being extracted.
+    @abc.abstractmethod
+    def min_qu(self):
+        pass
 
-        Parameters:
-            msg_extract (bool): True if we are extracting sent messages and
-                False if we are extracting sent threads.
-        
-        Returns:
-            int: The minimum quota units needed to continue messages extraction
-                or to continue threads extraction depending on msg_extract value
-        """
-        return qu.MIN_QUNITS_MSG if msg_extract else qu.MIN_QUNITS_THRD
+    @abc.abstractmethod
+    def get_list_key(self):
+        pass
 
-    def __get_list_key(self, msg_extract):
-        """
-        Obtains the dictionary key of the list value depending on the resource
-        being extracted.
+    @abc.abstractmethod
+    def get_list(self, nextPage):
+        pass
 
-        Parameters:
-            msg_extract (bool): True if we are extracting sent messages and
-                False if we are extracting sent threads.
-        
-        Returns:
-            str: the key of the list value of the dictionary
-        """
-        return 'messages' if msg_extract else 'threads'
+    @abc.abstractmethod
+    def get_resource(self, resId):
+        pass
 
-    def __get_list_resource(self, msg_extract, nextPage):
-        """
-        Obtains the list of the resource we are extracting.
-
-        Parameters:
-            msg_extract (bool): True if we are extracting sent messages and
-                False if we are extracting sent threads.
-            nextPage (str): Page token to retrieve a specific page of results
-                in the list.
-        
-        Returns:
-            List resource of sent messages (if msg_extract is True) or sent 
-                threads (if msg_extract is False).
-        """
-        msg_list = {}
-        if (msg_extract):
-            self.__wait_for_request(req_quota = qu.MSG_LIST)
-            msg_list = self.service.user().messages().list(userId = 'me', labelIds = ['SENT'], pageToken = nextPage).execute()
-            self.__update_attributes(req_quota = qu.MSG_LIST)
-        else:
-            self.__wait_for_request(req_quota = qu.THREADS_LIST)
-            msg_list = self.service.users().threads().list(userId = 'me', labelIds = ['SENT'], pageToken = nextPage).execute()
-            self.__update_attributes(req_quota = qu.THREADS_LIST)
-        return msg_list
-
-    def extract_sent_msg(self, cond_var, nmsg, msgs, msg_extract = True):
+    def extract_sent_msg(self, cond_var, nmsg, msgs):
         extracted = 0
         nextPage = None
-        self.init_time = time.time()
-        while (extracted < nmsg and self.quota >= self.__min_qu(msg_extract)):
-            msg_list = self.__get_list_resource(msg_extract, nextPage)
+        self.init_time = time()
+        while (extracted < nmsg and self.quota >= self.min_qu()):
+            msg_list = self.get_list(nextPage)
 
-            lst_size = len(msg_list[self.__get_list_key(msg_extract)])
+            lst_size = len(msg_list[self.get_list_key()])
             if (extracted + lst_size < nmsg):
                 nextPage = msg_list['nextPageToken']
 
-            msg_list = msg_list[self.__get_list_key(msg_extract)]
+            msg_list = msg_list[self.get_list_key()]
             i = 0
-            while (i < lst_size and self.quota >= self.__min_qu(msg_extract)):
-                self.__wait_for_request(req_quota = qu.MSG_GET)
+            while (i < lst_size and self.quota >= self.min_qu()):
+                #Obtains the resource (message or thread) with the given id
+                res = self.get_resource(msg_list[i]['id'])
 
 
         #Si se queda a medias guardar estado en un archivo
