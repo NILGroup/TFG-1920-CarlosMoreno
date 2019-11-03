@@ -7,3 +7,8 @@ MSG_GET = 5
 MSG_LIST = 5
 THREADS_GET = 10
 THREADS_LIST = 10
+
+#Minimum quota units needed to continue messages extraction
+MIN_QUNITS_MSG = 5
+#Minimum quota units needed to continue messages extraction
+MIN_QUNITS_THRD = 10
