@@ -11,20 +11,36 @@ class Extractor(ABC):
     or sent threads (it will materialize in the daughters classes ) from the 
     user by accessing Gmail API.
     
-    Parameters:
-        service: Gmail API resource with an Gmail user session opened.
-        quota (int): Gmail API quota units available for message extraction.
-
-    Attributes:
-        service: variable where we store service.
-        quota (int): variable where we store quota. Represents the remaining
-            quota units available to carry out the extraction operations.
-        init_time (float): Moment in which the second of operations begins.
-        last_req_time (float): Momento in which the last request was made.
-        quota_sec (int): remaining Gmail API quota units per second from 
-            init_time moment.
+    Attributes
+    ----------
+    service: Gmail resource
+        Gmail API resource with an Gmail user session opened.
+    quota: int
+        Gmail API quota units available for message extraction. Represents the
+        remaining quota units available to carry out the extraction operations.
+    init_time: float 
+        Moment in which the second of operations begins.
+    last_req_time: float
+        Moment in which the last Gmail API request was made.
+    quota_sec: int
+        Remaining Gmail API quota units per second from init_time moment.
     """
     def __init__(self, service, quota):
+        """
+        Class constructor.
+
+        Parameters
+        ----------
+        service: Gmail resource
+            Gmail API resource with an Gmail user session opened.
+        quota: int
+            Gmail API quota units available for message extraction.
+
+        Returns
+        -------
+        Constructed Extractor class.
+
+        """
         __metaclass__ = ABCMeta
         self.service = service
         self.quota = quota
@@ -37,9 +53,15 @@ class Extractor(ABC):
         Update the quota, quota_sec and last_req_time attributes of this class
         after making a Gmail API request with the req_quota quota units.
 
-        Parameters:
-            req_quota (int): quota units of the Gmail API request that has just
-                been made.
+        Parameters
+        ----------
+        req_quota: int
+            Quota units of the Gmail API request that has just been made.
+
+        Returns
+        -------
+        None.
+
         """
         self.last_req_time = time()
         self.quota = self.quota - req_quota
@@ -52,9 +74,15 @@ class Extractor(ABC):
         method updates the init_time attribute if from init_time until now more
         than a second has passed.
 
-        Parameters:
-            req_quota (int): quota units of the Gmail API request that is going
-                to be made.
+        Parameters
+        ----------
+        req_quota: int
+            Quota units of the Gmail API request that is going to be made.
+
+        Returns
+        -------
+        None.
+
         """
         slept = False
         t_now = time()
@@ -72,18 +100,97 @@ class Extractor(ABC):
 
     @abc.abstractmethod
     def min_qu(self):
+        """
+        Returns the minimum quota units needed to make a request of the resource.
+
+        Returns
+        -------
+        int: minimum quota units needed to continue with extraction.
+
+        """
         pass
 
     @abc.abstractmethod
     def get_list_key(self):
+        """
+        Returns the key of the dictionary given by the list request for
+        accessing to the list of the resource.
+
+        Returns
+        -------
+        str: key of the dictionary.
+
+        """
         pass
 
     @abc.abstractmethod
     def get_list(self, nextPage):
+        """
+        Obtains a dictionary which includes a list of the resource.
+
+        Parameters
+        ----------
+        nextPage : str
+            Page token to retrieve a specific page of results in the list.
+
+        Returns
+        -------
+        If successful, this method returns a response body with the following 
+        structure:
+        {
+            String_with_resource_name: [
+                Gmail API resource of the specific extractor
+            ],
+            "nextPageToken": string,
+            "resultSizeEstimate": unsigned integer
+        }
+
+        """
         pass
 
     @abc.abstractmethod
     def get_resource(self, resId):
+        """
+        Obtains the Gmail API resource of the specific extractor.
+
+        Parameters
+        ----------
+        resId : str
+            Resource's identifier that we want to retrieve.
+
+        Returns
+        -------
+        Gmail API resource (thread or message) depending on the specific
+        extractor.
+
+        """
+        pass
+
+    @abc.abstractmethod
+    def extract_msgs_from_resource(self, res):
+        """
+        Obtains a list of extracted messages.
+
+        Parameters
+        ----------
+        res : Gmail API resource
+            Gmail API resource (threads or messages) the specific extractor.
+
+        Returns
+        -------
+        A list of messages with the following structure:
+        {
+            'id' : string,
+            'threadId' : string,
+            'to' : [ string ]
+            'depth' : int,               # How many messages precede it
+            'date' : long,               # Epoch ms
+            'subject' : string,
+            'body' : string,
+            'charLength' : int
+        }
+
+        """
         pass
 
     def extract_sent_msg(self, cond_var, nmsg, msgs):
@@ -100,10 +207,15 @@ class Extractor(ABC):
             msg_list = msg_list[self.get_list_key()]
             i = 0
             while (i < lst_size and self.quota >= self.min_qu()):
-                #Obtains the resource (message or thread) with the given id
+                # Obtains the resource (message or thread) with the given id
                 res = self.get_resource(msg_list[i]['id'])
+                extracted_msgs = self.extract_msgs_from_resource(res)
+                # Inserts the messages in the shared resource
+                cond_var.acquire()
+                for m in extracted_msgs:
+                    msgs.append(m)
+                cond_var.notify()
+                cond_var.release()
 
-
-        #Si se queda a medias guardar estado en un archivo
-        #Utilizar variables de condición
-        #https://docs.python.org/3.5/library/threading.html#threading.Condition
+                i += 1
+                extracted += 1
