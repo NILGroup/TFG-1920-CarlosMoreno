@@ -113,6 +113,7 @@ class MessageExtractor(Extractor):
             'date' : long,               # Epoch ms
             'subject' : string,
             'body' : string,
+            'bodyBase64' : string,
             'charLength' : int
         }
 

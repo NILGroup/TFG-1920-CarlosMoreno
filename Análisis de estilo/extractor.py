@@ -187,6 +187,7 @@ class Extractor(ABC):
             'date' : long,               # Epoch ms
             'subject' : string,
             'body' : string,
+            'bodyBase64' : string,
             'charLength' : int
         }
 
@@ -220,4 +221,6 @@ class Extractor(ABC):
                 extracted += 1
 
         if extracted < nmsg:
-            return nextPage
+            return self.quota, nextPage
+        else:
+            return self.quota
