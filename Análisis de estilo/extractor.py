@@ -193,9 +193,8 @@ class Extractor(ABC):
         """
         pass
 
-    def extract_sent_msg(self, cond_var, nmsg, msgs):
+    def extract_sent_msg(self, cond_var, nmsg, msgs, nextPage = None):
         extracted = 0
-        nextPage = None
         self.init_time = time()
         while (extracted < nmsg and self.quota >= self.min_qu()):
             msg_list = self.get_list(nextPage)
@@ -219,3 +218,6 @@ class Extractor(ABC):
 
                 i += 1
                 extracted += 1
+
+        if extracted < nmsg:
+            return nextPage
