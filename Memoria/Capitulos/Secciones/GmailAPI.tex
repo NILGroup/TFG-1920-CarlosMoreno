@@ -180,7 +180,11 @@ Regardless of which programming language is used, messages resource \citep[/v1/r
 		'value' : string
 		}
 	],
-	'body' : users.messages.attachments resource,
+	'body' : {
+		'attachmentId' : string,
+		'size' : integer,
+		'data' : bytes
+	},
 	'parts' : [ (MessagePart) ]
 	},
 'sizeEstimate' : integer,
@@ -198,6 +202,7 @@ The more important keys (for us) of this data structure are (at least the most u
 		\item\textit{mimeType}: the MIME type (see the explanation of \textit{Content-Type} header in section \ref{sssect:mime}) of the message part.
 		\item\textit{headers}: a list of headers. It contains the standard RFC 2822 \citep{rfc2822} email headers such as \textit{To}, \textit{From}, \textit{Subject} and \textit{Date}. Each header has a \textit{name} field, which is the name of the header (for example \textit{From}), and a \textit{value} field, which is the value of the header (following the same example as with the \textit{name} field: \textit{example@gmail.com} could be the value).
 		\item\textit{parts}: a list which contains the different child MIME message parts (we will delve into this field in section \ref{sssect:mime}).
+		\item\textit{body}: a dictionary structure which contains the body data of this part (see section \ref{sssect:mime}) in case it does not contain MIME message parts (otherwise it will be empty). This structure should not be confused with an attached file. Each MIME part contains a body property regardless of MIME type of the part.
 	\end{itemize}
 	\item\textit{raw}: the entire email message in an RFC 2822 \citep{rfc2822} formatted and base64url (see section \ref{sssect:base64}) encoded string.
 \end{itemize}

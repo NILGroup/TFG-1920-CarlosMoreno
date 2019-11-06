@@ -1,3 +1,4 @@
+from __future__ import print_function
 from extractor import Extractor
 import quotaunits as qu
 
@@ -118,4 +119,3 @@ class MessageExtractor(Extractor):
         }
 
         """
-        
