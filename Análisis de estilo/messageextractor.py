@@ -90,9 +90,10 @@ class MessageExtractor(Extractor):
 
         """
         self.wait_for_request(qu.MSG_GET)
-        m = self.service.user().messages().get(id = resId, userId = 'me').execute()
+        m = self.service.user().messages()
+        msg = m.get(id = resId, userId = 'me', format='raw').execute()
         self.update_attributes(qu.MSG_GET)
-        return m
+        return msg
 
     def extract_msgs_from_resource(self, res):
         """
