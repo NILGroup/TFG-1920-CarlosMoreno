@@ -62,7 +62,7 @@ class MessageExtractor(Extractor):
         structure:
         {
             'messages' : [
-                Gmail API messages resource
+                Gmail API users.messages resource
             ],
             "nextPageToken": string,
             "resultSizeEstimate": unsigned integer
@@ -86,12 +86,12 @@ class MessageExtractor(Extractor):
 
         Returns
         -------
-        Gmail API messages resource.
+        Gmail API users.messages resource.
 
         """
         self.wait_for_request(qu.MSG_GET)
         m = self.service.user().messages()
-        msg = m.get(id = resId, userId = 'me', format='raw').execute()
+        msg = m.get(id = resId, userId = 'me').execute()
         self.update_attributes(qu.MSG_GET)
         return msg
 

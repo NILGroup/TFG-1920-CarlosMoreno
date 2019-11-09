@@ -3,16 +3,72 @@ from extractor import Extractor
 import quotaunits as qu
 
 class ThreadExtractor(Extractor):
+    """
+    Implements Extractor class
+    """
     def __init__(self, service, quota):
+        """
+        Class constructor.
+
+        Parameters
+        ----------
+        service: Gmail resource
+            Gmail API resource with an Gmail user session opened.
+        quota: int
+            Gmail API quota units available for message extraction.
+
+        Returns
+        -------
+        Constructed ThreadExtractor class.
+
+        """
         super().__init__(service, quota)
 
     def min_qu(self):
+        """
+        Returns the minimum quota units needed to make a request of a thread.
+
+        Returns
+        -------
+        int: minimum quota units needed to continue with extraction.
+
+        """
         return qu.MIN_QUNITS_THRD
 
     def get_list_key(self):
+        """
+        Returns the key of the dictionary given by the list request for
+        accessing to the threads list.
+
+        Returns
+        -------
+        str: key of the dictionary.
+
+        """
         return 'threads'
 
     def get_list(self, nextPage):
+        """
+        Obtains a dictionary which includes a list of threads.
+
+        Parameters
+        ----------
+        nextPage : str
+            Page token to retrieve a specific page of results in the list.
+
+        Returns
+        -------
+        If successful, this method returns a response body with the following 
+        structure:
+        {
+            'threads' : [
+                Gmail API users.threads resource
+            ],
+            "nextPageToken": string,
+            "resultSizeEstimate": unsigned integer
+        }
+
+        """
         self.wait_for_request(qu.THREADS_LIST)
         t = self.service.user().threads()
         l = t.list(userId = 'me', labelIds = ['SENT'], pageToken = nextPage).execute()
@@ -20,6 +76,19 @@ class ThreadExtractor(Extractor):
         return l
 
     def get_resource(self, resId):
+        """
+        Obtains the Gmail API threads resource.
+
+        Parameters
+        ----------
+        resId : str
+            Thread resource's identifier that we want to retrieve.
+
+        Returns
+        -------
+        Gmail API users.threads resource.
+
+        """
         self.wait_for_request(qu.THREADS_GET)
         t = self.service.user().threads().get(id = resId, userId = 'me').execute()
         self.update_attributes(qu.THREADS_GET)

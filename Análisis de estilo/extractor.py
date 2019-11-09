@@ -184,11 +184,15 @@ class Extractor(ABC):
             'id' : string,
             'threadId' : string,
             'to' : [ string ]
+            'cc' : [ string ]
+            'bcc' : [ string ]
             'depth' : int,               # How many messages precede it
             'date' : long,               # Epoch ms
             'subject' : string,
-            'body' : string,
-            'bodyBase64' : string,
+            'bodyPlain' : string,
+            'bodyHtml' : string,
+            'bodyBase64Plain' : string,
+            'bodyBase64Html' : string,
             'charLength' : int
         }
 
