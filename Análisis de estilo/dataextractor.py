@@ -301,15 +301,49 @@ class DataExtractor:
         self.__get_message_text(msg)
 
     def get_subject(self):
+        """
+        Obtains the subject of the message.
+
+        Returns
+        -------
+        str: subject of the message.
+
+        """
         return self.__subject
 
     def get_plain_text(self):
+        """
+        Obtains the body of the message as a plain text.
+
+        Returns
+        -------
+        str: body of the message.
+
+        """
         return self.__plain_text
 
     def get_html_text(self):
+        """
+        Obtains the body of the message as a html text.
+
+        Returns
+        -------
+        str: body of the message.
+
+        """
         return self.__html_text
 
     def get_dict(self):
+        """
+        Obtains the metadata of the message.
+
+        Returns
+        -------
+        dict: which includes message id, thread id, a list of addresses,
+        a list of Cc addresses, a list of Bcc addresses and the date of
+        the message.
+
+        """
         return {'id' : self.__id, 'threadId' : self.__thread_id,
                 'to' : self.__to, 'cc' : self.__cc, 'bcc' : self.__bcc,
                 'date' : self.__date}
