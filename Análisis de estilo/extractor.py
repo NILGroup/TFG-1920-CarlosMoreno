@@ -185,10 +185,51 @@ class Extractor(ABC):
         pass
 
     def extract_sent_msg(self, cond_var, nmsg, msgs, nextPage = None):
+        """
+        Extracts all the sent messages by using the Gmail API.
+
+        Parameters
+        ----------
+        cond_var: threading.Condition
+            Conditional variable which is needed to access to the shared
+            resource (msgs).
+        nmsg: int
+            Number of messages to be extracted.
+        msgs: list
+            Shared resource wich is a list of messages with the following
+            structure:
+            {
+                'id' : string,
+                'threadId' : string,
+                'to' : [ string ]
+                'cc' : [ string ]
+                'bcc' : [ string ]
+                'depth' : int,               # How many messages precede it
+                'date' : long,               # Epoch ms
+                'subject' : string,
+                'bodyPlain' : string,
+                'bodyHtml' : string,
+                'bodyBase64Plain' : string,
+                'bodyBase64Html' : string,
+                'charLength' : int
+            }
+        nextPage: str
+            Page token to retrieve a specific page of results in the list.
+
+        Returns
+        -------
+        (int, str): If all the messages were extracted, it returns the
+        remaining quota units in first argument and None in second. In other
+        case, the second argument will be the page token where the last message
+        was extracted.
+
+        """
         extracted = 0
         self.init_time = time()
+        actual_page = ''
         while (extracted < nmsg and self.quota >= self.min_qu):
             msg_list = self.get_list(nextPage)
+            actual_page = nextPage
 
             lst_size = len(msg_list[self.list_key])
             if (extracted + lst_size < nmsg):
@@ -211,6 +252,6 @@ class Extractor(ABC):
                 extracted += 1
 
         if extracted < nmsg:
-            return self.quota, nextPage
+            return self.quota, actual_page
         else:
             return self.quota
