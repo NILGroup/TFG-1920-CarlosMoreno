@@ -31,30 +31,24 @@ class DataExtractor:
     __html_text: str
         Body, as html text, of the given message.
     """
-    def __init__(self, msg):
+    def __init__(self):
         """
         Class constructor.
-
-        Parameters
-        ----------
-        msg : Gmail API users.messages resource
-            Message resource we want to extract the information.
 
         Returns
         -------
         Constructed DataExtractor class.
 
         """
-        self.__id = msg['id']
-        self.__thread_id = msg['threadId']
+        self.__id = None
+        self.__thread_id = None
         self.__to = []
         self.__cc = []
         self.__bcc = []
-        self.__date = msg['internalDate']
+        self.__date = None
         self.__subject = None
         self.__plain_text = None
         self.__html_text = None
-        self.__get_message_text(msg)
 
     def __dec_b64(self, text):
         """
@@ -281,6 +275,30 @@ class DataExtractor:
             elif (self.__is_type('text/html', pld, mimetype)):
                 self.__html_text = self.__clean_decoded_text(
                     self.__dec_b64(pld['body']['data']))
+
+    def set_new_message(self, msg):
+        """
+        Sets a new message to extract its data.
+
+        Parameters
+        ----------
+        msg : Gmail API users.messages resource
+            Message resource we want to extract the information.
+
+        Returns
+        -------
+        None.
+        """
+        self.__id = msg['id']
+        self.__thread_id = msg['threadId']
+        self.__to = []
+        self.__cc = []
+        self.__bcc = []
+        self.__date = msg['internalDate']
+        self.__subject = None
+        self.__plain_text = None
+        self.__html_text = None
+        self.__get_message_text(msg)
 
     def get_subject(self):
         return self.__subject

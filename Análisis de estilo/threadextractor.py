@@ -23,29 +23,8 @@ class ThreadExtractor(Extractor):
 
         """
         super().__init__(service, quota)
-
-    def min_qu(self):
-        """
-        Returns the minimum quota units needed to make a request of a thread.
-
-        Returns
-        -------
-        int: minimum quota units needed to continue with extraction.
-
-        """
-        return qu.MIN_QUNITS_THRD
-
-    def get_list_key(self):
-        """
-        Returns the key of the dictionary given by the list request for
-        accessing to the threads list.
-
-        Returns
-        -------
-        str: key of the dictionary.
-
-        """
-        return 'threads'
+        self.min_qu = qu.MIN_QUNITS_THRD
+        self.list_key = 'threads'
 
     def get_list(self, nextPage):
         """

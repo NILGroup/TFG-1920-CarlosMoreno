@@ -23,29 +23,8 @@ class MessageExtractor(Extractor):
 
         """
         super().__init__(service, quota)
-
-    def min_qu(self):
-        """
-        Returns the minimum quota units needed to make a request of a message.
-
-        Returns
-        -------
-        int: minimum quota units needed to continue with extraction.
-
-        """
-        return qu.MIN_QUNITS_MSG
-
-    def get_list_key(self):
-        """
-        Returns the key of the dictionary given by the list request for
-        accessing to the messages list.
-
-        Returns
-        -------
-        str: key of the dictionary.
-
-        """
-        return 'messages'
+        self.min_qu = qu.MIN_QUNITS_MSG
+        self.list_key = 'messages'
 
     def get_list(self, nextPage):
         """
@@ -101,8 +80,8 @@ class MessageExtractor(Extractor):
 
         Parameters
         ----------
-        res : Gmail API messages resource
-            Gmail API messages resource.
+        res : Gmail API users.messages resource
+            Gmail API users.messages resource.
 
         Returns
         -------
@@ -120,3 +99,4 @@ class MessageExtractor(Extractor):
         }
 
         """
+        

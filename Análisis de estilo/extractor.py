@@ -5,6 +5,7 @@ from abc import ABC
 from abc import ABCMeta
 from time import time
 from time import sleep
+from dataextractor import DataExtractor
 
 class Extractor(ABC):
     """
@@ -25,6 +26,14 @@ class Extractor(ABC):
         Moment in which the last Gmail API request was made.
     quota_sec: int
         Remaining Gmail API quota units per second from init_time moment.
+    data_extractor: DataExtractor
+        Class that allows us to extract the information from a message.
+    min_qu: int (abstract attribute)
+        Minimum quota units needed to make a request of the resource.
+    list_key: str (abstract attribute)
+        Key of the dictionary given by the list request for accessing to the
+        list of the resource.
+    
     """
     def __init__(self, service, quota):
         """
@@ -48,6 +57,7 @@ class Extractor(ABC):
         self.quota_sec = qu.QUOTA_UNITS_PER_SECOND
         self.init_time = time()
         self.last_req_time = time()
+        self.data_extractor = DataExtractor()
 
     def update_attributes(self, req_quota):
         """
@@ -98,31 +108,6 @@ class Extractor(ABC):
             self.quota_sec = qu.QUOTA_UNITS_PER_SECOND
             self.init_time = time()
             self.last_req_time = time()
-
-    @abc.abstractmethod
-    def min_qu(self):
-        """
-        Returns the minimum quota units needed to make a request of the resource.
-
-        Returns
-        -------
-        int: minimum quota units needed to continue with extraction.
-
-        """
-        pass
-
-    @abc.abstractmethod
-    def get_list_key(self):
-        """
-        Returns the key of the dictionary given by the list request for
-        accessing to the list of the resource.
-
-        Returns
-        -------
-        str: key of the dictionary.
-
-        """
-        pass
 
     @abc.abstractmethod
     def get_list(self, nextPage):
@@ -202,16 +187,16 @@ class Extractor(ABC):
     def extract_sent_msg(self, cond_var, nmsg, msgs, nextPage = None):
         extracted = 0
         self.init_time = time()
-        while (extracted < nmsg and self.quota >= self.min_qu()):
+        while (extracted < nmsg and self.quota >= self.min_qu):
             msg_list = self.get_list(nextPage)
 
-            lst_size = len(msg_list[self.get_list_key()])
+            lst_size = len(msg_list[self.list_key])
             if (extracted + lst_size < nmsg):
                 nextPage = msg_list['nextPageToken']
 
-            msg_list = msg_list[self.get_list_key()]
+            msg_list = msg_list[self.list_key]
             i = 0
-            while (i < lst_size and self.quota >= self.min_qu()):
+            while (i < lst_size and self.quota >= self.min_qu):
                 # Obtains the resource (message or thread) with the given id
                 res = self.get_resource(msg_list[i]['id'])
                 extracted_msgs = self.extract_msgs_from_resource(res)
