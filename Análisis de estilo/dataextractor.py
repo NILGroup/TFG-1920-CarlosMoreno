@@ -1,7 +1,7 @@
 from __future__ import print_function
 import base64
 
-NUM_HEADERS = 5
+NUM_HEADERS = 6
 
 class DataExtractor:
     """
@@ -30,6 +30,8 @@ class DataExtractor:
         Body, as plain text, of the given message.
     __html_text: str
         Body, as html text, of the given message.
+    __from: str
+        Sender of the message
     """
     def __init__(self):
         """
@@ -49,6 +51,7 @@ class DataExtractor:
         self.__subject = None
         self.__plain_text = None
         self.__html_text = None
+        self.__from = None
 
     def __dec_b64(self, text):
         """
@@ -105,6 +108,9 @@ class DataExtractor:
                 found += 1
             elif (headers[i]['name'] == 'Subject'):
                 self.__subject = headers[i]['value']
+                found += 1
+            elif (headers[i]['name'] == 'From'):
+                self.__from = headers[i]['value']
                 found += 1
             elif (headers[i]['name'] == 'To'):
                 self.__to = headers[i]['value'].split(',')
@@ -298,6 +304,7 @@ class DataExtractor:
         self.__subject = None
         self.__plain_text = None
         self.__html_text = None
+        self.__from = None
         self.__get_message_text(msg)
 
     def get_subject(self):
@@ -340,10 +347,10 @@ class DataExtractor:
         Returns
         -------
         dict: which includes message id, thread id, a list of addresses,
-        a list of Cc addresses, a list of Bcc addresses and the date of
-        the message.
+        a list of Cc addresses, a list of Bcc addresses, the message sender
+        and the date of the message.
 
         """
         return {'id' : self.__id, 'threadId' : self.__thread_id,
                 'to' : self.__to, 'cc' : self.__cc, 'bcc' : self.__bcc,
-                'date' : self.__date}
+                'from' : self.__from, 'date' : self.__date}

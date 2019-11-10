@@ -1,6 +1,7 @@
 from __future__ import print_function
 from extractor import Extractor
 import quotaunits as qu
+import base64
 
 class MessageExtractor(Extractor):
     """
@@ -89,14 +90,45 @@ class MessageExtractor(Extractor):
         {
             'id' : string,
             'threadId' : string,
-            'to' : [ string ]
+            'to' : [ string ],
+            'cc' : [ string ],
+            'bcc' : [ string ],
+            'from' : string,
             'depth' : int,               # How many messages precede it
             'date' : long,               # Epoch ms
             'subject' : string,
-            'body' : string,
-            'bodyBase64' : string,
+            'bodyPlain' : string,
+            'bodyHtml' : string,
+            'bodyBase64Plain' : string,
+            'bodyBase64Html' : string,
             'charLength' : int
         }
 
         """
-        
+        self.data_extractor.set_new_message(res)
+        metadata = self.data_extractor.get_dict()
+        metadata['depth'] = 0
+
+        subject = self.data_extractor.get_subject()
+        if subject is not None:
+            metadata['subject'] = subject
+
+        plain_text = self.data_extractor.get_plain_text()
+        if plain_text is not None:
+            metadata['bodyPlain'] = plain_text
+            metadata['bodyBase64Plain'] = base64.urlsafe_b64encode(
+                plain_text.encode()).decode()
+            metadata['charLength'] = len(plain_text)
+
+        html_text = self.data_extractor.get_html_text()
+        if html_text is not None:
+            metadata['bodyHtml'] = html_text
+            metadata['bodyBase64Html'] = base64.urlsafe_b64encode(
+                html_text.encode()).decode()
+            if (plain_text is None):
+                p_text = self.html_converter.handle(html_text)
+                metadata['bodyPlain'] = p_text
+                metadata['bodyBase64Plain'] = base64.urlsafe_b64encode(
+                    p_text.encode()).decode()
+                metadata['charLength'] = len(p_text)
+        return [metadata]

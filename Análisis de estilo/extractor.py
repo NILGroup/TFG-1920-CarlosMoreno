@@ -6,6 +6,7 @@ from abc import ABCMeta
 from time import time
 from time import sleep
 from dataextractor import DataExtractor
+import html2text
 
 class Extractor(ABC):
     """
@@ -58,6 +59,11 @@ class Extractor(ABC):
         self.init_time = time()
         self.last_req_time = time()
         self.data_extractor = DataExtractor()
+        self.html_converter = html2text.HTML2Text()
+        self.html_converter.ignore_emphasis = True
+        self.html_converter.ignore_links = True
+        self.html_converter.ignore_images = True
+        self.html_converter.ignore_tables = True
 
     def update_attributes(self, req_quota):
         """
@@ -168,9 +174,10 @@ class Extractor(ABC):
         {
             'id' : string,
             'threadId' : string,
-            'to' : [ string ]
-            'cc' : [ string ]
-            'bcc' : [ string ]
+            'to' : [ string ],
+            'cc' : [ string ],
+            'bcc' : [ string ],
+            'from' : string,
             'depth' : int,               # How many messages precede it
             'date' : long,               # Epoch ms
             'subject' : string,
