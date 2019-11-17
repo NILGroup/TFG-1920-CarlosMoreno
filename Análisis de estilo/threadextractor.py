@@ -141,4 +141,5 @@ class ThreadExtractor(Extractor):
                         p_text.encode()).decode()
                     metadata['charLength'] = len(p_text)
             l_msgs.append(metadata)
+            depth += 1
         return l_msgs

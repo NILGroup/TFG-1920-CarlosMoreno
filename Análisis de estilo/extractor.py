@@ -41,9 +41,30 @@ class Extractor(ABC):
     list_key: str (abstract attribute)
         Key of the dictionary given by the list request for accessing to the
         list of the resource.
+    msgs: list
+        Shared resource wich is a list of messages with the following structure:
+        {
+            'id' : string,
+            'threadId' : string,
+            'to' : [ string ]
+            'cc' : [ string ]
+            'bcc' : [ string ]
+            'depth' : int,               # How many messages precede it
+            'date' : long,               # Epoch ms
+            'subject' : string,
+            'bodyPlain' : string,
+            'bodyHtml' : string,
+            'bodyBase64Plain' : string,
+            'bodyBase64Html' : string,
+            'charLength' : int
+        }
+    
+    cond_var: multiprocessing.Condition
+        Conditional variable which is needed to access to the shared 
+        resource (msgs).
     
     """
-    def __init__(self, service, quota):
+    def __init__(self, service, quota, msgs, cv):
         """
         Class constructor.
 
@@ -53,6 +74,10 @@ class Extractor(ABC):
             Gmail API resource with an Gmail user session opened.
         quota: int
             Gmail API quota units available for message extraction.
+        msgs: list
+            List of information about extracted messages.
+        cv: multiprocessing.Condition
+            Conditional varable for accessing to msgs.
 
         Returns
         -------
@@ -63,6 +88,8 @@ class Extractor(ABC):
         self.service = service
         self.quota = quota
         self.quota_sec = qu.QUOTA_UNITS_PER_SECOND
+        self.msgs = msgs
+        self.cond_var = cv
         self.init_time = time()
         self.last_req_time = time()
         self.data_extractor = DataExtractor()
@@ -198,35 +225,14 @@ class Extractor(ABC):
         """
         pass
 
-    def extract_sent_msg(self, cond_var, nmsg, msgs, nextPage = None):
+    def extract_sent_msg(self, nmsg, nextPage = None):
         """
         Extracts all the sent messages by using the Gmail API.
 
         Parameters
         ----------
-        cond_var: threading.Condition
-            Conditional variable which is needed to access to the shared
-            resource (msgs).
         nmsg: int
             Number of messages to be extracted.
-        msgs: list
-            Shared resource wich is a list of messages with the following
-            structure:
-            {
-                'id' : string,
-                'threadId' : string,
-                'to' : [ string ]
-                'cc' : [ string ]
-                'bcc' : [ string ]
-                'depth' : int,               # How many messages precede it
-                'date' : long,               # Epoch ms
-                'subject' : string,
-                'bodyPlain' : string,
-                'bodyHtml' : string,
-                'bodyBase64Plain' : string,
-                'bodyBase64Html' : string,
-                'charLength' : int
-            }
         nextPage: str
             Page token to retrieve a specific page of results in the list.
 
@@ -256,11 +262,11 @@ class Extractor(ABC):
                 res = self.get_resource(msg_list[i]['id'])
                 extracted_msgs = self.extract_msgs_from_resource(res)
                 # Inserts the messages in the shared resource
-                cond_var.acquire()
+                self.cond_var.acquire()
                 for m in extracted_msgs:
-                    msgs.append(m)
-                cond_var.notify()
-                cond_var.release()
+                    self.msgs.append(m)
+                self.cond_var.notify()
+                self.cond_var.release()
 
                 i += 1
                 extracted += 1

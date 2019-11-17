@@ -8,7 +8,7 @@ Created on Tue Nov 12 14:32:54 2019
 from __future__ import print_function
 import base64
 
-NUM_HEADERS = 6
+NUM_HEADERS = 7
 
 class DataExtractor:
     """
@@ -39,6 +39,8 @@ class DataExtractor:
         Body, as html text, of the given message.
     __from: str
         Sender of the message
+    __references: str
+        Identifiers of previous messages of the same thread.
     """
     def __init__(self):
         """
@@ -59,6 +61,7 @@ class DataExtractor:
         self.__plain_text = None
         self.__html_text = None
         self.__from = None
+        self.__references = None
 
     def __dec_b64(self, text):
         """
@@ -127,6 +130,9 @@ class DataExtractor:
                 found += 1
             elif (headers[i]['name'] == 'Bcc'):
                 self.__bcc = headers[i]['value'].split(',')
+                found += 1
+            elif (headers[i]['name'] == 'References'):
+                self.__references = headers[i]['value']
                 found += 1
             i += 1
         return cont_type
@@ -312,6 +318,7 @@ class DataExtractor:
         self.__plain_text = None
         self.__html_text = None
         self.__from = None
+        self.__references = None
         self.__get_message_text(msg)
 
     def get_subject(self):
@@ -346,6 +353,17 @@ class DataExtractor:
 
         """
         return self.__html_text
+    
+    def get_references(self):
+        """
+        Obtains the references of the message.
+
+        Returns
+        -------
+        str: references of the message.
+
+        """
+        return self.__references
 
     def get_dict(self):
         """

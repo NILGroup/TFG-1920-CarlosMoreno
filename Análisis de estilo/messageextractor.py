@@ -81,6 +81,30 @@ class MessageExtractor(Extractor):
         msg = m.get(id = resId, userId = 'me').execute()
         self.update_attributes(qu.MSG_GET)
         return msg
+    
+    def __count_num_ref(self, refer):
+        """
+        Counts the number of references which contains the references message header.
+        
+        Parameters
+        ----------
+        refer : str
+            References message header.
+            
+        Returns
+        -------
+        int: number of references.
+        
+        """
+        count = 0
+        abierto = False
+        for c in refer:
+            if (abierto and c == '>'):
+                abierto = False
+                count += 1
+            elif (not(abierto) and c == '<'):
+                abierto  = True
+        return count
 
     def extract_msgs_from_resource(self, res):
         """
@@ -119,6 +143,10 @@ class MessageExtractor(Extractor):
         subject = self.data_extractor.get_subject()
         if subject is not None:
             metadata['subject'] = subject
+            
+        refer = self.data_extractor.get_references()
+        if refer is not None:
+            metadata['depth'] = self.__count_num_ref(refer)
 
         plain_text = self.data_extractor.get_plain_text()
         if plain_text is not None:

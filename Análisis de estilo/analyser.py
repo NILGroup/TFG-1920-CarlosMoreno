@@ -9,7 +9,7 @@ from __future__ import print_function
 import quotaunits as qu
 import messageextractor as mex
 import threadextractor as tex
-import threading
+import multiprocessing
 
 NUM_RESOURCE_PER_LIST = 100
 
@@ -34,7 +34,7 @@ class Analyser:
             else:
                 self.extractor = tex.ThreadExtractor(self.service, self.quota)
         self.msg_list = []
-        self.cv = threading.Condition()
+        self.cv = multiprocessing.Condition()
 
     def __get_res_cost(self, listcost, numres, getcost):
         return listcost * (numres // NUM_RESOURCE_PER_LIST + 1) + getcost * numres
