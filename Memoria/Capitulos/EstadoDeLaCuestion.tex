@@ -9,9 +9,11 @@ Apart from Gmail API (see section \ref{sect:gmailapi}), there is another way to 
 In spite of being a mail server-independent solution, as we will see, we are going to find security issues which are going to hinder our user's email data access. These trials come from the automatic server access. The assessment of the advantages and disadvantages of making use of the email protocols or the Gmail API is discussed in section \ref{ssect:protvsapi}.
 
 \subsection{Simple Mail Transfer Protocol} \label{ssect:smtp}
-Simple Mail Transfer Protocol (also known as SMTP) is a network protocol used for the exchange of e-mail messages. It was originally defined in \cite{rfc821} (for the transfer) and in \cite{rfc822} (for the message). It is currently defined in \cite{rfc5321} and \cite{rfc5322}.
+Simple Mail Transfer Protocol (also known as SMTP) is a network connection-oriented communication protocol used for the exchange of e-mail messages. It was originally defined in \cite{rfc821} (for the transfer) and in \cite{rfc822} (for the message). It is currently defined in \cite{rfc5321} and \cite{rfc5322}. However, this protocol has some limitations when it comes to receiving messages on the destination server. For this reason, this task is intended for other protocols such as the Internet Message Access Protocol (see section \ref{ssect:imap}) or the Post Office Protocol (refer to point \ref{ssect:pop}), and SMTP is used specifically to send messages.
 
 \subsection{Internet Message Access Protocol} \label{ssect:imap}
+
+Internet Message Access Protocol (also known as IMAP) is an application protocol which allows the access to stored messages in an Internet server. As with the Post Office Protocol (se section \ref{ssect:pop}), with IMAP you can access your e-mail from any computer with an Internet connection. The current version of IMAP (IMAP version 4 review 1 or IMAP4rev1) is defined in \cite{rfc3501}.
 
 \subsection{Post Office Protocol} \label{ssect:pop}
 
