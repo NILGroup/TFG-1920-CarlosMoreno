@@ -12,7 +12,7 @@ In spite of being a mail server-independent solution, as we will see, we are goi
 
 Simple Mail Transfer Protocol (also known as SMTP) is a network connection-oriented communication protocol used for the exchange of e-mail messages. It was originally defined in \cite{rfc821} (for the transfer) and in \cite{rfc822} (for the message). It is currently defined in \cite{rfc5321} and \cite{rfc5322}. However, this protocol has some limitations when it comes to receiving messages on the destination server. For this reason, this task is intended for other protocols such as the Internet Message Access Protocol (see section \ref{ssect:imap}) or the Post Office Protocol (refer to point \ref{ssect:pop}), and SMTP is used specifically to send messages.
 
-Making use of SMTP, mail is "pushed" from one mail server to another (next-hop mail server) until it reaches its destination. The message is not routed according to the message recipients specified during the client's connection to the SMTP server, but from the destination mail server. Thanks to this protocolan, intermittently connected mail server can extract messages from another remote server when necessary.
+Making use of SMTP, mail is ``pushed'' from one mail server to another (next-hop mail server) until it reaches its destination. The message is not routed according to the message recipients specified during the client's connection to the SMTP server, but from the destination mail server. Thanks to this protocolan, intermittently connected mail server can extract messages from another remote server when necessary.
 
 \subsection{Post Office Protocol} \label{ssect:pop}
 
