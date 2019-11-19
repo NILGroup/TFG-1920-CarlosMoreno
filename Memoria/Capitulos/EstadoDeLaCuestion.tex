@@ -11,10 +11,18 @@ In spite of being a mail server-independent solution, as we will see, we are goi
 \subsection{Simple Mail Transfer Protocol} \label{ssect:smtp}
 Simple Mail Transfer Protocol (also known as SMTP) is a network connection-oriented communication protocol used for the exchange of e-mail messages. It was originally defined in \cite{rfc821} (for the transfer) and in \cite{rfc822} (for the message). It is currently defined in \cite{rfc5321} and \cite{rfc5322}. However, this protocol has some limitations when it comes to receiving messages on the destination server. For this reason, this task is intended for other protocols such as the Internet Message Access Protocol (see section \ref{ssect:imap}) or the Post Office Protocol (refer to point \ref{ssect:pop}), and SMTP is used specifically to send messages.
 
+\subsection{Post Office Protocol} \label{ssect:pop}
+
+Post Office Protocol (also known as POP) is an application protocol (in OSI Model) for obtaining e-mails stored in a remote Internet server called POP server. It was originally defined in \cite{rfc918} (it was POP version 1, also known as POP1). Current POP version (POP3, in general when we talk about pop we refer to this version) is detailed in \cite{rfc1939}.
+
+POP was designed for receiving emails. Using POP, users with intermittent or very slow Internet connections (such as modem connections) can download their email while online and check it later even when offline. The general operation is: a client using POP3 connects, gets all messages, stores them on the user's computer as new messages, deletes them from the server, and finally disconnects. However some mail clients include the option to leave messages on the server. They use the order UIDL (Unique IDentification Listing) which, unlike most POP3 commands, does not identify messages depending on their mail server ordinal number, due to the fact that this creates problems when a client tries to leave messages on the server, since messages with numbers change from one connection to the server to another. Accordingly, server which makes use of UIDL, assigns a unique and permanent character string to each message. Thus, when a POP3-compatible mail client connects to the server, it uses the UIDL command to map the message identifier. This way the client can use that mapping to determine which messages to download and which to save at the time of download.
+
+Like other old Internet protocols, POP3 used a signature mechanism without encryption. The transmission of POP3 passwords in plain text still occurs. Nowadays POP3 has various authentication methods that offer a diverse range of levels of protection against illegal access to users' mailboxes.
+
+The advantage over other protocols is that between server-client you don't have to send so many commands for communication between them. The POP protocol also works properly if you do not use a constant connection to the Internet or to the network that contains the mail server.
+
 \subsection{Internet Message Access Protocol} \label{ssect:imap}
 
 Internet Message Access Protocol (also known as IMAP) is an application protocol which allows the access to stored messages in an Internet server. As with the Post Office Protocol (se section \ref{ssect:pop}), with IMAP you can access your e-mail from any computer with an Internet connection. The current version of IMAP (IMAP version 4 review 1 or IMAP4rev1) is defined in \cite{rfc3501}.
-
-\subsection{Post Office Protocol} \label{ssect:pop}
 
 \subsection{Advantages and disadvantages of email protocols versus the use of Gmail API} \label{ssect:protvsapi}
