@@ -238,9 +238,10 @@ class Extractor(ABC):
 
         Returns
         -------
-        (int, str): If all the messages were extracted, it returns the
-        remaining quota units in first argument and None in second. In other
-        case, the second argument will be the page token where the last message
+        (int, int, str): If all the messages were extracted, it returns the
+        remaining quota units in first argument, number of extracted messages
+        in sencond argument and None in third argument. In other case, the 
+        third argument will be the page token where the last message
         was extracted.
 
         """
@@ -272,6 +273,6 @@ class Extractor(ABC):
                 extracted += 1
 
         if extracted < nmsg:
-            return self.quota, actual_page
+            return self.quota, extracted, actual_page
         else:
-            return self.quota
+            return self.quota, extracted
