@@ -14,7 +14,7 @@ class MessageExtractor(Extractor):
     """
     Implements Extractor class
     """
-    def __init__(self, service, quota):
+    def __init__(self, service, quota, msgs, cv):
         """
         Class constructor.
 
@@ -24,13 +24,17 @@ class MessageExtractor(Extractor):
             Gmail API resource with an Gmail user session opened.
         quota: int
             Gmail API quota units available for message extraction.
+        msgs: list
+            List of information about extracted messages.
+        cv: multiprocessing.Condition
+            Conditional varable for accessing to msgs.
 
         Returns
         -------
         Constructed MessageExtractor class.
 
         """
-        super().__init__(service, quota)
+        super().__init__(service, quota, msgs, cv)
         self.min_qu = qu.MIN_QUNITS_MSG
         self.list_key = 'messages'
 
