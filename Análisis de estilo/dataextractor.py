@@ -199,6 +199,34 @@ class DataExtractor:
         bool: whether or not the given part has the type t.
         """
         return p_type.startswith(t) and self.__is_there_data(part)
+    
+    def __clean_decoded_text(self, text):
+        """
+        Removes soft break lines of the message body.
+
+        Parameters
+        ----------
+        text: str
+            Message body
+
+        Returns
+        -------
+        str: Message body without soft break lines.
+        """
+        new_text = ""
+        i = 0
+        n = len(text)
+        while i < n:
+            if (text[i] == '\r' and (i + 1 < n) and text[i + 1] == '\n'):
+                i += 2
+                while((i + 1 < n) and text[i] == '\r' and text[i + 1] == '\n'):
+                    new_text = new_text + text[i] + text[i + 1]
+                    i += 2
+            else:
+                new_text += text[i]
+                i += 1
+    
+        return new_text
 
     def __get_text_content(self, msg_parts):
         """
@@ -232,7 +260,8 @@ class DataExtractor:
                     self.__plain_text = self.__dec_b64(part['body']['data'])
                     plain_found = True
                 elif (self.__is_type('text/html', part, p_type)):
-                    self.__html_text = self.__dec_b64(part['body']['data'])
+                    self.__html_text = self.__clean_decoded_text(
+                        self.__dec_b64(part['body']['data']))
                     html_found = True
     
             i += 1
@@ -261,7 +290,8 @@ class DataExtractor:
             elif (self.__is_type('text/plain', pld, mimetype)):
                 self.__plain_text = self.__dec_b64(pld['body']['data'])
             elif (self.__is_type('text/html', pld, mimetype)):
-                self.__html_text =  self.__dec_b64(pld['body']['data'])
+                self.__html_text = self.__clean_decoded_text(
+                    self.__dec_b64(pld['body']['data']))
 
     def set_new_message(self, msg):
         """
