@@ -61,7 +61,7 @@ class MessageExtractor(Extractor):
 
         """
         self.wait_for_request(qu.MSG_LIST)
-        m = self.service.user().messages()
+        m = self.service.users().messages()
         l = m.list(userId = 'me', labelIds = ['SENT'], pageToken = nextPage).execute()
         self.update_attributes(qu.MSG_LIST)
         return l
@@ -81,7 +81,7 @@ class MessageExtractor(Extractor):
 
         """
         self.wait_for_request(qu.MSG_GET)
-        m = self.service.user().messages()
+        m = self.service.users().messages()
         msg = m.get(id = resId, userId = 'me').execute()
         self.update_attributes(qu.MSG_GET)
         return msg
@@ -151,6 +151,8 @@ class MessageExtractor(Extractor):
         refer = self.data_extractor.get_references()
         if refer is not None:
             metadata['depth'] = self.__count_num_ref(refer)
+        else:
+            metadata['depth'] = 0
 
         plain_text = self.data_extractor.get_plain_text()
         if plain_text is not None:

@@ -61,7 +61,7 @@ class ThreadExtractor(Extractor):
 
         """
         self.wait_for_request(qu.THREADS_LIST)
-        t = self.service.user().threads()
+        t = self.service.users().threads()
         l = t.list(userId = 'me', labelIds = ['SENT'], pageToken = nextPage).execute()
         self.update_attributes(qu.THREADS_LIST)
         return l
@@ -81,7 +81,7 @@ class ThreadExtractor(Extractor):
 
         """
         self.wait_for_request(qu.THREADS_GET)
-        t = self.service.user().threads().get(id = resId, userId = 'me').execute()
+        t = self.service.users().threads().get(id = resId, userId = 'me').execute()
         self.update_attributes(qu.THREADS_GET)
         return t
 
