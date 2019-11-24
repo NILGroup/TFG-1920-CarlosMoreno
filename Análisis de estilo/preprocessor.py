@@ -10,6 +10,7 @@ from email_reply_parser import EmailReplyParser
 import base64
 import os
 import csv
+import spacy
 
 TAGS_BREAKS_LINE = {'/p', '/div', 'br', 'br/'}
 BREAK_LINE = {'\n', '\r'}
@@ -40,6 +41,7 @@ class Preprocessor:
         self.preprocessed = msgs
         self.cv_raw = cv_raw
         self.cv_msgs = cv_msgs
+        self.__nlp = spacy.load("es_core_news_sm") 
         
     def __is_break_line_tag(self, html, pos):
         """
@@ -133,9 +135,8 @@ class Preprocessor:
             os.mkdir(user + '/Extraction')
         
         csv_columns = ['id', 'threadId', 'to', 'cc', 'bcc', 'from',
-                       'depth', 'date', 'subject', 'bodyPlain', 'bodyHtml',
-                       'bodyBase64Plain', 'bodyBase64Html', 'plainEncoding',
-                       'charLength']
+                       'depth', 'date', 'subject', 'bodyBase64Plain', 
+                       'bodyBase64Html', 'plainEncoding', 'charLength']
         if not os.path.exists(user + '/Extraction/extracted.csv'):
             csvfile = open(user + '/Extraction/extracted.csv', 'w')
             writer = csv.DictWriter(csvfile, fieldnames = csv_columns)
@@ -151,20 +152,23 @@ class Preprocessor:
         self.cv_raw.release()
         
         if 'bodyPlain' in msg_raw:
-            writer.writerow(msg_raw)
             msg_prep = {}
             if msg_raw['depth'] > 0:
                 msg_prep['bodyPlain'] = EmailReplyParser.parse_reply(
-                        msg_raw['bodyPlain'])
+                        msg_raw.pop('bodyPlain'))
+                if 'bodyHtml' in msg_raw:
+                    msg_prep['bodyPlain'] = self.__remove_soft_breaks(
+                        msg_prep['bodyPlain'], msg_raw.pop('bodyHtml'))
             elif 'bodyHtml' in msg_raw:
                 msg_prep['bodyPlain'] = self.__remove_soft_breaks(
-                        msg_raw['bodyPlain'], msg_raw['bodyHtml'])
+                        msg_raw.pop('bodyPlain'), msg_raw.pop('bodyHtml'))
             elif ('plainEncoding' in msg_raw and 
                   msg_raw['plainEncoding'] == 'quoted-printable'):
                 msg_prep['bodyPlain'] = self.__clean_decoded_text(
-                        msg_raw['bodyPlain'])
+                        msg_raw.pop('bodyPlain'))
             else:
-                msg_prep['bodyPlain'] = msg_raw['bodyPlain']
-                
+                msg_prep['bodyPlain'] = msg_raw.pop('bodyPlain')
+            
+            writer.writerow(msg_raw)
             msg_prep['bodyBase64Plain'] = base64.urlsafe_b64encode(
                 msg_prep['bodyPlain'].encode()).decode()
