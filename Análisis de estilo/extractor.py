@@ -77,7 +77,7 @@ class Extractor(ABC):
         msgs: list
             List of information about extracted messages.
         cv: multiprocessing.Condition
-            Conditional varable for accessing to msgs.
+            Conditional variable for accessing to msgs.
 
         Returns
         -------
@@ -219,6 +219,7 @@ class Extractor(ABC):
             'bodyHtml' : string,
             'bodyBase64Plain' : string,
             'bodyBase64Html' : string,
+            'plainEncoding' : string,
             'charLength' : int
         }
 

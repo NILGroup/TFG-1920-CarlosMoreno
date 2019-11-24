@@ -37,6 +37,8 @@ class DataExtractor:
         Body, as plain text, of the given message.
     __html_text: str
         Body, as html text, of the given message.
+    __plain_encod : str
+        Enconding of the plain text.
     __from: str
         Sender of the message
     __references: str
@@ -60,6 +62,7 @@ class DataExtractor:
         self.__subject = None
         self.__plain_text = None
         self.__html_text = None
+        self.__plain_encod = None
         self.__from = None
         self.__references = None
 
@@ -161,6 +164,31 @@ class DataExtractor:
     
         if i < n:
             return headers[i]['value']
+        
+    def __get_Content_Encoding(self, part):
+        """
+        Gets the content type of a message or a part of a message.
+
+        Parameters
+        ----------
+        part : MIME part
+            Message part we want to extract the Content-Transfer-Encoding MIME 
+            message header.
+
+        Returns
+        -------
+        str: header Content-Transfer-Encoding of the MIME message.
+
+        """
+        i = 0
+        headers = part['headers']
+        n = len(headers)
+    
+        while (i < n and headers[i]['name'] != 'Content-Transfer-Encoding'):
+            i = i + 1
+    
+        if i < n:
+            return headers[i]['value']
 
     def __get_part_type(self, part):
         """
@@ -200,7 +228,7 @@ class DataExtractor:
         """
         return p_type.startswith(t) and self.__is_there_data(part)
     
-    def __clean_decoded_text(self, text):
+    def __clean_html_text(self, text):
         """
         Removes soft break lines of the message body.
 
@@ -258,10 +286,14 @@ class DataExtractor:
                     self.__get_text_content(part['parts'])
                 elif (self.__is_type('text/plain', part, p_type)):
                     self.__plain_text = self.__dec_b64(part['body']['data'])
+                    self.__plain_encod = self.__get_Content_Encoding(part)
                     plain_found = True
                 elif (self.__is_type('text/html', part, p_type)):
-                    self.__html_text = self.__clean_decoded_text(
-                        self.__dec_b64(part['body']['data']))
+                    if (self.__get_Content_Encoding(part) == 'quoted-printable'):
+                        self.__html_text = self.__clean_html_text(
+                            self.__dec_b64(part['body']['data']))
+                    else:
+                        self.__html_text = self.__dec_b64(part['body']['data'])
                     html_found = True
     
             i += 1
@@ -289,9 +321,13 @@ class DataExtractor:
                 self.__get_text_content(pld['parts'])
             elif (self.__is_type('text/plain', pld, mimetype)):
                 self.__plain_text = self.__dec_b64(pld['body']['data'])
+                self.__plain_encod = self.__get_Content_Encoding(pld)
             elif (self.__is_type('text/html', pld, mimetype)):
-                self.__html_text = self.__clean_decoded_text(
-                    self.__dec_b64(pld['body']['data']))
+                if (self.__get_Content_Encoding(pld) == 'quoted-printable'):
+                    self.__html_text = self.__clean_html_text(
+                        self.__dec_b64(pld['body']['data']))
+                else:
+                    self.__html_text = self.__dec_b64(pld['body']['data'])
 
     def set_new_message(self, msg):
         """
@@ -314,6 +350,7 @@ class DataExtractor:
         self.__date = msg['internalDate']
         self.__subject = None
         self.__plain_text = None
+        self.__plain_encod = None
         self.__html_text = None
         self.__from = None
         self.__references = None
@@ -340,6 +377,17 @@ class DataExtractor:
 
         """
         return self.__plain_text
+    
+    def get_plain_encod(self):
+        """
+        Obtains the encoding of the body of the message as a plain text.
+
+        Returns
+        -------
+        str: encoding of the body of the message.
+
+        """
+        return self.__plain_encod
 
     def get_html_text(self):
         """

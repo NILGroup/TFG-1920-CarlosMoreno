@@ -111,6 +111,7 @@ class ThreadExtractor(Extractor):
             'bodyHtml' : string,
             'bodyBase64Plain' : string,
             'bodyBase64Html' : string,
+            'plainEncoding' : string,
             'charLength' : int
         }
 
@@ -131,6 +132,7 @@ class ThreadExtractor(Extractor):
                 metadata['bodyPlain'] = plain_text
                 metadata['bodyBase64Plain'] = base64.urlsafe_b64encode(
                     plain_text.encode()).decode()
+                metadata['plainEncoding'] = self.data_extractor.get_plain_encod()
                 metadata['charLength'] = len(plain_text)
     
             html_text = self.data_extractor.get_html_text()
