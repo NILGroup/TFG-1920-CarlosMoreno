@@ -11,9 +11,8 @@ import base64
 import os
 import csv
 import spacy
-
-TAGS_BREAKS_LINE = {'/p', '/div', 'br', 'br/'}
-BREAK_LINE = {'\n', '\r'}
+import re
+import confprep as cf
 
 class Preprocessor:
     
@@ -63,7 +62,7 @@ class Preprocessor:
         while (html[pos] != ' ' and html):
             tag += html[pos]
             pos += 1
-        return tag in TAGS_BREAKS_LINE 
+        return tag in cf.TAGS_BREAKS_LINE 
         
     def __remove_soft_breaks(self, plain, html):
         """
@@ -85,17 +84,17 @@ class Preprocessor:
         ind = html.find('>') + 1
         
         for c in plain:
-            while (c != html[ind] and not c in BREAK_LINE):
+            while (c != html[ind] and not c in cf.BREAK_LINE):
                 if html[ind] == '<':
                     ind = html.find('>', ind) + 1
                 else:
                     ind += 1
                     
-            while (c in BREAK_LINE and html[ind] == '<' and 
+            while (c in cf.BREAK_LINE and html[ind] == '<' and 
                    not self.__is_break_line_tag(html, ind + 1)):
                 ind = html.find('>', ind) + 1
                     
-            if (not c in BREAK_LINE):
+            if (not c in cf.BREAK_LINE):
                 ind += 1
                 cleaned_text += c
             elif (html[ind] == '<' and self.__is_break_line_tag(html, ind + 1)):
@@ -129,8 +128,34 @@ class Preprocessor:
                 i += 1
     
         return new_text
+    
+    def __remove_signature(self, text, sign):
+        """
+        Removes the signature from the text of the email.
         
-    def star_preprocessing(self, user):
+        Parameters
+        ----------
+        text: str
+            Email body.
+        sign: str
+            Signature.
+            
+        Returns
+        -------
+        str: text without signature if it was found, and the original text
+            in other case.
+            
+        """
+        ind = text.rfind(sign)
+        if ind + len(sign) >= len(text) - cf.CHAR_ERROR:
+            return text[:ind]
+        else:
+            return text
+        
+    def __remove_header_replied(self, text, to, cc, bcc):
+        recipient = to + cc + bcc
+        
+    def star_preprocessing(self, user, sign):
         if not os.path.exists(user + '/Extraction'):
             os.mkdir(user + '/Extraction')
         
@@ -154,6 +179,12 @@ class Preprocessor:
         if 'bodyPlain' in msg_raw:
             msg_prep = {}
             if msg_raw['depth'] > 0:
+                ind = msg_raw['bodyPlain'].find(cf.FOWARD_LINE)
+                if (ind >= 0):
+                    # As we can't detect (without comparing it) which 
+                    # part of the message is originally text of the 
+                    # forwarded message, we delete all that part.
+                    msg_raw['bodyPlain'] = msg_raw['bodyPlain'][:ind]
                 msg_prep['bodyPlain'] = EmailReplyParser.parse_reply(
                         msg_raw.pop('bodyPlain'))
                 if 'bodyHtml' in msg_raw:
@@ -170,5 +201,7 @@ class Preprocessor:
                 msg_prep['bodyPlain'] = msg_raw.pop('bodyPlain')
             
             writer.writerow(msg_raw)
+            msg_prep['bodyPlain'] = self.__remove_signature(msg_prep['bodyPlain'],
+                                                            sign)
             msg_prep['bodyBase64Plain'] = base64.urlsafe_b64encode(
                 msg_prep['bodyPlain'].encode()).decode()
