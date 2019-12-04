@@ -12,7 +12,7 @@ In spite of being a mail server-independent solution, as we will see, we are goi
 
 Simple Mail Transfer Protocol (also known as SMTP) is a network connection-oriented communication protocol used for the exchange of e-mail messages. It was originally defined in \cite{rfc821} (for the transfer) and in \cite{rfc822} (for the message). It is currently defined in \cite{rfc5321} and \cite{rfc5322}. However, this protocol has some limitations when it comes to receiving messages on the destination server. For this reason, this task is intended for other protocols such as the Internet Message Access Protocol (see section \ref{ssect:imap}) or the Post Office Protocol (refer to point \ref{ssect:pop}), and SMTP is used specifically to send messages.
 
-Making use of SMTP, mail is ``pushed'' from one mail server to another (next-hop mail server) until it reaches its destination. The message is not routed according to the message recipients specified during the client's connection to the SMTP server, but from the destination mail server. Thanks to this protocolan, intermittently connected mail server can extract messages from another remote server when necessary.
+Making use of SMTP, mail is ``pushed'' from one mail server to another (next-hop mail server) until it reaches its destination. The message is not routed according to the message recipients specified during the client's connection to the SMTP server, but from the destination mail server. Thanks to the fact that this protocol has a feature to initiate mail queue processing, intermittently connected mail server can extract messages from another remote server when necessary.
 
 \subsection{Post Office Protocol} \label{ssect:pop}
 
@@ -26,6 +26,8 @@ The advantage over other protocols is that between server-client you don't have 
 
 \subsection{Internet Message Access Protocol} \label{ssect:imap}
 
-Internet Message Access Protocol (also known as IMAP) is an application protocol which allows the access to stored messages in an Internet server. As with the Post Office Protocol (se section \ref{ssect:pop}), with IMAP you can access your e-mail from any computer with an Internet connection. The current version of IMAP (IMAP version 4 review 1 or IMAP4rev1) is defined in \cite{rfc3501}.
+Internet Message Access Protocol (also known as IMAP) is an application protocol, designed as an alternative to Post Office Protocol (se section \ref{ssect:pop}) in 1986, which allows the access to stored messages in an Internet server. As with the Post Office Protocol, with IMAP you can access your e-mail from any computer with an Internet connection. The current version of IMAP (IMAP version 4 review 1 or IMAP4rev1) is defined in \cite{rfc3501}.
+
+In contrast to Post Office Protocol, IMAP allows multiple clients to manage the same mailbox. This fact results from the main difference between these two protocols: IMAP does not remove email from server until the client specifically requests it and it does not download the messages to the user's computer (clients may store a local copy of them, but these are considered to be temporary data).
 
 \subsection{Advantages and disadvantages of email protocols versus the use of Gmail API} \label{ssect:protvsapi}
