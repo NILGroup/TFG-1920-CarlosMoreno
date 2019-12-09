@@ -121,8 +121,13 @@ class Preprocessor:
             if (text[i] == '\r' and (i + 1 < n) and text[i + 1] == '\n'):
                 i += 2
                 while((i + 1 < n) and text[i] == '\r' and text[i + 1] == '\n'):
-                    new_text = new_text + text[i] + text[i + 1]
+                    new_text += text[i] + text[i + 1]
                     i += 2
+            elif (text[i] == '\n'):
+                i += 1
+                while(text[i] == '\n'):
+                    new_text += text[i]
+                    i += 1
             else:
                 new_text += text[i]
                 i += 1
@@ -152,13 +157,75 @@ class Preprocessor:
         else:
             return text
         
-    def __pos_header_replied(self, text):
+    def __remove_header_replied(self, text):
+        """
+        Removes the header with which the replied text begins.
+        
+        Parameters
+        ----------
+        text: str
+            Email body.
+            
+        Returns
+        -------
+        str: text without the header if it was found, and the original text in
+            other case.
+        """
         match = re.search(cf.REPLY_PATTERN, text)
         if match is not None:
-            #El texto está en text[match.start():match.end()]
-            return (match.start(), match.end())
+            return text[:match.start()] + text[match.end():]
+        else:
+            return text
         
-    def star_preprocessing(self, user, sign):
+    def __extract_body_msg(self, msg_prep, msg_raw):
+        """
+        Extracts the body message from the raw message. For achieving this
+        goal, this function removes the text of the replied email (if it
+        exists) and the soft break lines inserted in the body.
+
+        Parameters
+        ----------
+        msg_prep : dict
+            Dictionary where the extracted text is going to be stored.
+        msg_raw : dict
+            Dictionary with the raw information of the message.
+
+        Returns
+        -------
+        None.
+
+        """
+        if msg_raw['depth'] > 0:
+                ind = msg_raw['bodyPlain'].find(cf.FOWARD_LINE)
+                if (ind >= 0):
+                    # As we can't detect (without comparing it) which 
+                    # part of the message is originally text of the 
+                    # forwarded message, we delete all that part.
+                    msg_raw['bodyPlain'] = msg_raw['bodyPlain'][:ind]
+                msg_prep['bodyPlain'] = EmailReplyParser.parse_reply(
+                        msg_raw.pop('bodyPlain'))
+                msg_prep['bodyPlain'] = self.__remove_header_replied(
+                    msg_prep['bodyPlain'])
+                
+                if 'bodyHtml' in msg_raw:
+                    msg_prep['bodyPlain'] = self.__remove_soft_breaks(
+                        msg_prep['bodyPlain'], msg_raw.pop('bodyHtml'))
+                elif ('plainEncoding' in msg_raw and 
+                      msg_raw['plainEncoding'] == 'quoted-printable'):
+                    msg_prep['bodyPlain'] = self.__clean_decoded_text(
+                        msg_prep['bodyPlain'])
+                    
+            elif 'bodyHtml' in msg_raw:
+                msg_prep['bodyPlain'] = self.__remove_soft_breaks(
+                        msg_raw.pop('bodyPlain'), msg_raw.pop('bodyHtml'))
+            elif ('plainEncoding' in msg_raw and 
+                  msg_raw['plainEncoding'] == 'quoted-printable'):
+                msg_prep['bodyPlain'] = self.__clean_decoded_text(
+                        msg_raw.pop('bodyPlain'))
+            else:
+                msg_prep['bodyPlain'] = msg_raw.pop('bodyPlain')
+        
+    def star_preprocessing(self, user, sign = None):
         if not os.path.exists(user + '/Extraction'):
             os.mkdir(user + '/Extraction')
         
@@ -181,30 +248,11 @@ class Preprocessor:
         
         if 'bodyPlain' in msg_raw:
             msg_prep = {}
-            if msg_raw['depth'] > 0:
-                ind = msg_raw['bodyPlain'].find(cf.FOWARD_LINE)
-                if (ind >= 0):
-                    # As we can't detect (without comparing it) which 
-                    # part of the message is originally text of the 
-                    # forwarded message, we delete all that part.
-                    msg_raw['bodyPlain'] = msg_raw['bodyPlain'][:ind]
-                msg_prep['bodyPlain'] = EmailReplyParser.parse_reply(
-                        msg_raw.pop('bodyPlain'))
-                if 'bodyHtml' in msg_raw:
-                    msg_prep['bodyPlain'] = self.__remove_soft_breaks(
-                        msg_prep['bodyPlain'], msg_raw.pop('bodyHtml'))
-            elif 'bodyHtml' in msg_raw:
-                msg_prep['bodyPlain'] = self.__remove_soft_breaks(
-                        msg_raw.pop('bodyPlain'), msg_raw.pop('bodyHtml'))
-            elif ('plainEncoding' in msg_raw and 
-                  msg_raw['plainEncoding'] == 'quoted-printable'):
-                msg_prep['bodyPlain'] = self.__clean_decoded_text(
-                        msg_raw.pop('bodyPlain'))
-            else:
-                msg_prep['bodyPlain'] = msg_raw.pop('bodyPlain')
+            self.__extract_body_msg(msg_prep, msg_raw)
             
             writer.writerow(msg_raw)
-            msg_prep['bodyPlain'] = self.__remove_signature(msg_prep['bodyPlain'],
-                                                            sign)
+            if sign is not None:
+                msg_prep['bodyPlain'] = self.__remove_signature(
+                    msg_prep['bodyPlain'], sign)
             msg_prep['bodyBase64Plain'] = base64.urlsafe_b64encode(
                 msg_prep['bodyPlain'].encode()).decode()
