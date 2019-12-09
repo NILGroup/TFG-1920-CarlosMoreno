@@ -152,8 +152,11 @@ class Preprocessor:
         else:
             return text
         
-    def __remove_header_replied(self, text, to, cc, bcc):
-        recipient = to + cc + bcc
+    def __pos_header_replied(self, text):
+        match = re.search(cf.REPLY_PATTERN, text)
+        if match is not None:
+            #El texto está en text[match.start():match.end()]
+            return (match.start(), match.end())
         
     def star_preprocessing(self, user, sign):
         if not os.path.exists(user + '/Extraction'):

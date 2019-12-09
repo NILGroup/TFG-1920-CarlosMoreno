@@ -125,7 +125,8 @@ class DataExtractor:
             elif (headers[i]['name'] == 'From'):
                 self.__from = headers[i]['value']
                 found += 1
-            elif (headers[i]['name'] == 'To'):
+            elif (headers[i]['name'] == 'To' 
+                  and headers[i]['value'] != 'undisclosed-recipients:;'):
                 self.__to = headers[i]['value'].split(',')
                 found += 1
             elif (headers[i]['name'] == 'Cc'):
