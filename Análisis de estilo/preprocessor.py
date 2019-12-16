@@ -196,34 +196,34 @@ class Preprocessor:
 
         """
         if msg_raw['depth'] > 0:
-                ind = msg_raw['bodyPlain'].find(cf.FOWARD_LINE)
-                if (ind >= 0):
-                    # As we can't detect (without comparing it) which 
-                    # part of the message is originally text of the 
-                    # forwarded message, we delete all that part.
-                    msg_raw['bodyPlain'] = msg_raw['bodyPlain'][:ind]
-                msg_prep['bodyPlain'] = EmailReplyParser.parse_reply(
-                        msg_raw.pop('bodyPlain'))
-                msg_prep['bodyPlain'] = self.__remove_header_replied(
-                    msg_prep['bodyPlain'])
+            ind = msg_raw['bodyPlain'].find(cf.FOWARD_LINE)
+            if (ind >= 0):
+                # As we can't detect (without comparing it) which 
+                # part of the message is originally text of the 
+                # forwarded message, we delete all that part.
+                msg_raw['bodyPlain'] = msg_raw['bodyPlain'][:ind]
+            msg_prep['bodyPlain'] = EmailReplyParser.parse_reply(
+                msg_raw.pop('bodyPlain'))
+            msg_prep['bodyPlain'] = self.__remove_header_replied(
+                msg_prep['bodyPlain'])
                 
-                if 'bodyHtml' in msg_raw:
-                    msg_prep['bodyPlain'] = self.__remove_soft_breaks(
-                        msg_prep['bodyPlain'], msg_raw.pop('bodyHtml'))
-                elif ('plainEncoding' in msg_raw and 
-                      msg_raw['plainEncoding'] == 'quoted-printable'):
-                    msg_prep['bodyPlain'] = self.__clean_decoded_text(
-                        msg_prep['bodyPlain'])
-                    
-            elif 'bodyHtml' in msg_raw:
+            if 'bodyHtml' in msg_raw:
                 msg_prep['bodyPlain'] = self.__remove_soft_breaks(
-                        msg_raw.pop('bodyPlain'), msg_raw.pop('bodyHtml'))
+                    msg_prep['bodyPlain'], msg_raw.pop('bodyHtml'))
             elif ('plainEncoding' in msg_raw and 
                   msg_raw['plainEncoding'] == 'quoted-printable'):
                 msg_prep['bodyPlain'] = self.__clean_decoded_text(
-                        msg_raw.pop('bodyPlain'))
-            else:
-                msg_prep['bodyPlain'] = msg_raw.pop('bodyPlain')
+                    msg_prep['bodyPlain'])
+                    
+        elif 'bodyHtml' in msg_raw:
+            msg_prep['bodyPlain'] = self.__remove_soft_breaks(
+                msg_raw.pop('bodyPlain'), msg_raw.pop('bodyHtml'))
+        elif ('plainEncoding' in msg_raw and 
+              msg_raw['plainEncoding'] == 'quoted-printable'):
+            msg_prep['bodyPlain'] = self.__clean_decoded_text(
+                msg_raw.pop('bodyPlain'))
+        else:
+            msg_prep['bodyPlain'] = msg_raw.pop('bodyPlain')
         
     def star_preprocessing(self, user, sign = None):
         if not os.path.exists(user + '/Extraction'):
