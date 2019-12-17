@@ -16,7 +16,7 @@ import confprep as cf
 
 class Preprocessor:
     
-    def __init__(self, raw_msgs, msgs, cv_raw, cv_msgs):
+    def __init__(self, raw_msgs, msgs, cv_raw, cv_msgs, extract_finished):
         """
         Class constructor.
         
@@ -30,6 +30,9 @@ class Preprocessor:
             Conditional variable for accessing raw_msgs.
         cv_msgs: multiprocessing.Condition
             Conditional variable for accessing to msgs.
+        extract_finished: multiprocessing.Event
+            Event which informs whether or not the extraction of messages has
+            finished.
 
         Returns
         -------
@@ -40,6 +43,7 @@ class Preprocessor:
         self.preprocessed = msgs
         self.cv_raw = cv_raw
         self.cv_msgs = cv_msgs
+        self.extract_finished = extract_finished
         self.__nlp = spacy.load("es_core_news_sm") 
         
     def __is_break_line_tag(self, html, pos):
@@ -240,19 +244,21 @@ class Preprocessor:
             csvfile = open(user + '/Extraction/extracted.csv', 'a')
             writer = csv.DictWriter(csvfile, fieldnames = csv_columns)
         
-        self.cv_raw.acquire()
-        while (len(self.raw) == 0):
-            self.cv_raw.wait()
-        msg_raw = self.raw.pop()
-        self.cv_raw.release()
-        
-        if 'bodyPlain' in msg_raw:
-            msg_prep = {}
-            self.__extract_body_msg(msg_prep, msg_raw)
+        while (not(self.extract_finished.is_set())):
+            self.cv_raw.acquire()
+            while (len(self.raw) == 0 and not(self.extract_finished.is_set())):
+                self.cv_raw.wait()
+            if (len(self.raw) != 0):
+                msg_raw = self.raw.pop()
+            self.cv_raw.release()
             
-            writer.writerow(msg_raw)
-            if sign is not None:
-                msg_prep['bodyPlain'] = self.__remove_signature(
-                    msg_prep['bodyPlain'], sign)
-            msg_prep['bodyBase64Plain'] = base64.urlsafe_b64encode(
-                msg_prep['bodyPlain'].encode()).decode()
+            if (not(self.extract_finished.is_set()) and 'bodyPlain' in msg_raw):
+                msg_prep = {}
+                self.__extract_body_msg(msg_prep, msg_raw)
+                
+                writer.writerow(msg_raw)
+                if sign is not None:
+                    msg_prep['bodyPlain'] = self.__remove_signature(
+                        msg_prep['bodyPlain'], sign)
+                msg_prep['bodyBase64Plain'] = base64.urlsafe_b64encode(
+                    msg_prep['bodyPlain'].encode()).decode()

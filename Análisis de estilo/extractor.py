@@ -46,9 +46,10 @@ class Extractor(ABC):
         {
             'id' : string,
             'threadId' : string,
-            'to' : [ string ]
-            'cc' : [ string ]
-            'bcc' : [ string ]
+            'to' : [ string ],
+            'cc' : [ string ],
+            'bcc' : [ string ],
+            'from' : string,
             'depth' : int,               # How many messages precede it
             'date' : long,               # Epoch ms
             'subject' : string,
@@ -56,15 +57,19 @@ class Extractor(ABC):
             'bodyHtml' : string,
             'bodyBase64Plain' : string,
             'bodyBase64Html' : string,
+            'plainEncoding' : string,
             'charLength' : int
         }
     
     cond_var: multiprocessing.Condition
         Conditional variable which is needed to access to the shared 
         resource (msgs).
+    has_finished: multiprocessing.Event
+        Event which informs that the extraction has finished to the rest
+        of the preocesses.
     
     """
-    def __init__(self, service, quota, msgs, cv):
+    def __init__(self, service, quota, msgs, cv, has_finished):
         """
         Class constructor.
 
@@ -78,6 +83,9 @@ class Extractor(ABC):
             List of information about extracted messages.
         cv: multiprocessing.Condition
             Conditional variable for accessing to msgs.
+        has_finished: multiprocessing.Event
+            Event which informs that the extraction has finished to the rest
+            of the preocesses.
 
         Returns
         -------
@@ -90,14 +98,15 @@ class Extractor(ABC):
         self.quota_sec = qu.QUOTA_UNITS_PER_SECOND
         self.msgs = msgs
         self.cond_var = cv
-        self.init_time = time()
-        self.last_req_time = time()
+        self.has_finished = has_finished
         self.data_extractor = DataExtractor()
         self.html_converter = html2text.HTML2Text()
         self.html_converter.ignore_emphasis = True
         self.html_converter.ignore_links = True
         self.html_converter.ignore_images = True
         self.html_converter.ignore_tables = True
+        self.init_time = time()
+        self.last_req_time = time()
 
     def update_attributes(self, req_quota):
         """
@@ -272,7 +281,13 @@ class Extractor(ABC):
 
                 i += 1
                 extracted += 1
-
+        
+        # Informs the rest of the processes that the extraction has finished
+        self.cond_var.acquire()
+        self.has_finished.set()
+        self.cond_var.notify()
+        self.cond_var.release()
+        
         if extracted < nmsg:
             return self.quota, extracted, actual_page
         else:

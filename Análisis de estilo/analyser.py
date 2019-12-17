@@ -19,8 +19,8 @@ class Analyser:
         self.service = service
         self.quota = quota
         self.extractor = None
-        self.msg_list = []
-        self.cv = multiprocessing.Condition()
+        self.msg_raw = []
+        self.cv_raw = multiprocessing.Condition()
         if (self.quota > qu.LABELS_GET):
             sent_lbl = self.service.users().labels().get(userId = 'me', id = 'SENT').execute()
             self.quota -= qu.LABELS_GET
@@ -32,9 +32,9 @@ class Analyser:
             cost_thrd_ext = self.__get_res_cost(qu.THREADS_LIST, self.num_thrd, qu.THREADS_GET)
 
             if (cost_msg_ext <= cost_thrd_ext):
-                self.extractor = mex.MessageExtractor(self.service, self.quota, self.msg_list, self.cv)
+                self.extractor = mex.MessageExtractor(self.service, self.quota, self.msg_raw, self.cv_raw)
             else:
-                self.extractor = tex.ThreadExtractor(self.service, self.quota, self.msg_list, self.cv)
+                self.extractor = tex.ThreadExtractor(self.service, self.quota, self.msg_raw, self.cv_raw)
 
     def __get_res_cost(self, listcost, numres, getcost):
         return listcost * (numres // NUM_RESOURCE_PER_LIST + 1) + getcost * numres
