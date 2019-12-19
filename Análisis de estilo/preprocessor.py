@@ -2,7 +2,7 @@
 """
 Created on Sun Nov 17 18:27:33 2019
 
-@author: Carlos
+@author: Carlos Moreno Morera
 """
 
 from __future__ import print_function
@@ -10,13 +10,75 @@ from email_reply_parser import EmailReplyParser
 import base64
 import os
 import csv
-import spacy
 import re
 import confprep as cf
 
 class Preprocessor:
+    """
+    Preprocessor class performs the tas of preprocessing the extracted messages
+    in order to being analysed then.
     
-    def __init__(self, raw_msgs, msgs, cv_raw, cv_msgs, extract_finished):
+    Attributes
+    ----------
+    raw: list
+        Shared resource wich is a list of messages with the following structure:
+        {
+            'id' : string,
+            'threadId' : string,
+            'to' : [ string ],
+            'cc' : [ string ],
+            'bcc' : [ string ],
+            'from' : string,
+            'depth' : int,               # How many messages precede it
+            'date' : long,               # Epoch ms
+            'subject' : string,          # Optional
+            'bodyPlain' : string,        # Optional
+            'bodyHtml' : string,         # Optional
+            'bodyBase64Plain' : string,  # Optional
+            'bodyBase64Html' : string,   # Optional
+            'plainEncoding' : string,    # Optional
+            'charLength' : int           # Optional
+        }
+    preprocessed: list
+        Shared resource wich is a list of messages with the following structure:
+            {
+            'id' : string,
+            'threadId' : string,
+            'to' : [ string ],
+            'cc' : [ string ],
+            'bcc' : [ string ],
+            'from' : string,
+            'depth' : int,               # How many messages precede it
+            'date' : long,               # Epoch ms
+            'subject' : string,          # Optional
+            'bodyPlain' : string,
+            'bodyBase64Plain' : string,
+            'bodyBase64Html' : string,   # Optional
+            'plainEncoding' : string,    # Optional
+            'charLength' : int           # Optional
+            'doc' : Spacy's Doc
+            'sentences' : [
+                {
+                    doc: Spacy's Doc of the sentence
+                    words: [Spacy's Tokens]
+                }
+            ]
+        }
+    cv_raw: multiprocessing.Condition
+        Conditional variable which is needed to access to the shared 
+        resource (raw).
+    cv_msgs: multiprocessing.Condition
+        Conditional variable which is needed to access to the shared 
+        resource (preprocessed).
+    extract_finished: multiprocessing.Event
+        Event which informs that the process in charge of the message 
+        extraction has finished.
+    nlp: Spacy model
+        Spacy's trained model which will be used to processed.
+        
+    """
+    
+    def __init__(self, raw_msgs, msgs, cv_raw, cv_msgs, extract_finished, nlp):
         """
         Class constructor.
         
@@ -33,6 +95,8 @@ class Preprocessor:
         extract_finished: multiprocessing.Event
             Event which informs whether or not the extraction of messages has
             finished.
+        nlp: spacy model
+            Spacy's trained model which will be used to processed.
 
         Returns
         -------
@@ -44,7 +108,7 @@ class Preprocessor:
         self.cv_raw = cv_raw
         self.cv_msgs = cv_msgs
         self.extract_finished = extract_finished
-        self.__nlp = spacy.load("es_core_news_sm") 
+        self.nlp = nlp
         
     def __is_break_line_tag(self, html, pos):
         """
@@ -228,8 +292,92 @@ class Preprocessor:
                 msg_raw.pop('bodyPlain'))
         else:
             msg_prep['bodyPlain'] = msg_raw.pop('bodyPlain')
+            
+    def __copy_metadata(self, prep, raw):
+        """
+        Copies the metadata of the message from the raw to the preprocessed.
+        
+        Parameters
+        ----------
+        prep : dict
+            Dictionary which represents the preprocessed message.
+        raw : dict
+            Dictionary which represents the raw message.
+
+        Returns
+        -------
+        None.
+        
+        """
+        prep['id'] = raw['id']
+        prep['threadId'] = raw['threadId']
+        prep['to'] = raw['to']
+        prep['cc'] = raw['cc']
+        prep['bcc'] = raw['bcc']
+        prep['from'] = raw['from']
+        prep['depth'] = raw['depth']
+        prep['date'] = raw['date']
+        if 'subject' in raw:
+            prep['subject'] = raw['subject']
+        if ('plainEncoding' in raw and raw['plainEncoding'] is not None):
+            prep['plainEncoding'] = raw['plainEncoding']
+        if ('bodyBase64Html' in raw):
+            prep['bodyBase64Html'] = raw['bodyBase64Html']
+            
+    def __get_structured_text(self, prep):
+        """
+        Adds to the prep dictionary a key 'doc', whose value will correspond with
+        the Spacy's Doc of the body of the message, and a key 'sentences', whose
+        value will have the next structure:
+            [
+                {
+                    doc: Spacy's Doc of the sentence
+                    words: [Spacy's Tokens]
+                }
+            ]
+
+        Parameters
+        ----------
+        prep : dict
+            Dictionary of the preprocessed message.
+
+        Returns
+        -------
+        None.
+
+        """
+        prep['doc'] = self.nlp(prep['bodyPlain'])
+        sentences = [s.text for s in prep['doc'].sents]
+        prep['sentences'] = []
+        
+        nums = 0
+        for s in sentences:
+            prep['setences'].append({})
+            prep['sentences'][nums]['doc'] = self.nlp(s)
+            prep['sentences'][nums]['words'] = [t for t in 
+                                                prep['sentences'][nums]['doc']]
+            nums += 1
+            
         
     def star_preprocessing(self, user, sign = None):
+        """
+        Obtains the messages extracted and preprocessed them by extracting only
+        the body message (removing the sign, the replied message, ...) and 
+        getting a list of sentences and different words in the text. Besides
+        this method saves the raw messages before the preprocessing.
+        
+        Parameters
+        ----------
+        user: str
+            User name of the owner of the messages.
+        sign: str (optional)
+            Sign of the person who writes the emails.
+            
+        Returns
+        -------
+        None.
+        
+        """
         if not os.path.exists(user + '/Extraction'):
             os.mkdir(user + '/Extraction')
         
@@ -260,5 +408,16 @@ class Preprocessor:
                 if sign is not None:
                     msg_prep['bodyPlain'] = self.__remove_signature(
                         msg_prep['bodyPlain'], sign)
+                
                 msg_prep['bodyBase64Plain'] = base64.urlsafe_b64encode(
                     msg_prep['bodyPlain'].encode()).decode()
+                
+                self.__copy_metadata(msg_prep, msg_raw)
+                msg_prep['charLength'] = len(msg_prep['bodyPlain'])
+                
+                self.__get_structured_text(msg_prep)
+                
+                self.cv_msgs.acquire()
+                self.preprocessed.append(msg_prep)
+                self.cv_msgs.notify()
+                self.cv_msgs.release()

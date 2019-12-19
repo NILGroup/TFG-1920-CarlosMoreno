@@ -66,7 +66,7 @@ class Extractor(ABC):
         resource (msgs).
     has_finished: multiprocessing.Event
         Event which informs that the extraction has finished to the rest
-        of the preocesses.
+        of the processes.
     
     """
     def __init__(self, service, quota, msgs, cv, has_finished):
