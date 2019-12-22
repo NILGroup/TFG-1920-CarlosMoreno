@@ -13,7 +13,7 @@ from abc import ABCMeta
 from time import time
 from time import sleep
 from dataextractor import DataExtractor
-import html2text
+from html2text import HTML2Text
 
 class Extractor(ABC):
     """
@@ -100,7 +100,7 @@ class Extractor(ABC):
         self.cond_var = cv
         self.has_finished = has_finished
         self.data_extractor = DataExtractor()
-        self.html_converter = html2text.HTML2Text()
+        self.html_converter = HTML2Text()
         self.html_converter.ignore_emphasis = True
         self.html_converter.ignore_links = True
         self.html_converter.ignore_images = True

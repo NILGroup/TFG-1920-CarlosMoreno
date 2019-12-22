@@ -9,8 +9,8 @@ from __future__ import print_function
 from email_reply_parser import EmailReplyParser
 import base64
 import os
-import csv
-import re
+from csv import DictWriter
+from re import search
 import confprep as cf
 
 class Preprocessor:
@@ -239,7 +239,7 @@ class Preprocessor:
         str: text without the header if it was found, and the original text in
             other case.
         """
-        match = re.search(cf.REPLY_PATTERN, text)
+        match = search(cf.REPLY_PATTERN, text)
         if match is not None:
             return text[:match.start()] + text[match.end():]
         else:
@@ -386,11 +386,11 @@ class Preprocessor:
                        'bodyBase64Html', 'plainEncoding', 'charLength']
         if not os.path.exists(user + '/Extraction/extracted.csv'):
             csvfile = open(user + '/Extraction/extracted.csv', 'w')
-            writer = csv.DictWriter(csvfile, fieldnames = csv_columns)
+            writer = DictWriter(csvfile, fieldnames = csv_columns)
             writer.writeheader()
         else:
             csvfile = open(user + '/Extraction/extracted.csv', 'a')
-            writer = csv.DictWriter(csvfile, fieldnames = csv_columns)
+            writer = DictWriter(csvfile, fieldnames = csv_columns)
         
         while (not(self.extract_finished.is_set())):
             self.cv_raw.acquire()

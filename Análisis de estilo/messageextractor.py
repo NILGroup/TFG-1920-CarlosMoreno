@@ -14,7 +14,7 @@ class MessageExtractor(Extractor):
     """
     Implements Extractor class
     """
-    def __init__(self, service, quota, msgs, cv):
+    def __init__(self, service, quota, msgs, cv, has_finished):
         """
         Class constructor.
 
@@ -28,13 +28,16 @@ class MessageExtractor(Extractor):
             List of information about extracted messages.
         cv: multiprocessing.Condition
             Conditional varable for accessing to msgs.
+        has_finished: multiprocessing.Event
+            Event which informs that the extraction has finished to the rest
+            of the preocesses.
 
         Returns
         -------
         Constructed MessageExtractor class.
 
         """
-        super().__init__(service, quota, msgs, cv)
+        super().__init__(service, quota, msgs, cv, has_finished)
         self.min_qu = qu.MIN_QUNITS_MSG
         self.list_key = 'messages'
 
