@@ -12,25 +12,25 @@ from threadextractor import ThreadExtractor
 import multiprocessing
 import spacy
 from preprocessor import Preprocessor
-
-NUM_RESOURCE_PER_LIST = 100
+import confanalyser as cfa
 
 class Analyser:
 
     def __init__(self, service, quota = qu.QUOTA_UNITS_PER_DAY):
         self.service = service
         self.quota = quota
-        self.extractor = None
-        self.msg_raw = []
-        self.msg_prep = []
-        self.msg_corrected = []
-        self.cv_raw = multiprocessing.Condition()
-        self.cv_prep = multiprocessing.Condition()
-        self.cv_corrected = multiprocessing.Condition()
-        self.ext_fin = multiprocessing.Event()
-        self.prep_fin = multiprocessing.Event()
         
         if (self.quota > qu.LABELS_GET):
+            self.extractor = None
+            self.msg_raw = []
+            self.msg_prep = []
+            self.msg_corrected = []
+            self.cv_raw = multiprocessing.Condition()
+            self.cv_prep = multiprocessing.Condition()
+            self.cv_corrected = multiprocessing.Condition()
+            self.ext_fin = multiprocessing.Event()
+            self.prep_fin = multiprocessing.Event()
+            
             l = self.service.users().labels()
             sent_lb = l.get(userId = 'me', id = 'SENT').execute()
             self.quota -= qu.LABELS_GET
@@ -48,10 +48,11 @@ class Analyser:
                 self.extractor = ThreadExtractor(self.service, self.quota, 
                                                      self.msg_raw, self.cv_raw,
                                                      self.ext_fin)
-            self.nlp = spacy.load("es_core_news_md")
+            self.nlp = spacy.load(cfa.SPACY_MODEL)
             self.preprocessor = Preprocessor(self.msg_raw, self.msg_prep, 
                                                  self.cv_raw, self.cv_prep,
-                                                 self.ext_fin, self.nlp)
+                                                 self.ext_fin, self.prep_fin,
+                                                 self.nlp)
 
     def __get_res_cost(self, listcost, numres, getcost):
-        return listcost * (numres // NUM_RESOURCE_PER_LIST + 1) + getcost * numres
+        return listcost * (numres // cfa.NUM_RESOURCE_PER_LIST + 1) + getcost * numres

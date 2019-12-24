@@ -73,12 +73,14 @@ class Preprocessor:
     extract_finished: multiprocessing.Event
         Event which informs that the process in charge of the message 
         extraction has finished.
+    prep_finished: multiprocessing.Event
+        Event which informs that this process has finished.
     nlp: Spacy model
         Spacy's trained model which will be used to processed.
         
     """
     
-    def __init__(self, raw_msgs, msgs, cv_raw, cv_msgs, extract_finished, nlp):
+    def __init__(self, raw_msgs, msgs, cv_raw, cv_msgs, ext_fin, prp_fin, nlp):
         """
         Class constructor.
         
@@ -92,8 +94,11 @@ class Preprocessor:
             Conditional variable for accessing raw_msgs.
         cv_msgs: multiprocessing.Condition
             Conditional variable for accessing to msgs.
-        extract_finished: multiprocessing.Event
+        ext_fin: multiprocessing.Event
             Event which informs whether or not the extraction of messages has
+            finished.
+        prp_fin: multiprocessing.Event
+            Event which informs whether or not the preprocessing of messages has
             finished.
         nlp: spacy model
             Spacy's trained model which will be used to processed.
@@ -107,7 +112,8 @@ class Preprocessor:
         self.preprocessed = msgs
         self.cv_raw = cv_raw
         self.cv_msgs = cv_msgs
-        self.extract_finished = extract_finished
+        self.extract_finished = ext_fin
+        self.prep_finished = prp_fin
         self.nlp = nlp
         
     def __is_break_line_tag(self, html, pos):
@@ -392,8 +398,8 @@ class Preprocessor:
             csvfile = open(user + '/Extraction/extracted.csv', 'a')
             writer = DictWriter(csvfile, fieldnames = csv_columns)
         
-        while (not(self.extract_finished.is_set())):
-            self.cv_raw.acquire()
+        self.cv_raw.acquire()
+        while (not(self.extract_finished.is_set()) or len(self.raw) > 0):
             while (len(self.raw) == 0 and not(self.extract_finished.is_set())):
                 self.cv_raw.wait()
             if (len(self.raw) != 0):
@@ -421,3 +427,12 @@ class Preprocessor:
                 self.preprocessed.append(msg_prep)
                 self.cv_msgs.notify()
                 self.cv_msgs.release()
+                
+                self.cv_raw.acquire()
+        
+        self.cv_raw.release()
+        
+        self.cv_msgs.acquire()
+        self.prep_finished.set()
+        self.cv_msgs.notify()
+        self.cv_msgs.release()
