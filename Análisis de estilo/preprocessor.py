@@ -390,6 +390,7 @@ class Preprocessor:
         csv_columns = ['id', 'threadId', 'to', 'cc', 'bcc', 'from',
                        'depth', 'date', 'subject', 'bodyBase64Plain', 
                        'bodyBase64Html', 'plainEncoding', 'charLength']
+        
         if not os.path.exists(user + '/Extraction/extracted.csv'):
             csvfile = open(user + '/Extraction/extracted.csv', 'w')
             writer = DictWriter(csvfile, fieldnames = csv_columns)
@@ -400,13 +401,15 @@ class Preprocessor:
         
         self.cv_raw.acquire()
         while (not(self.extract_finished.is_set()) or len(self.raw) > 0):
+            extracted = False
             while (len(self.raw) == 0 and not(self.extract_finished.is_set())):
                 self.cv_raw.wait()
-            if (len(self.raw) != 0):
+            if (len(self.raw) > 0):
                 msg_raw = self.raw.pop()
+                extracted = True
             self.cv_raw.release()
             
-            if (not(self.extract_finished.is_set()) and 'bodyPlain' in msg_raw):
+            if (extracted and 'bodyPlain' in msg_raw):
                 msg_prep = {}
                 self.__extract_body_msg(msg_prep, msg_raw)
                 
@@ -436,3 +439,5 @@ class Preprocessor:
         self.prep_finished.set()
         self.cv_msgs.notify()
         self.cv_msgs.release()
+        
+        csvfile.close()
