@@ -51,20 +51,49 @@ class TypoCorrector:
         with open('oov.json', 'w') as fp:
             json.dump(self.oov, fp)
             
-    def __is_it_typo(self):
+    def __yes_no_question(self, question):
         """
-        Asks the user if the word previously printed is a typographic error.
+        Asks the user the given yes or no question.
+        
+        Parameters
+        ----------
+        question: str
+            Question which is going to be asked.
         
         Returns
         -------
-        bool: true if it is a real typographic error and false if it is not.
+        bool: true if the answer is yes and false if it is not.
+        
         """
-        answ = input('\nIs it a real typographic error? [y/n] ')
+        answ = input(f'\n{question} [y/n] ')
         while(not answ in {'y', 'n'}):
             print('Please write "y" or "n" to answer the question.\n')
-            answ = input('Is it a real typographic error? [y/n] ')
+            answ = input(f'{question} [y/n] ')
             
         return answ == 'y'
+    
+    def __req_verified_answer(self, question):
+        """
+        Asks the user the given question and it makes sure that the answer is
+        correct.
+        
+        Parameters
+        ----------
+        question: str
+            Question which is going to be asked.
+        
+        Returns
+        -------
+        str: verified answer.
+        
+        """
+        answ = input(question)
+            
+        sure = f'Introduced answer is: {answ}\nIs it correct?'
+        while (not self.__yes_no_question(sure)):
+            answ = input(question)
+            sure = f'Introduced answer is: {answ}\nIs it correct?'
+        return answ
     
     def __correct_typo(self, ind, msg_typo, s_ind, s_ini):
         """
@@ -101,26 +130,94 @@ class TypoCorrector:
                 print('Invalid input.\n')
         
         token = msg_typo['doc'][ind]
+        sentence = msg_typo['sentences'][s_ind]
+        
         begining = msg_typo['bodyPlain'][:token.idx]
+        s_begining = sentence['doc'].text[:token.idx - s_ini]
         ending = msg_typo['bodyPlain'][token.idx + len(token):]
+        s_ending = sentence['doc'].text[token.idx - s_ini + len(token):]
         
         if opt == 1:            
             msg_typo['bodyPlain'] = begining + ending[1:]
+            sent_text = s_begining + s_ending[1:]
         else:
-            new_word = input('Introduce the correct word: ')
+            new_word = self.__req_verified_answer('Introduce the correct word: ')
+            
             msg_typo['bodyPlain'] = begining + new_word + ending
+            sent_text = s_begining + new_word + s_ending
         
         msg_typo['doc'] = self.nlp(msg_typo['bodyPlain'])
-        #Falta cambiar las palabras en las frases.
+        sentence['doc'] = self.nlp(sent_text)
+        sentence['words'] = [t for t in sentence['doc']]
             
     def __req_token_correction(self, ind, msg_typo, s_ind, s_ini):
+        """
+        Requests a token correction when the module has found a typographic
+        error (which is given).
+        
+        Parameters
+        ----------
+        ind: int
+            Index which indicates the position of the token which has the 
+            typographic error.
+        msg_typo: dict
+            Dictionary where the body of the message and the spacy's doc of
+            it are stored.
+        s_ind: int
+            Index of the sentence where the typographic error is.
+        s_ini: int
+            Index of the begining of the sentence in the complete text.
+        
+        Returns
+        -------
+        int: index of the next word which has to be analysed.
+        
+        """
         print(f'Typographic error: {msg_typo["doc"][ind].text}\n')
         print('Body message:\n\n')
         print(msg_typo['bodyPlain'])
         
-        if (self.__is_it_typo()):
+        if (self.__yes_no_question('Is it a real typographic error?')):
             self.__correct_typo(ind, msg_typo, s_ind, s_ini)
-        #else:
+            return ind
+        elif msg_typo['doc'][ind].text in self.oov:
+            pos = {'position' : ind, 'sentenceIndex' : s_ind, 
+                   'sentencePosition' : s_ini}
+            msg_typo['corrections'].append({**pos, 
+                                            **self.oov[msg_typo['doc'][ind].text]})
+            return ind + 1
+        else:
+            ling_feat = {'text' : msg_typo['doc'][ind].text}
+            
+            print('You will need to introduce some linguistic features:\n')
+            
+            ling_feat['is_punct'] = self.__yes_no_question('Is the token punctuation?')
+            if ling_feat['is_punct']:
+                ling_feat['is_lpunct'] = self.__yes_no_question('Is it left punctuation?')
+                ling_feat['is_rpunct'] = self.__yes_no_question('Is it right punctuation?')
+        
+            ling_feat['is_url'] = self.__yes_no_question('Is it an url?')
+            ling_feat['is_email'] = self.__yes_no_question('Is it an email?')
+            
+            if (self.__yes_no_question("Do you know the token's lemma?")):
+                ling_feat['lemma'] = self.__req_verified_answer(
+                    "Introduce the token's lemma: ")
+                
+            ling_feat['is_stop'] = self.__yes_no_question('Is a stop word?')
+            
+            if (self.__yes_no_question("Do you know the token's part-of-speech?")):
+                ling_feat['pos'] = self.__req_verified_answer(
+                    "Introduce the token's pos: ")
+            
+            if (self.__yes_no_question('Do you want to save this information in' +
+                                       ' order to know what to do in the future?')):
+                self.oov[msg_typo['doc'][ind].text] = ling_feat.copy()
+            
+            pos = {'position' : ind, 'sentenceIndex' : s_ind, 
+                   'sentencePosition' : s_ini}
+            msg_typo['corrections'].append({**pos, **ling_feat})
+            return ind + 1
+            
         
     def correct_msgs(self, user):
         if not os.path.exists(user + '/Preprocessing'):
@@ -153,10 +250,12 @@ class TypoCorrector:
                 
                 msg_typo['bodyPlain'] = prep_msg.pop('bodyPlain')
                 msg_typo['doc'] = prep_msg.pop('doc')
-                msg_typo['sentences'] = prep_msg['sentences']
+                msg_typo['sentences'] = prep_msg['sentences'].copy()
+                msg_typo['corrections'] = []
+                
                 i = 0
                 s_ind = -1
-                s_ini = 0
+                s_ini = 0   #Posibilidad de descartar email
                 while i < len(msg_typo['doc']):
                     if msg_typo['doc'][i].is_sent_start:
                         s_ind += 1
