@@ -59,24 +59,68 @@ class TypoCorrector:
         -------
         bool: true if it is a real typographic error and false if it is not.
         """
-        print('\nIs it a real typographic error? [y/n] ')
-        answ = input()
+        answ = input('\nIs it a real typographic error? [y/n] ')
         while(not answ in {'y', 'n'}):
             print('Please write "y" or "n" to answer the question.\n')
-            print('Is it a real typographic error? [y/n] ')
-            answ = input()
+            answ = input('Is it a real typographic error? [y/n] ')
             
         return answ == 'y'
+    
+    def __correct_typo(self, ind, msg_typo, s_ind, s_ini):
+        """
+        Corrects a typographic error of the token which is in the index given
+        position.
+        
+        Parameters
+        ----------
+        ind: int
+            Index which indicates the position of the token which has the 
+            typographic error.
+        msg_typo: dict
+            Dictionary where the body of the message and the spacy's doc of
+            it are stored.
+        s_ind: int
+            Index of the sentence where the typographic error is.
+        s_ini: int
+            Index of the begining of the sentence in the complete text.
+        
+        Returns
+        -------
+        None.
+        
+        """
+        chosen = False
+        while not chosen:
+            print('Possible solutions:\n')
+            print('1.- Remove word.\n')
+            print('2.- Rewrite word.\n')
+            try:
+                opt = int(input('Choose an option: '))
+                chosen = opt in {0, 1, 2}
+            except ValueError:
+                print('Invalid input.\n')
+        
+        token = msg_typo['doc'][ind]
+        begining = msg_typo['bodyPlain'][:token.idx]
+        ending = msg_typo['bodyPlain'][token.idx + len(token):]
+        
+        if opt == 1:            
+            msg_typo['bodyPlain'] = begining + ending[1:]
+        else:
+            new_word = input('Introduce the correct word: ')
+            msg_typo['bodyPlain'] = begining + new_word + ending
+        
+        msg_typo['doc'] = self.nlp(msg_typo['bodyPlain'])
+        #Falta cambiar las palabras en las frases.
             
-    def __req_token_correction(self, ind, msg_typo):
+    def __req_token_correction(self, ind, msg_typo, s_ind, s_ini):
         print(f'Typographic error: {msg_typo["doc"][ind].text}\n')
         print('Body message:\n\n')
         print(msg_typo['bodyPlain'])
         
         if (self.__is_it_typo()):
-            print('Possible solutions:\n')
-            print('1.- Remove word.\n')
-            print('2.- Rewrite word.\n')
+            self.__correct_typo(ind, msg_typo, s_ind, s_ini)
+        #else:
         
     def correct_msgs(self, user):
         if not os.path.exists(user + '/Preprocessing'):
@@ -109,11 +153,19 @@ class TypoCorrector:
                 
                 msg_typo['bodyPlain'] = prep_msg.pop('bodyPlain')
                 msg_typo['doc'] = prep_msg.pop('doc')
+                msg_typo['sentences'] = prep_msg['sentences']
                 i = 0
+                s_ind = -1
+                s_ini = 0
                 while i < len(msg_typo['doc']):
+                    if msg_typo['doc'][i].is_sent_start:
+                        s_ind += 1
+                        s_ini = msg_typo['doc'][i].idx
+                    
                     if msg_typo['doc'][i].is_oov:
-                        i = self.__req_token_correction(i, msg_typo)
-                    i += 1
+                        i = self.__req_token_correction(i, msg_typo, s_ind, s_ini)
+                    else:
+                        i += 1
                                 
                 self.corrected_cv.acquire()
                 self.corrected.append(msg_typo)
