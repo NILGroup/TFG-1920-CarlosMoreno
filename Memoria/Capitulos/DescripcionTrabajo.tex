@@ -1,31 +1,19 @@
-\chapter{Descripción del Trabajo}
+\chapter{Work Description}
 \label{cap:descripcionTrabajo}
 
-Aquí comienza la descripción del trabajo realizado. Se deben incluir tantos capítulos como sea necesario para describir de la manera más completa posible el trabajo que se ha llevado a cabo. Como muestra la figura \ref{fig:sampleImage}, está todo por hacer.
+\section{Style Analyser}
+In order to generate messages with the user's writing style, it is necessary to define parameters which will determine and describe it. For this purpose, we have developed a style analyser that extracts the messages written by the user and obtains the value of various metrics from them. Then it will be useful for analysing different user's emails and drawing conclusions about what parameters describe the writing style of each person more accurately. Besides most of the developed code will be reusable in the final application for analysing the user's messages.
 
-\begin{figure}[h]
-	\centering
-	\includegraphics[width = 0.5\textwidth]{Imagenes/Vectorial/Todo.pdf}
-	\caption{Ejemplo de imagen}
-	\label{fig:sampleImage}
-\end{figure}
+In this section we are going to explain the architecture of this analyser (see \ref{ssection:stylearch}) and each of the modules that compose it (they are explained in sections \ref{ssection:extmod}, \ref{ssection:prepmod}, \ref{ssection:typomod} and \ref{ssection:measmod}). Finally, we are going to discuss the obtained results and analyse them for drawing a conclusion (this discussion can be looked up in \ref{ssection:resconc}).
 
-Si te sirve de utilidad,  puedes incluir tablas para mostrar resultados, tal como se ve en la tabla \ref{tab:sampleTable}.
+\subsection{Architecture} \label{ssection:stylearch}
 
+\subsection{Extracting Module} \label{ssection:extmod}
 
-\begin{table}
-	\centering
-	\begin{tabular}{c|c|c}
-		\textbf{Col 1} & \textbf{Col 2} & \textbf{Col 3} \\
-		\hline\hline
-		3 & 3.01 & 3.50\\
-		6 & 2.12 & 4.40\\
-		1 & 3.79 & 5.00\\
-		2 & 4.88 & 5.30\\
-		4 & 3.50 & 2.90\\
-		5 & 7.40 & 4.70\\
-		\hline
-	\end{tabular}
-	\caption{Tabla de ejemplo}
-	\label{tab:sampleTable}
-\end{table}
+\subsection{Preprocessing Module} \label{ssection:prepmod}
+
+\subsection{Typographic Correction Module} \label{ssection:typomod}
+
+\subsection{Measuring module} \label{ssection:measmod}
+
+\subsection{Results and conclusions} \label{ssection:resconc}
