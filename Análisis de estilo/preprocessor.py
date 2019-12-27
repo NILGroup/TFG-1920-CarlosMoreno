@@ -15,7 +15,7 @@ import confprep as cf
 
 class Preprocessor:
     """
-    Preprocessor class performs the tas of preprocessing the extracted messages
+    Preprocessor class performs the task of preprocessing the extracted messages
     in order to being analysed then.
     
     Attributes
@@ -42,28 +42,28 @@ class Preprocessor:
     preprocessed: list
         Shared resource wich is a list of messages with the following structure:
             {
-            'id' : string,
-            'threadId' : string,
-            'to' : [ string ],
-            'cc' : [ string ],
-            'bcc' : [ string ],
-            'from' : string,
-            'depth' : int,               # How many messages precede it
-            'date' : long,               # Epoch ms
-            'subject' : string,          # Optional
-            'bodyPlain' : string,
-            'bodyBase64Plain' : string,
-            'bodyBase64Html' : string,   # Optional
-            'plainEncoding' : string,    # Optional
-            'charLength' : int           # Optional
-            'doc' : Spacy's Doc
-            'sentences' : [
-                {
-                    doc: Spacy's Doc of the sentence
-                    words: [Spacy's Tokens]
-                }
-            ]
-        }
+                'id' : string,
+                'threadId' : string,
+                'to' : [ string ],
+                'cc' : [ string ],
+                'bcc' : [ string ],
+                'from' : string,
+                'depth' : int,               # How many messages precede it
+                'date' : long,               # Epoch ms
+                'subject' : string,          # Optional
+                'bodyPlain' : string,
+                'bodyBase64Plain' : string,
+                'bodyBase64Html' : string,   # Optional
+                'plainEncoding' : string,    # Optional
+                'charLength' : int
+                'doc' : Spacy's Doc
+                'sentences' : [
+                    {
+                        doc: Spacy's Doc of the sentence
+                        words: [Spacy's Tokens]
+                    }
+                ]
+            }
     cv_raw: multiprocessing.Condition
         Conditional variable which is needed to access to the shared 
         resource (raw).
@@ -387,17 +387,13 @@ class Preprocessor:
         if not os.path.exists(user + '/Extraction'):
             os.mkdir(user + '/Extraction')
         
-        csv_columns = ['id', 'threadId', 'to', 'cc', 'bcc', 'from',
-                       'depth', 'date', 'subject', 'bodyBase64Plain', 
-                       'bodyBase64Html', 'plainEncoding', 'charLength']
-        
         if not os.path.exists(user + '/Extraction/extracted.csv'):
             csvfile = open(user + '/Extraction/extracted.csv', 'w')
-            writer = DictWriter(csvfile, fieldnames = csv_columns)
+            writer = DictWriter(csvfile, fieldnames = cf.CSV_COL)
             writer.writeheader()
         else:
             csvfile = open(user + '/Extraction/extracted.csv', 'a')
-            writer = DictWriter(csvfile, fieldnames = csv_columns)
+            writer = DictWriter(csvfile, fieldnames = cf.CSV_COL)
         
         self.cv_raw.acquire()
         while (not(self.extract_finished.is_set()) or len(self.raw) > 0):
@@ -431,7 +427,7 @@ class Preprocessor:
                 self.cv_msgs.notify()
                 self.cv_msgs.release()
                 
-                self.cv_raw.acquire()
+            self.cv_raw.acquire()
         
         self.cv_raw.release()
         

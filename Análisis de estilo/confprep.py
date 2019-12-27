@@ -12,6 +12,9 @@ CHAR_ERROR = 3
 
 FOWARD_LINE = '---------- Forwarded message ---------'
 
+CSV_COL = ['id', 'threadId', 'to', 'cc', 'bcc', 'from', 'depth', 'date', 'subject', 
+               'bodyBase64Plain', 'bodyBase64Html', 'plainEncoding', 'charLength']
+
 WEEK_PATTERN = r'(?:lun|mar|mié|jue|vie|sáb|dom)\.'
 DAYS_31_PAT = r'(?:(?:[12]?\d)|30|31)'
 DAYS_30_PAT = r'(?:(?:[12]?\d)|30)'

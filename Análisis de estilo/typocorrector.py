@@ -9,10 +9,143 @@ from __future__ import print_function
 import os
 import json
 from csv import DictWriter
+import coftypo as cft
+import base64
 
 class TypoCorrector:
+    """
+    TypoCorrector class performs the task of correcting the typographic errors
+    of the messages.
+    
+    Attributes
+    ----------
+    prep: list
+        Shared resource wich is a list of messages with the following structure:
+            {
+                'id' : string,
+                'threadId' : string,
+                'to' : [ string ],
+                'cc' : [ string ],
+                'bcc' : [ string ],
+                'from' : string,
+                'depth' : int,               # How many messages precede it
+                'date' : long,               # Epoch ms
+                'subject' : string,          # Optional
+                'bodyPlain' : string,
+                'bodyBase64Plain' : string,
+                'bodyBase64Html' : string,   # Optional
+                'plainEncoding' : string,    # Optional
+                'charLength' : int
+                'doc' : Spacy's Doc
+                'sentences' : [
+                    {
+                        doc: Spacy's Doc of the sentence
+                        words: [Spacy's Tokens]
+                    }
+                ]
+            }
+    corrected: list
+        Shared resource wich is a list of messages with the following structure:
+            {
+                'id' : string,
+                'threadId' : string,
+                'to' : [ string ],
+                'cc' : [ string ],
+                'bcc' : [ string ],
+                'from' : string,
+                'depth' : int,               # How many messages precede it
+                'date' : long,               # Epoch ms
+                'subject' : string,          # Optional
+                'bodyPlain' : string,
+                'bodyBase64Plain' : string,
+                'plainEncoding' : string,    # Optional
+                'charLength' : int
+                'doc' : Spacy's Doc
+                'sentences' : [
+                    {
+                        doc: Spacy's Doc of the sentence
+                        words: [Spacy's Tokens]
+                    }
+                ]
+                'corrections' : [
+                    {
+                        'text' : string,
+                        'is_punct' : boolean
+                        'is_lpunct' : boolean       # Optional
+                        'is_rpunct' : boolean       # Optional
+                        'is_url' : boolean
+                        'is_email' : boolean
+                        'lemma' : string            # Optional
+                        'is_stop' : boolean
+                        'pos' : string              # Optional
+                        'position' : int
+                        'sentenceIndex' : int
+                        'sentenceInit' : int
+                    }
+                ]
+            }
+    prep_cv: multiprocessing.Condition
+        Conditional variable which is needed to access to the shared 
+        resource (prep).
+    corrected_cv: multiprocessing.Condition
+        Conditional variable which is needed to access to the shared 
+        resource (corrected).
+    pre_fin: multiprocessing.Event
+        Event which informs that the process in charge of the message 
+        preprocessing has finished.
+    typo_fin: multiprocessing.Event
+        Event which informs that this process has finished.
+    nlp: Spacy model
+        Spacy's trained model which will be used to correct typographic errors.
+    oov: dict
+        Dictionary where tokens out of vocabulary are stored in order to use
+        them if they appears later in the correction. It has the following
+        structure:
+            {
+            <token.text> : {
+                    'text' : string,
+                    'is_punct' : boolean
+                    'is_lpunct' : boolean       # Optional
+                    'is_rpunct' : boolean       # Optional
+                    'is_url' : boolean
+                    'is_email' : boolean
+                    'lemma' : string            # Optional
+                    'is_stop' : boolean
+                    'pos' : string              # Optional
+                }
+            }
+            
+    """
     
     def __init__(self, prep, corrected, prep_cv, cor_cv, prep_fin, typo_fin, nlp):
+        """
+        Class constructor.
+
+        Parameters
+        ----------
+        prep : list
+            List of preprocessed messages.
+        corrected : list
+            List of preprocessed messages whose typographical errors have been 
+            corrected.
+        prep_cv : multiprocessing.Condition
+            Conditional variable for accessing to prep.
+        cor_cv : multiprocessing.Condition
+            Conditional variable for accessing to corrected.
+        prep_fin : multiprocessing.Event
+            Event which informs whether or not the preprocessing of messages has
+            finished.
+        typo_fin : multiprocessing.Event
+            Event which informs whether or not the typographic correction of messages 
+            has finished.
+        nlp : spacy model
+            Spacy's trained model which will be used to processed.
+
+        Returns
+        -------
+        Constructed TypoCorrector class.
+
+        """
         self.prep = prep
         self.corrected = corrected
         self.prep_cv = prep_cv
@@ -181,8 +314,7 @@ class TypoCorrector:
             self.__correct_typo(ind, msg_typo, s_ind, s_ini)
             return ind
         elif msg_typo['doc'][ind].text in self.oov:
-            pos = {'position' : ind, 'sentenceIndex' : s_ind, 
-                   'sentencePosition' : s_ini}
+            pos = {'position' : ind, 'sentenceIndex' : s_ind, 'sentenceInit' : s_ini}
             msg_typo['corrections'].append({**pos, 
                                             **self.oov[msg_typo['doc'][ind].text]})
             return ind + 1
@@ -193,46 +325,103 @@ class TypoCorrector:
             
             ling_feat['is_punct'] = self.__yes_no_question('Is the token punctuation?')
             if ling_feat['is_punct']:
-                ling_feat['is_lpunct'] = self.__yes_no_question('Is it left punctuation?')
-                ling_feat['is_rpunct'] = self.__yes_no_question('Is it right punctuation?')
+                ling_feat['is_lpunct'] = self.__yes_no_question(cft.IS_LPUNCT)
+                ling_feat['is_rpunct'] = self.__yes_no_question(cft.IS_RPUNCT)
         
             ling_feat['is_url'] = self.__yes_no_question('Is it an url?')
             ling_feat['is_email'] = self.__yes_no_question('Is it an email?')
             
             if (self.__yes_no_question("Do you know the token's lemma?")):
-                ling_feat['lemma'] = self.__req_verified_answer(
-                    "Introduce the token's lemma: ")
+                ling_feat['lemma'] = self.__req_verified_answer(cft.TOK_LEM)
                 
             ling_feat['is_stop'] = self.__yes_no_question('Is a stop word?')
             
             if (self.__yes_no_question("Do you know the token's part-of-speech?")):
-                ling_feat['pos'] = self.__req_verified_answer(
-                    "Introduce the token's pos: ")
+                ling_feat['pos'] = self.__req_verified_answer(cft.TOK_POS)
             
-            if (self.__yes_no_question('Do you want to save this information in' +
-                                       ' order to know what to do in the future?')):
+            if (self.__yes_no_question(cft.SAVE_OOV)):
                 self.oov[msg_typo['doc'][ind].text] = ling_feat.copy()
             
-            pos = {'position' : ind, 'sentenceIndex' : s_ind, 
-                   'sentencePosition' : s_ini}
+            pos = {'position' : ind, 'sentenceIndex' : s_ind, 'sentenceInit' : s_ini}
             msg_typo['corrections'].append({**pos, **ling_feat})
             return ind + 1
+    
+    def __copy_data(self, prep_msg, msg_typo):
+        """
+        Copies the data from the preprocessed message to the message with the
+        typographic errors corrected.
+        
+        Parameters
+        ----------
+        prep_msg: dict
+            Dictionary which represents the preprocessed message. It has the
+            next structure:
+                {
+                    'id' : string,
+                    'threadId' : string,
+                    'to' : [ string ],
+                    'cc' : [ string ],
+                    'bcc' : [ string ],
+                    'from' : string,
+                    'depth' : int,               # How many messages precede it
+                    'date' : long,               # Epoch ms
+                    'subject' : string,          # Optional
+                    'bodyBase64Plain' : string,
+                    'bodyBase64Html' : string,   # Optional
+                    'plainEncoding' : string,    # Optional
+                    'charLength' : int
+                    'sentences' : [ [ string ] ]
+                    ]
+                }
+        msg_typo: dict
+            Dictionary where the data is going to be copied.
             
+        Returns
+        -------
+        None.
+        
+        """
+        msg_typo['id'] = prep_msg['id']
+        msg_typo['threadId'] = prep_msg['threadId']
+        msg_typo['to'] = prep_msg['to']
+        msg_typo['cc'] = prep_msg['cc']
+        msg_typo['bcc'] = prep_msg['bcc']
+        msg_typo['from'] = prep_msg['from']
+        msg_typo['depth'] = prep_msg['depth']
+        msg_typo['date'] = prep_msg['date']
+        
+        if 'subject' in prep_msg:
+            msg_typo['subject'] = prep_msg['subject']
+        
+        if 'plainEncoding' in prep_msg:
+            msg_typo['plainEncoding'] = prep_msg['plainEncoding']
         
     def correct_msgs(self, user):
+        """
+        Obtains the preprocessed messages and corrects all the typographic errors
+        on them. Besides this method saves the preprocessed messages before the 
+        correction.
+        
+        Parameters
+        ----------
+        user: str
+            User name of the owner of the messages.
+            
+        Returns
+        -------
+        None.
+        
+        """
         if not os.path.exists(user + '/Preprocessing'):
             os.mkdir(user + '/Preprocessing')
-        
-        csv_columns = ['id', 'threadId', 'to', 'cc', 'bcc', 'from',
-                       'depth', 'date', 'subject', 'bodyBase64Plain', 
-                       'bodyBase64Html', 'plainEncoding', 'charLength']
+            
         if not os.path.exists(user + '/Preprocessing/preprocessed.csv'):
             csvfile = open(user + '/Preprocessing/preprocessed.csv', 'w')
-            writer = DictWriter(csvfile, fieldnames = csv_columns)
+            writer = DictWriter(csvfile, fieldnames = cft.CSV_COL)
             writer.writeheader()
         else:
             csvfile = open(user + '/Preprocessing/preprocessed.csv', 'a')
-            writer = DictWriter(csvfile, fieldnames = csv_columns)
+            writer = DictWriter(csvfile, fieldnames = cft.CSV_COL)
         
         self.prep_cv.aquire()
         while (not(self.pre_fin.is_set()) or len(self.prep) > 0):
@@ -253,25 +442,51 @@ class TypoCorrector:
                 msg_typo['sentences'] = prep_msg['sentences'].copy()
                 msg_typo['corrections'] = []
                 
+                discard = False
+                if (msg_typo['doc'][0].is_oov):
+                    print('Typographic error found in the begining of the message.\n')
+                    print('This is the text:\n\n')
+                    print(msg_typo['bodyPlain'])
+                    discard = self.__yes_no_question(cft.DISC_MSG)
+                
                 i = 0
                 s_ind = -1
-                s_ini = 0   #Posibilidad de descartar email
-                while i < len(msg_typo['doc']):
+                s_ini = 0
+                count = 0
+                while (i < len(msg_typo['doc']) and not(discard)):
                     if msg_typo['doc'][i].is_sent_start:
                         s_ind += 1
                         s_ini = msg_typo['doc'][i].idx
                     
                     if msg_typo['doc'][i].is_oov:
                         i = self.__req_token_correction(i, msg_typo, s_ind, s_ini)
+                        count += 1
+                        
+                        if count == cft.TOO_MANY_TYPO:
+                            print(f'{count} typographic errors found.')
+                            discard = self.__yes_no_question(cft.DISC_MSG)
                     else:
                         i += 1
-                                
-                self.corrected_cv.acquire()
-                self.corrected.append(msg_typo)
-                self.corrected_cv.notify()
-                self.corrected_cv.release()
                 
-                self.prep_cv.acquire()
+                if not(discard):
+                    for j in range(len(prep_msg['sentences'])):
+                        prep_msg['sentences'][j] = [base64.urlsafe_b64encode(
+                            t.text.encode()).decode() for t in 
+                            prep_msg['sentences'][j]['words']]
+                    
+                    self.__copy_data(prep_msg, msg_typo)
+                    writer.writerow(prep_msg)
+                    
+                    self.__msg_typo['charLength'] = len(msg_typo['bodyPlain'])
+                    msg_typo['bodyBase64Plain'] = base64.urlsafe_b64encode(
+                        msg_typo['bodyPlain'].encode()).decode()
+                    
+                    self.corrected_cv.acquire()
+                    self.corrected.append(msg_typo)
+                    self.corrected_cv.notify()
+                    self.corrected_cv.release()
+                
+            self.prep_cv.acquire()
         
         self.prep_cv.release()
         
