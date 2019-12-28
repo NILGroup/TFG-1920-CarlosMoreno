@@ -76,7 +76,7 @@ class Preprocessor:
     prep_finished: multiprocessing.Event
         Event which informs that this process has finished.
     nlp: Spacy model
-        Spacy's trained model which will be used to processed.
+        Spacy's trained model which will be used for preprocessing.
         
     """
     

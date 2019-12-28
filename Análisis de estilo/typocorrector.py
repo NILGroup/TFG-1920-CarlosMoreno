@@ -96,7 +96,7 @@ class TypoCorrector:
     typo_fin: multiprocessing.Event
         Event which informs that this process has finished.
     nlp: Spacy model
-        Spacy's trained model which will be used to correct typographic errors.
+        Spacy's trained model which will be used for correcting typographic errors.
     oov: dict
         Dictionary where tokens out of vocabulary are stored in order to use
         them if they appears later in the correction. It has the following

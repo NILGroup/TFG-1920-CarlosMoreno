@@ -15,7 +15,134 @@ from preprocessor import Preprocessor
 import confanalyser as cfa
 
 class Analyser:
-
+    """
+    The class Analyser performs the task of analysing all the messages of a
+    user in order to obtain metrics which differentiate between the style
+    writing of each person.
+    
+    Attributes
+    ----------
+    service: Gmail resource
+        Gmail API resource with an Gmail user session opened.
+    quota: int
+        Gmail API quota units available for message extraction. Represents the
+        remaining quota units available to carry out the extraction operations.
+    extractor: Extractor
+        Object which performs the task of extracting sent messages 
+        or sent threads from the user by accessing Gmail API.
+    msg_raw: list
+        Shared resource wich is a list of extracted messages with the following
+        structure:
+        {
+            'id' : string,
+            'threadId' : string,
+            'to' : [ string ],
+            'cc' : [ string ],
+            'bcc' : [ string ],
+            'from' : string,
+            'depth' : int,               # How many messages precede it
+            'date' : long,               # Epoch ms
+            'subject' : string,          # Optional
+            'bodyPlain' : string,        # Optional
+            'bodyHtml' : string,         # Optional
+            'bodyBase64Plain' : string,  # Optional
+            'bodyBase64Html' : string,   # Optional
+            'plainEncoding' : string,    # Optional
+            'charLength' : int           # Optional
+        }
+    msg_prep: list
+        Shared resource wich is a list of preprocessed messages with the
+        following structure:
+            {
+                'id' : string,
+                'threadId' : string,
+                'to' : [ string ],
+                'cc' : [ string ],
+                'bcc' : [ string ],
+                'from' : string,
+                'depth' : int,               # How many messages precede it
+                'date' : long,               # Epoch ms
+                'subject' : string,          # Optional
+                'bodyPlain' : string,
+                'bodyBase64Plain' : string,
+                'bodyBase64Html' : string,   # Optional
+                'plainEncoding' : string,    # Optional
+                'charLength' : int
+                'doc' : Spacy's Doc
+                'sentences' : [
+                    {
+                        doc: Spacy's Doc of the sentence
+                        words: [Spacy's Tokens]
+                    }
+                ]
+            }
+    msg_corrected: list
+        Shared resource wich is a list of corrected messages (by correcting
+        the typographic errors) with the following structure:
+            {
+                'id' : string,
+                'threadId' : string,
+                'to' : [ string ],
+                'cc' : [ string ],
+                'bcc' : [ string ],
+                'from' : string,
+                'depth' : int,               # How many messages precede it
+                'date' : long,               # Epoch ms
+                'subject' : string,          # Optional
+                'bodyPlain' : string,
+                'bodyBase64Plain' : string,
+                'plainEncoding' : string,    # Optional
+                'charLength' : int
+                'doc' : Spacy's Doc
+                'sentences' : [
+                    {
+                        doc: Spacy's Doc of the sentence
+                        words: [Spacy's Tokens]
+                    }
+                ]
+                'corrections' : [
+                    {
+                        'text' : string,
+                        'is_punct' : boolean
+                        'is_lpunct' : boolean       # Optional
+                        'is_rpunct' : boolean       # Optional
+                        'is_url' : boolean
+                        'is_email' : boolean
+                        'lemma' : string            # Optional
+                        'is_stop' : boolean
+                        'pos' : string              # Optional
+                        'position' : int
+                        'sentenceIndex' : int
+                        'sentenceInit' : int
+                    }
+                ]
+            }
+    cv_raw: multiprocessing.Condition
+        Conditional variable which is needed to access to the shared 
+        resource (msg_raw).
+    cv_prep: multiprocessing.Condition
+        Conditional variable which is needed to access to the shared 
+        resource (msg_prep).
+    cv_corrected: multiprocessing.Condition
+        Conditional variable which is needed to access to the shared 
+        resource (msg_corrected).
+    ext_fin: multiprocessing.Event
+        Event which informs that the process in charge of the message 
+        extraction has finished.
+    prep_fin: multiprocessing.Event
+        Event which informs that the process in charge of the message 
+        preprocessing has finished.
+    typo_fin: multiprocessing.Event
+        Event which informs that the process in charge of the message 
+        typographic correction has finished.
+    nlp: Spacy model
+        Spacy's trained model which will be used for analysing the message's
+        text.
+    preprocessor: Preprocessor
+        Object which performs the task of preprocessing the extracted messages
+        in order to being analysed then.
+    
+    """
     def __init__(self, service, quota = qu.QUOTA_UNITS_PER_DAY):
         self.service = service
         self.quota = quota
@@ -30,6 +157,7 @@ class Analyser:
             self.cv_corrected = multiprocessing.Condition()
             self.ext_fin = multiprocessing.Event()
             self.prep_fin = multiprocessing.Event()
+            self.typo_fin = multiprocessing.Event()
             
             l = self.service.users().labels()
             sent_lb = l.get(userId = 'me', id = 'SENT').execute()
