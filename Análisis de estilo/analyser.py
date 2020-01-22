@@ -12,6 +12,7 @@ from threadextractor import ThreadExtractor
 import multiprocessing
 import spacy
 from preprocessor import Preprocessor
+from typocorrector import TypoCorrector
 import confanalyser as cfa
 
 class Analyser:
@@ -141,6 +142,11 @@ class Analyser:
     preprocessor: Preprocessor
         Object which performs the task of preprocessing the extracted messages
         in order to being analysed then.
+    typocorrector: TypoCorrector
+        Object which performs the task of correcting typographic errors from
+        preprocessed messages in order to being analysed then.
+    nres: int
+        Number of the resource that is going to be extracted (messages or threads).
     
     """
     def __init__(self, service, quota = qu.QUOTA_UNITS_PER_DAY):
@@ -161,6 +167,7 @@ class Analyser:
             
             l = self.service.users().labels()
             sent_lb = l.get(userId = 'me', id = 'SENT').execute()
+            self.nres = sent_lb['messagesTotal']
             self.quota -= qu.LABELS_GET
 
             cost_msg_ext = self.__get_res_cost(qu.MSG_LIST, sent_lb['messagesTotal'], 
@@ -176,11 +183,27 @@ class Analyser:
                 self.extractor = ThreadExtractor(self.service, self.quota, 
                                                      self.msg_raw, self.cv_raw,
                                                      self.ext_fin)
+                self.nres = sent_lb['threadsTotal']
             self.nlp = spacy.load(cfa.SPACY_MODEL)
             self.preprocessor = Preprocessor(self.msg_raw, self.msg_prep, 
                                                  self.cv_raw, self.cv_prep,
                                                  self.ext_fin, self.prep_fin,
                                                  self.nlp)
+            self.typocorrector = TypoCorrector(self.msg_prep, self.msg_corrected,
+                                               self.cv_prep, self.cv_corrected,
+                                               self.prep_fin, self.typo_fin,
+                                               self.nlp)
 
     def __get_res_cost(self, listcost, numres, getcost):
         return listcost * (numres // cfa.NUM_RESOURCE_PER_LIST + 1) + getcost * numres
+    
+    def analyse(self, user, nextPageToken = None, sign = None):
+        p_ext = multiprocessing.Process(target = self.extractor.extract_sent_msg,
+                                        args = (self.nres, nextPageToken))
+        p_ext.start()
+        p_prep = multiprocessing.Process(target = self.preprocessor.star_preprocessing,
+                                         args = (user, sign))
+        p_prep.start()
+        p_typo = multiprocessing.Process(target = self.typocorrector.correct_msgs,
+                                         args = (user))
+        p_typo.start()

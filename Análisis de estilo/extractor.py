@@ -242,7 +242,7 @@ class Extractor(ABC):
         Parameters
         ----------
         nmsg: int
-            Number of messages to be extracted.
+            Number of messages or threads to be extracted.
         nextPage: str
             Page token to retrieve a specific page of results in the list.
 
