@@ -13,6 +13,7 @@ import multiprocessing
 import spacy
 from preprocessor import Preprocessor
 from typocorrector import TypoCorrector
+from stylemeter import StyleMeter
 import confanalyser as cfa
 
 class Analyser:
@@ -176,14 +177,19 @@ class Analyser:
                                                 qu.THREADS_GET)
 
             if (cost_msg_ext <= cost_thrd_ext):
+                with open('log.txt', 'a') as f:
+                    f.write('Message extractor has been selected.\n')
                 self.extractor = MessageExtractor(self.service, self.quota, 
                                                       self.msg_raw, self.cv_raw,
                                                       self.ext_fin)
             else:
+                with open('log.txt', 'a') as f:
+                    f.write('Thread extractor has been selected.\n')
                 self.extractor = ThreadExtractor(self.service, self.quota, 
                                                      self.msg_raw, self.cv_raw,
                                                      self.ext_fin)
                 self.nres = sent_lb['threadsTotal']
+            
             self.nlp = spacy.load(cfa.SPACY_MODEL)
             self.preprocessor = Preprocessor(self.msg_raw, self.msg_prep, 
                                                  self.cv_raw, self.cv_prep,
@@ -193,8 +199,27 @@ class Analyser:
                                                self.cv_prep, self.cv_corrected,
                                                self.prep_fin, self.typo_fin,
                                                self.nlp)
+            self.meter = StyleMeter(self.msg_corrected, self.cv_corrected,
+                                    self.typo_fin, self.nlp)
 
     def __get_res_cost(self, listcost, numres, getcost):
+        """
+        Gets the cost of extracting a resource (message or thread).
+        
+        Parameters
+        ----------
+        listcost: int
+            Cost of getting a list of the resource in quota units.
+        numres: int
+            Number of the resource that is going to be extracted.
+        getcost: int
+            Cost of getting a resource in quota units.
+            
+        Returns
+        -------
+        int: cost of extracting the resource.
+        
+        """
         return listcost * (numres // cfa.NUM_RESOURCE_PER_LIST + 1) + getcost * numres
     
     def analyse(self, user, nextPageToken = None, sign = None):
@@ -207,3 +232,7 @@ class Analyser:
         p_typo = multiprocessing.Process(target = self.typocorrector.correct_msgs,
                                          args = (user))
         p_typo.start()
+        
+        proc = [p_ext, p_prep, p_typo]
+        for p in proc:
+            p.join()
