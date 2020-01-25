@@ -9,7 +9,7 @@ from __future__ import print_function
 import os
 import json
 from csv import DictWriter
-import coftypo as cft
+import conftypo as cft
 import base64
 
 class TypoCorrector:
@@ -423,7 +423,7 @@ class TypoCorrector:
             csvfile = open(user + '/Preprocessing/preprocessed.csv', 'a')
             writer = DictWriter(csvfile, fieldnames = cft.CSV_COL)
         
-        self.prep_cv.aquire()
+        self.prep_cv.acquire()
         while (not(self.pre_fin.is_set()) or len(self.prep) > 0):
             extracted = False
             while (len(self.prep) == 0 and not(self.pre_fin.is_set())):
@@ -450,10 +450,14 @@ class TypoCorrector:
                     discard = self.__yes_no_question(cft.DISC_MSG)
                 
                 i = 0
+                # Sentence index: indicates the initial token of the sentence
                 s_ind = -1
+                # Sentence init: indicates the position of the first chartacter
                 s_ini = 0
+                # Number of typo errors detected
                 count = 0
                 while (i < len(msg_typo['doc']) and not(discard)):
+                    # If the token stars a sentence
                     if msg_typo['doc'][i].is_sent_start:
                         s_ind += 1
                         s_ini = msg_typo['doc'][i].idx

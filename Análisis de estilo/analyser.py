@@ -200,7 +200,7 @@ class Analyser:
                                                self.prep_fin, self.typo_fin,
                                                self.nlp)
             self.meter = StyleMeter(self.msg_corrected, self.cv_corrected,
-                                    self.typo_fin, self.nlp)
+                                    self.typo_fin)
 
     def __get_res_cost(self, listcost, numres, getcost):
         """
