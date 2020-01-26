@@ -11,6 +11,7 @@ import json
 from csv import DictWriter
 import conftypo as cft
 import base64
+from mytoken import MyToken
 
 class TypoCorrector:
     """
@@ -69,15 +70,7 @@ class TypoCorrector:
                 ]
                 'corrections' : [
                     {
-                        'text' : string,
-                        'is_punct' : boolean
-                        'is_lpunct' : boolean       # Optional
-                        'is_rpunct' : boolean       # Optional
-                        'is_url' : boolean
-                        'is_email' : boolean
-                        'lemma' : string            # Optional
-                        'is_stop' : boolean
-                        'pos' : string              # Optional
+                        'token' : <MyToken class>
                         'position' : int
                         'sentenceIndex' : int
                         'sentenceInit' : int
@@ -102,17 +95,7 @@ class TypoCorrector:
         them if they appears later in the correction. It has the following
         structure:
             {
-            <token.text> : {
-                    'text' : string,
-                    'is_punct' : boolean
-                    'is_lpunct' : boolean       # Optional
-                    'is_rpunct' : boolean       # Optional
-                    'is_url' : boolean
-                    'is_email' : boolean
-                    'lemma' : string            # Optional
-                    'is_stop' : boolean
-                    'pos' : string              # Optional
-                }
+            <token.text> : <MyToken class>
             }
             
     """
@@ -169,7 +152,13 @@ class TypoCorrector:
             self.oov = {}
         else:
             with open('oov.json', 'r') as fp:
-                self.oov = json.load(fp)
+                d = json.load(fp)
+            for key in d:
+                w = d['key']
+                tok = MyToken(w['text'], w['punct'], w['rpunct'], w['lpunct'], 
+                              w['url'], w['email'], w['lemma'], w['stop'], w['pos'],
+                              w['bracket'])
+                self.oov['key'] = tok
                 
     def __save_words_oov(self):
         """
@@ -181,8 +170,16 @@ class TypoCorrector:
         None.
 
         """
+        d = {}
+        for key in self.oov:
+            t = self.oov[key]
+            d[key] = {'text' : t.text, 'punct': t.is_punct, 'rpunct' : t.is_right_punct,
+                      'lpunct' : t.is_left_punct, 'url' : t.like_url,
+                      'email' : t.like_email, 'lemma' : t.lemma_, 'stop' : t.is_stop,
+                      'pos' : t.pos_, 'bracket' : t.is_bracket}
+            
         with open('oov.json', 'w') as fp:
-            json.dump(self.oov, fp)
+            json.dump(d, fp)
             
     def __yes_no_question(self, question):
         """
@@ -314,36 +311,38 @@ class TypoCorrector:
             self.__correct_typo(ind, msg_typo, s_ind, s_ini)
             return ind
         elif msg_typo['doc'][ind].text in self.oov:
-            pos = {'position' : ind, 'sentenceIndex' : s_ind, 'sentenceInit' : s_ini}
-            msg_typo['corrections'].append({**pos, 
-                                            **self.oov[msg_typo['doc'][ind].text]})
+            cor = {'position' : ind, 'sentenceIndex' : s_ind, 'sentenceInit' : s_ini,
+                   'token' : self.oov[msg_typo['doc'][ind].text]}
+            msg_typo['corrections'].append(cor)
             return ind + 1
         else:
-            ling_feat = {'text' : msg_typo['doc'][ind].text}
+            ling_feat = MyToken(msg_typo['doc'][ind].text)
             
             print('You will need to introduce some linguistic features:\n')
             
-            ling_feat['is_punct'] = self.__yes_no_question('Is the token punctuation?')
-            if ling_feat['is_punct']:
-                ling_feat['is_lpunct'] = self.__yes_no_question(cft.IS_LPUNCT)
-                ling_feat['is_rpunct'] = self.__yes_no_question(cft.IS_RPUNCT)
+            ling_feat.is_punct = self.__yes_no_question('Is the token punctuation?')
+            if ling_feat.is_punct:
+                ling_feat.is_left_punct = self.__yes_no_question(cft.IS_LPUNCT)
+                ling_feat.is_right_punct = self.__yes_no_question(cft.IS_RPUNCT)
+                ling_feat.is_bracket = self.__yes_no_question(cft.IS_BRACKET)
         
-            ling_feat['is_url'] = self.__yes_no_question('Is it an url?')
-            ling_feat['is_email'] = self.__yes_no_question('Is it an email?')
+            ling_feat.like_url = self.__yes_no_question('Is it an url?')
+            ling_feat.like_email = self.__yes_no_question('Is it an email?')
             
             if (self.__yes_no_question("Do you know the token's lemma?")):
-                ling_feat['lemma'] = self.__req_verified_answer(cft.TOK_LEM)
+                ling_feat.lemma_ = self.__req_verified_answer(cft.TOK_LEM)
                 
-            ling_feat['is_stop'] = self.__yes_no_question('Is a stop word?')
+            ling_feat.is_stop = self.__yes_no_question('Is a stop word?')
             
             if (self.__yes_no_question("Do you know the token's part-of-speech?")):
-                ling_feat['pos'] = self.__req_verified_answer(cft.TOK_POS)
+                ling_feat.pos_ = self.__req_verified_answer(cft.TOK_POS)
             
             if (self.__yes_no_question(cft.SAVE_OOV)):
-                self.oov[msg_typo['doc'][ind].text] = ling_feat.copy()
+                self.oov[msg_typo['doc'][ind].text] = ling_feat
             
-            pos = {'position' : ind, 'sentenceIndex' : s_ind, 'sentenceInit' : s_ini}
-            msg_typo['corrections'].append({**pos, **ling_feat})
+            cor = {'position' : ind, 'sentenceIndex' : s_ind, 'sentenceInit' : s_ini,
+                   'token' : ling_feat}
+            msg_typo['corrections'].append(cor)
             return ind + 1
     
     def __copy_data(self, prep_msg, msg_typo):
