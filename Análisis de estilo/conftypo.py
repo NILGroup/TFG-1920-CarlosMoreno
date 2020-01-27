@@ -7,7 +7,7 @@ Created on Thu Dec 26 23:45:23 2019
 
 IS_LPUNCT = 'Is it left punctuation?'
 IS_RPUNCT = 'Is it right punctuation?'
-IS_BRACKET= 'Is the token a bracket'
+IS_BRACKET= 'Is the token a bracket?'
 
 TOK_LEM = "Introduce the token's lemma: "
 TOK_POS = "Introduce the token's pos: "

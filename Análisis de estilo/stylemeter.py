@@ -9,6 +9,7 @@ from __future__ import print_function
 import os
 from csv import DictWriter
 import confstyle as cfs
+import math
 
 class StyleMeter:
     
@@ -239,6 +240,37 @@ class StyleMeter:
         
         return 1.599 * self.__lambdaFK(metrics) - 1.015 * beta - 31.517
         
+    def __calculate_Yule_richness(self, M, words):
+        """
+        Calculates the Yule's richness of vocabulary index which could be found
+        in Yule, G. U. (1944) The statistical study of literary vocabulary. Journal
+        of the Royal Statistical Society, 107(2), 129-131.
+        
+        Parameters
+        ----------
+        words: dict
+            Dictionary which relates each words with the number of times that
+            it appears in the text.
+        M: int
+            Number of diferent words in the text.
+            
+        Returns
+        -------
+        float: Yule's richness of vocabulary index.
+        
+        """
+        words_appearance = {}
+        for key in words:
+            if not(words[key] in words_appearance):
+                words_appearance[words[key]] = 0
+            words_appearance[words[key]] += 1
+            
+        yule_sum = 0
+        for i in words_appearance:
+            yule_sum += (math.pow(i, 2) * words_appearance[i] - M)
+            
+        return (math.pow(10, 4) * yule_sum) / math.pow(M, 2)
+    
     def __calculate_metrics(self, metrics, cor_msg, doc):
         self.__initialize_metrics(metrics, len(cor_msg['sentences']))
         
@@ -269,6 +301,11 @@ class StyleMeter:
         metrics['stopRatio'] = (metrics['numStopWords']/metrics['numWords']) * 100
         # Flesch-Kincaid (DuBay, 2004)
         metrics['difficultyLevel'] = self.__Flesch_Kincaid_Index(metrics)
+        # Honoré, A. (1979). Some simple measures of richness of vocabulary.
+        M = len(words)
+        metrics['richnessVocab'] = (100 * math.log(M))/(math.pow(M, 2))
+        # Yule, G. U. (1944) The statistical study of literary vocabulary.
+        metrics['richnessYule'] = self.__calculate_Yule_richness(M, words)
         
     def measure_style(self, user):
         if not os.path.exists(user + '/TypoCorrection'):
