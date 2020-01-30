@@ -150,11 +150,14 @@ class StyleMeter:
                     
         if not(len(t.text) in metrics['wordLength']):
             metrics['wordLength'][len(t.text)] = 0
+        if not(len(t.text) in m_sent['wordLength']):
             m_sent['wordLength'][len(t.text)] = 0
                     
         metrics['wordLength'][len(t.text)] += 1
         m_sent['wordLength'][len(t.text)] += 1
         words[t.lemma_] += 1
+        metrics['numWords'] += 1
+        m_sent['numWords'] += 1
                     
         if t.is_stop:
             metrics['numStopWords'] += 1
@@ -162,6 +165,27 @@ class StyleMeter:
         if t.pos_ in cfs.POS:
             metrics[t.pos_] += 1
             m_sent[t.pos_] += 1
+            
+    def __mean_word_length(self, metrics):
+        """
+        Obtains the mean word length.
+        
+        Parameters
+        ----------
+        metrics: dict
+            Dictionary where the metrics are stored.
+            
+        Returns
+        -------
+        float: mean word length.
+        
+        """
+        w_len = metrics['wordLength']
+        total_char = 0
+        for key in w_len:
+            total_char += key * w_len[key]
+        
+        return total_char/metrics['numWords']
             
     def __calculate_sentence_metrics(self, metrics, m_sent, s):
         """
@@ -181,7 +205,6 @@ class StyleMeter:
         None.
         
         """
-        m_sent['numWords'] = len(s['words'])
         m_sent['charLength'] = len(s['doc'].text)
             
         if not(m_sent['numWords'] in metrics['sentNumWords']):
@@ -191,6 +214,10 @@ class StyleMeter:
                 
         metrics['sentNumWords'][m_sent['numWords']] += 1
         metrics['sentLength'][m_sent['charLength']] += 1
+        
+        # Ril, Y., Y.C. & Fonseca, E. (2014) Determination of writing styles
+        m_sent['stopRatio'] = (m_sent['numStopWords']/m_sent['numWords']) * 100
+        m_sent['meanWordLen'] = self.__mean_word_length(m_sent)
         
     def __lambdaFK(self, metrics):
         """
@@ -271,6 +298,26 @@ class StyleMeter:
             
         return (math.pow(10, 4) * yule_sum) / math.pow(M, 2)
     
+    def __calculate_Simpson_Index(self, M, YuleChar):
+        """
+        Obtains the Simpson's Index from the Yule's Characteristic or Yule's 
+        richness of vocabulary index. The Simpson's index could be found in
+        Simpson, E.H. (1949). Measurement of diversity. Nature, 163, 688.
+        
+        Parameters
+        ----------
+        M: int
+            Number of diferent words in the text.
+        YuleChar: float
+            Yule's richness of vocabulary index.
+            
+        Returns
+        -------
+        float: Simpson's Index.
+        
+        """
+        return YuleChar/(math.pow(10, 4)*(1-1/M))
+    
     def __calculate_metrics(self, metrics, cor_msg, doc):
         self.__initialize_metrics(metrics, len(cor_msg['sentences']))
         
@@ -294,7 +341,6 @@ class StyleMeter:
             self.__calculate_sentence_metrics(metrics, m_sent, s)
             ind_sent += 1
         
-        metrics['numWords'] = len(doc)
         metrics['charLength'] = cor_msg['charLength']
         
         # Ril, Y., Y.C. & Fonseca, E. (2014) Determination of writing styles
@@ -306,6 +352,18 @@ class StyleMeter:
         metrics['richnessVocab'] = (100 * math.log(M))/(math.pow(M, 2))
         # Yule, G. U. (1944) The statistical study of literary vocabulary.
         metrics['richnessYule'] = self.__calculate_Yule_richness(M, words)
+        metrics['meanSentLen'] = metrics['numWords']/len(cor_msg['sentences'])
+        metrics['meanWordLen'] = self.__mean_word_length(metrics)
+        metrics['numDifWords'] = len(words)
+        
+        if metrics['ADJ'] != 0:
+            metrics['verbAdjectiveRatio'] = metrics['VERB']/metrics['ADJ']
+        if metrics['PRON'] != 0:
+            metrics['detPronRatio'] = metrics['DET']/metrics['PRON']
+        
+        K = metrics['richnessYule']
+        # Simpson, E.H. (1949). Measurement of diversity
+        metrics['SimpsonIndex'] = self.__calculate_Simpson_Index(M, K)
         
     def measure_style(self, user):
         if not os.path.exists(user + '/TypoCorrection'):
