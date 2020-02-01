@@ -267,7 +267,7 @@ class StyleMeter:
         
         return 1.599 * self.__lambdaFK(metrics) - 1.015 * beta - 31.517
         
-    def __calculate_Yule_richness(self, M, words):
+    def __Yule_richness(self, M, words, words_appearance):
         """
         Calculates the Yule's richness of vocabulary index which could be found
         in Yule, G. U. (1944) The statistical study of literary vocabulary. Journal
@@ -280,13 +280,15 @@ class StyleMeter:
             it appears in the text.
         M: int
             Number of diferent words in the text.
+        words_appearance: dict
+            Dictionary which counts how many words are that they have appeared
+            the key number of times.
             
         Returns
         -------
         float: Yule's richness of vocabulary index.
         
         """
-        words_appearance = {}
         for key in words:
             if not(words[key] in words_appearance):
                 words_appearance[words[key]] = 0
@@ -298,7 +300,7 @@ class StyleMeter:
             
         return (math.pow(10, 4) * yule_sum) / math.pow(M, 2)
     
-    def __calculate_Simpson_Index(self, M, YuleChar):
+    def __Simpson_Index(self, M, YuleChar):
         """
         Obtains the Simpson's Index from the Yule's Characteristic or Yule's 
         richness of vocabulary index. The Simpson's index could be found in
@@ -317,6 +319,29 @@ class StyleMeter:
         
         """
         return YuleChar/(math.pow(10, 4)*(1-1/M))
+    
+    def __entropy(self, words, numWords):
+        """
+        Calculates the entropy of the given text.
+
+        Parameters
+        ----------
+        words : dict
+            Dictionary which relates each words with the number of times that
+            it appears in the text.
+        numWords : int
+            Number of words in the text.
+
+        Returns
+        -------
+        float: entropy.
+
+        """
+        H = 0
+        for key in words:
+            p = words[key]/numWords
+            H += p * math.log(p)/math.log(numWords)
+        return -100 * H
     
     def __calculate_metrics(self, metrics, cor_msg, doc):
         self.__initialize_metrics(metrics, len(cor_msg['sentences']))
@@ -350,8 +375,10 @@ class StyleMeter:
         # Honoré, A. (1979). Some simple measures of richness of vocabulary.
         M = len(words)
         metrics['richnessVocab'] = (100 * math.log(M))/(math.pow(M, 2))
+        metrics['wordsAppearance'] = {}
         # Yule, G. U. (1944) The statistical study of literary vocabulary.
-        metrics['richnessYule'] = self.__calculate_Yule_richness(M, words)
+        metrics['richnessYule'] = self.__Yule_richness(M, words, 
+                                                       metrics['wordsAppearance'])
         metrics['meanSentLen'] = metrics['numWords']/len(cor_msg['sentences'])
         metrics['meanWordLen'] = self.__mean_word_length(metrics)
         metrics['numDifWords'] = len(words)
@@ -361,9 +388,9 @@ class StyleMeter:
         if metrics['PRON'] != 0:
             metrics['detPronRatio'] = metrics['DET']/metrics['PRON']
         
-        K = metrics['richnessYule']
         # Simpson, E.H. (1949). Measurement of diversity
-        metrics['SimpsonIndex'] = self.__calculate_Simpson_Index(M, K)
+        metrics['SimpsonIndex'] = self.__Simpson_Index(M, metrics['richnessYule'])
+        metrics['entropy'] = self.__entropy(words, metrics['numWords'])
         
     def measure_style(self, user):
         if not os.path.exists(user + '/TypoCorrection'):
