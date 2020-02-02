@@ -344,6 +344,23 @@ class StyleMeter:
         return -100 * H
     
     def __calculate_metrics(self, metrics, cor_msg, doc):
+        """
+        Calculates the style metrics.
+        
+        Parameters
+        ----------
+        metrics : dict
+            Dictionary where the metrics are going to be stored.
+        cor_msg: dict
+            Dictionary which stores the information of the message whose
+            typographic errors has been corrected.
+        doc: Spacy's doc
+        
+        Returns
+        -------
+        None.
+        
+        """
         self.__initialize_metrics(metrics, len(cor_msg['sentences']))
         
         words = {}
@@ -395,14 +412,24 @@ class StyleMeter:
     def measure_style(self, user):
         if not os.path.exists(user + '/TypoCorrection'):
             os.mkdir(user + '/TypoCorrection')
+        if not os.path.exists(user + '/Metrics'):
+            os.mkdir(user + 'Metrics')
             
         if not os.path.exists(user + '/TypoCorrection/typocorrected.csv'):
-            csvfile = open(user + '/TypoCorrection/typocorrected', 'w')
-            writer = DictWriter(csvfile, fieldnames = cfs.CSV_COL)
-            writer.writeheader()
+            csvtypo = open(user + '/TypoCorrection/typocorrected.csv', 'w')
+            writerTypo = DictWriter(csvtypo, fieldnames = cfs.CSV_TYPO_COL)
+            writerTypo.writeheader()
         else:
-            csvfile = open(user + '/TypoCorrection/typocorrected', 'a')
-            writer = DictWriter(csvfile, fieldnames = cfs.CSV_COL)
+            csvtypo = open(user + '/TypoCorrection/typocorrected.csv', 'a')
+            writerTypo = DictWriter(csvtypo, fieldnames = cfs.CSV_TYPO_COL)
+            
+        if not os.path.exists(user + '/Metrics/stylemetrics.csv'):
+            csvMetrics = open(user + '/Metrics/stylemetrics.csv', 'w')
+            writerMetrics = DictWriter(csvMetrics, fieldnames = cfs.CSV_MET_COL)
+            writerMetrics.writeheader()
+        else:
+            csvMetrics = open(user + '/Metrics/stylemetrics.csv', 'a')
+            writerMetrics = DictWriter(csvMetrics, fieldnames = cfs.CSV_MET_COL)
             
         self.cor_cv.acquire()
         while (not(self.typo_fin.is_set()) or len(self.corrected) > 0):
