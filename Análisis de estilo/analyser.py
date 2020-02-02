@@ -148,9 +148,31 @@ class Analyser:
         preprocessed messages in order to being analysed then.
     nres: int
         Number of the resource that is going to be extracted (messages or threads).
+    meter: StyleMeter
+        Object which performs the task of measuring the writting style from
+        corrected messages.
     
     """
-    def __init__(self, service, quota = qu.QUOTA_UNITS_PER_DAY):
+    def __init__(self, service, quota = qu.QUOTA_UNITS_PER_DAY, ext_msg = None):
+        """
+        Class constructor.
+
+        Parameters
+        ----------
+        service : Gmail resource
+            Gmail API resource with an Gmail user session opened.
+        quota : int, optional
+            Gmail API quota units available for message extraction. The default 
+            is qu.QUOTA_UNITS_PER_DAY.
+        ext_msg: bool, optional
+            Indicates whether there where a previous extraction and whether it
+            extracts messages or threads. The default is None.
+
+        Returns
+        -------
+        Constructed Analyser class.
+
+        """
         self.service = service
         self.quota = quota
         
@@ -176,7 +198,7 @@ class Analyser:
             cost_thrd_ext = self.__get_res_cost(qu.THREADS_LIST, sent_lb['threadsTotal'], 
                                                 qu.THREADS_GET)
 
-            if (cost_msg_ext <= cost_thrd_ext):
+            if (((ext_msg is None) and cost_msg_ext <= cost_thrd_ext) or ext_msg):
                 with open('log.txt', 'a') as f:
                     f.write('Message extractor has been selected.\n')
                 self.extractor = MessageExtractor(self.service, self.quota, 
@@ -223,6 +245,23 @@ class Analyser:
         return listcost * (numres // cfa.NUM_RESOURCE_PER_LIST + 1) + getcost * numres
     
     def analyse(self, user, nextPageToken = None, sign = None):
+        """
+        Analyses all the messages of the given user.
+        
+        Parameters
+        ----------
+        user: str
+            Gmail user.
+        nextPageToken: str, optional
+            Token of the next page for extracting messages. The default is None.
+        sign: str, optional
+            Signature of the user in his emails. The default value is None.
+            
+        Returns
+        -------
+        None.
+        
+        """
         p_ext = multiprocessing.Process(target = self.extractor.extract_sent_msg,
                                         args = (self.nres, nextPageToken))
         p_ext.start()
@@ -232,7 +271,10 @@ class Analyser:
         p_typo = multiprocessing.Process(target = self.typocorrector.correct_msgs,
                                          args = (user))
         p_typo.start()
+        p_meter = multiprocessing.Process(target = self.meter.measure_style,
+                                          args = (user))
+        p_meter.start()
         
-        proc = [p_ext, p_prep, p_typo]
+        proc = [p_ext, p_prep, p_typo, p_meter]
         for p in proc:
             p.join()
