@@ -10,8 +10,57 @@ import os
 from csv import DictWriter
 import confstyle as cfs
 import math
+import base64
 
 class StyleMeter:
+    """
+    StyleMeter class performs the task of calculating some metrics which describes
+    the writting style of the message.
+    
+    Attributes
+    ----------
+    corrected : list
+        List of preprocessed messages whose typographical errors have been 
+        corrected. Shared resource wich is a list of messages with the following 
+        structure:
+            {
+                'id' : string,
+                'threadId' : string,
+                'to' : [ string ],
+                'cc' : [ string ],
+                'bcc' : [ string ],
+                'from' : string,
+                'depth' : int,               # How many messages precede it
+                'date' : long,               # Epoch ms
+                'subject' : string,          # Optional
+                'bodyPlain' : string,
+                'bodyBase64Plain' : string,
+                'plainEncoding' : string,    # Optional
+                'charLength' : int
+                'doc' : Spacy's Doc
+                'sentences' : [
+                    {
+                        doc: Spacy's Doc of the sentence
+                        words: [Spacy's Tokens]
+                    }
+                ]
+                'corrections' : [
+                    {
+                        'token' : <MyToken class>
+                        'position' : int
+                        'sentenceIndex' : int
+                        'sentenceInit' : int
+                    }
+                ]
+            }
+    cor_cv: multiprocessing.Condition
+        Conditional variable which is needed to access to the shared 
+        resource (corrected).
+    pre_fin: multiprocessing.Event
+        Event which informs that the process in charge of the message 
+        typographical correcting has finished.
+        
+    """
     
     def __init__(self, corrected, cor_cv, typo_fin):
         """
@@ -409,11 +458,24 @@ class StyleMeter:
         metrics['SimpsonIndex'] = self.__Simpson_Index(M, metrics['richnessYule'])
         metrics['entropy'] = self.__entropy(words, metrics['numWords'])
         
-    def measure_style(self, user):
+    def __create_typo_writer(self, user):
+        """
+        Creates a csv dictionary writer for the messages that have been typographical
+        corrected.
+        
+        Parameters
+        ----------
+        user: str
+            Gmail user.
+        
+        Returns
+        -------
+        DictWriter: csv dictionary writer.
+        File descriptor: csv file descriptor.
+        
+        """
         if not os.path.exists(user + '/TypoCorrection'):
             os.mkdir(user + '/TypoCorrection')
-        if not os.path.exists(user + '/Metrics'):
-            os.mkdir(user + 'Metrics')
             
         if not os.path.exists(user + '/TypoCorrection/typocorrected.csv'):
             csvtypo = open(user + '/TypoCorrection/typocorrected.csv', 'w')
@@ -422,7 +484,26 @@ class StyleMeter:
         else:
             csvtypo = open(user + '/TypoCorrection/typocorrected.csv', 'a')
             writerTypo = DictWriter(csvtypo, fieldnames = cfs.CSV_TYPO_COL)
-            
+        return writerTypo, csvtypo
+    
+    def __create_metrics_writer(self, user):
+        """
+        Creates a csv dictionary writer for the calculated metrics.
+        
+        Parameters
+        ----------
+        user: str
+            Gmail user.
+        
+        Returns
+        -------
+        DictWriter: csv dictionary writer.
+        File descriptor: csv file descriptor.
+        
+        """
+        if not os.path.exists(user + '/Metrics'):
+            os.mkdir(user + 'Metrics')
+                
         if not os.path.exists(user + '/Metrics/stylemetrics.csv'):
             csvMetrics = open(user + '/Metrics/stylemetrics.csv', 'w')
             writerMetrics = DictWriter(csvMetrics, fieldnames = cfs.CSV_MET_COL)
@@ -430,6 +511,24 @@ class StyleMeter:
         else:
             csvMetrics = open(user + '/Metrics/stylemetrics.csv', 'a')
             writerMetrics = DictWriter(csvMetrics, fieldnames = cfs.CSV_MET_COL)
+        return writerMetrics, csvMetrics
+        
+    def measure_style(self, user):
+        """
+        Measures the writting style of the messages of the given user.
+
+        Parameters
+        ----------
+        user : str
+            Gmail user.
+
+        Returns
+        -------
+        None.
+
+        """
+        writerTypo, csvtypo = self.__create_typo_writer(user)
+        writerMetrics, csvMetrics = self.__create_metrics_writer(user)
             
         self.cor_cv.acquire()
         while (not(self.typo_fin.is_set()) or len(self.corrected) > 0):
@@ -447,6 +546,19 @@ class StyleMeter:
                 doc = cor_msg.pop('doc')
                 self.__calculate_metrics(metrics, cor_msg, doc)
                 
+                for j in range(len(cor_msg['sentences'])):
+                    cor_msg['sentences'][j] = [base64.urlsafe_b64encode(
+                        t.text.encode()).decode() for t in 
+                        cor_msg['sentences'][j]['words']]
+                    
+                for j in range(len(cor_msg['corrections'])):
+                    cor_msg['corrections'][j] = base64.urlsafe_b64encode(
+                        cor_msg['corrections'][j]['token'].text.encode()).decode()
+                
+            writerTypo.writerow(cor_msg)
+            writerMetrics.writerow(metrics)
             self.cor_cv.acquire()
-        
+            
         self.cor_cv.release()
+        csvtypo.close()
+        csvMetrics.close()
