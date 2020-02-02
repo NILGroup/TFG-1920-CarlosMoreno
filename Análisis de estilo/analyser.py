@@ -165,7 +165,7 @@ class Analyser:
             Gmail API quota units available for message extraction. The default 
             is qu.QUOTA_UNITS_PER_DAY.
         ext_msg: bool, optional
-            Indicates whether there where a previous extraction and whether it
+            Indicates whether there were a previous extraction and whether it
             extracts messages or threads. The default is None.
 
         Returns
