@@ -199,7 +199,7 @@ class Preprocessor:
                     i += 2
             elif (text[i] == '\n'):
                 i += 1
-                while(text[i] == '\n'):
+                while((i < n) and text[i] == '\n'):
                     new_text += text[i]
                     i += 1
             else:
@@ -358,7 +358,7 @@ class Preprocessor:
         
         nums = 0
         for s in sentences:
-            prep['setences'].append({})
+            prep['sentences'].append({})
             prep['sentences'][nums]['doc'] = self.nlp(s)
             prep['sentences'][nums]['words'] = [t for t in 
                                                 prep['sentences'][nums]['doc']]

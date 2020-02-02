@@ -289,9 +289,10 @@ class Extractor(ABC):
         self.cond_var.release()
         
         with open('log.txt', 'a') as f:
-                    f.write('\n\nEXTRACTION FINISHED:\n')
-                    f.write('Extracted resources: ' + extracted + '\n')
-                    f.write('Remaining quota: ' + self.quota + '\n')
+            f.write('\n\nEXTRACTION FINISHED:\n')
+            f.write(f'Extracted resources: {extracted}\n')
+            f.write(f'Remaining quota: {self.quota}\n')
                     
-                    if extracted < nmsg:
-                        f.write('Next Page Token: '+ nextPage + '\n')
+            if extracted < nmsg:
+                f.write('Actual Page Token: ' + actual_page + '\n')
+                f.write('Next Page Token: '+ nextPage + '\n')

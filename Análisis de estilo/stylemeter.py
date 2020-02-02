@@ -502,7 +502,7 @@ class StyleMeter:
         
         """
         if not os.path.exists(user + '/Metrics'):
-            os.mkdir(user + 'Metrics')
+            os.mkdir(user + '/Metrics')
                 
         if not os.path.exists(user + '/Metrics/stylemetrics.csv'):
             csvMetrics = open(user + '/Metrics/stylemetrics.csv', 'w')

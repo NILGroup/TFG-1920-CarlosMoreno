@@ -135,6 +135,7 @@ class TypoCorrector:
         self.corrected_cv = cor_cv
         self.pre_fin = prep_fin
         self.typo_fin = typo_fin
+        self.oov = {}
         self.__load_words_oov()
         self.nlp = nlp
         
@@ -148,17 +149,15 @@ class TypoCorrector:
         None.
 
         """
-        if not os.path.exists('oov.json'):
-            self.oov = {}
-        else:
+        if os.path.exists('oov.json'):
             with open('oov.json', 'r') as fp:
                 d = json.load(fp)
             for key in d:
-                w = d['key']
+                w = d[key]
                 tok = MyToken(w['text'], w['punct'], w['rpunct'], w['lpunct'], 
                               w['url'], w['email'], w['lemma'], w['stop'], w['pos'],
                               w['bracket'])
-                self.oov['key'] = tok
+                self.oov[key] = tok
                 
     def __save_words_oov(self):
         """
@@ -480,7 +479,7 @@ class TypoCorrector:
                     self.__copy_data(prep_msg, msg_typo)
                     writer.writerow(prep_msg)
                     
-                    self.__msg_typo['charLength'] = len(msg_typo['bodyPlain'])
+                    msg_typo['charLength'] = len(msg_typo['bodyPlain'])
                     msg_typo['bodyBase64Plain'] = base64.urlsafe_b64encode(
                         msg_typo['bodyPlain'].encode()).decode()
                     
