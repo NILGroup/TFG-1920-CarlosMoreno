@@ -116,6 +116,28 @@ class Preprocessor:
         self.prep_finished = prp_fin
         self.nlp = nlp
         
+    def __extract_html_tag(self, html, pos):
+        """
+        Extracts the HTML tag in the given position of the given string.
+
+        Parameters
+        ----------
+        html: str
+            HTML code.
+        pos: int
+            Position of the tag that we want to check.
+
+        Returns
+        -------
+        str: HTML tag.
+
+        """
+        tag = ""
+        while (html[pos] != ' ' and html[pos] != '>'):
+            tag += html[pos]
+            pos += 1
+        return tag
+    
     def __is_break_line_tag(self, html, pos):
         """
         Checks if the html tag causes a break line.
@@ -132,12 +154,88 @@ class Preprocessor:
         bool: True if the tag causes a break line and false if it does not.
         
         """
-        tag = ""
-        while (html[pos] != ' ' and html):
-            tag += html[pos]
-            pos += 1
-        return tag in cf.TAGS_BREAKS_LINE 
+        return self.__extract_html_tag(html, pos) in cf.TAGS_BREAKS_LINE
         
+    def __is_text_format_tag(self, html, pos):
+        """
+        Checks if the html tag modifies the text's format.
+        
+        Parameters
+        ----------
+        html: str
+            HTML code.
+        pos: int
+            Position of the tag that we want to check.
+            
+        Returns
+        -------
+        bool: True if the tag modifies the text's format and false if it does
+        not.
+        
+        """
+        return self.__extract_html_tag(html, pos) in cf.TAGS_FORMAT_TEXT
+    
+    def __is_list_tag(self, html, pos):
+        """
+        Checks if the html tag causes an ordered or an unordered list.
+        
+        Parameters
+        ----------
+        html: str
+            HTML code.
+        pos: int
+            Position of the tag that we want to check.
+            
+        Returns
+        -------
+        bool: True if the tag causes an ordered or an unordered list and false 
+        if it does not.
+        
+        """
+        return self.__extract_html_tag(html, pos) in cf.TAGS_LIST
+    
+    def __is_known_tag(self, html, pos):
+        """
+        Checks if the html tag is a list tag, a break line tag or a text format
+        tag.
+        
+        Parameters
+        ----------
+        html: str
+            HTML code.
+        pos: int
+            Position of the tag that we want to check.
+            
+        Returns
+        -------
+        bool: True if the tag is a list tag, a break line tag or a text format
+        tag and false if it does not.
+        
+        """
+        tag = self.__extract_html_tag(html, pos)
+        return ((tag in cf.TAGS_BREAKS_LINE) or (tag in cf.TAGS_FORMAT_TEXT) or
+            (tag in cf.TAGS_LIST))
+    
+    def __is_vspace_tag(self, html, pos):
+        """
+        Checks if the html tag is a list tag or a break line tag.
+        
+        Parameters
+        ----------
+        html: str
+            HTML code.
+        pos: int
+            Position of the tag that we want to check.
+            
+        Returns
+        -------
+        bool: True if the tag is a list tag or a break line tag and false if 
+        it does not.
+        
+        """
+        tag = self.__extract_html_tag(html, pos)
+        return ((tag in cf.TAGS_BREAKS_LINE) or (tag in cf.TAGS_LIST))
+    
     def __remove_soft_breaks(self, plain, html):
         """
         Removes soft break lines of the message body by comparing its
@@ -153,27 +251,78 @@ class Preprocessor:
         Returns
         -------
         str: Message body as plain text without soft break lines.
+        
         """
         cleaned_text = ""
         ind = html.find('>') + 1
+        start_list_item = False
         
         for c in plain:
-            while (c != html[ind] and not c in cf.BREAK_LINE):
-                if html[ind] == '<':
-                    ind = html.find('>', ind) + 1
-                else:
+            while ((c in cf.BREAK_LINE or c == ' ' or c == '*') and 
+                   html[ind] == '<' and not self.__is_known_tag(html, ind + 1)):
+                ind = html.find('>', ind) + 1
+                if (ind < len(html) - 1 and html[ind] == ' ' and 
+                    html[ind + 1] == '<' and html[ind] != c):
                     ind += 1
                     
-            while (c in cf.BREAK_LINE and html[ind] == '<' and 
-                   not self.__is_break_line_tag(html, ind + 1)):
-                ind = html.find('>', ind) + 1
-                    
-            if (not c in cf.BREAK_LINE):
-                ind += 1
-                cleaned_text += c
-            elif (html[ind] == '<' and self.__is_break_line_tag(html, ind + 1)):
-                cleaned_text += c
-                ind = html.find('>', ind) + 1
+            if not(start_list_item):
+                while (c != html[ind] and not(c.isdigit()) and 
+                       (c not in cf.SPECIAL_CHAR) and (not c in cf.BREAK_LINE)):
+                    if html[ind] == '<' and not self.__is_vspace_tag(html, ind + 1):
+                        ind = html.find('>', ind) + 1
+                        if (ind < len(html) - 1 and html[ind] == ' ' and
+                            html[ind + 1] == '<' and html[ind] != c):
+                            ind += 1
+                    elif html[ind] != '<':
+                        ind += 1
+                        
+                while ((c == '-' or c == '.' or c.isdigit()) and html[ind] == '<' 
+                       and not self.__is_known_tag(html, ind + 1)):
+                    ind = html.find('>', ind) + 1
+                    if (ind < len(html) - 1 and html[ind] == ' ' and 
+                        html[ind + 1] == '<' and html[ind] != c):
+                        ind += 1
+                        
+                if (c == html[ind]):
+                    ind += 1
+                    cleaned_text += c
+                elif (c in cf.BREAK_LINE and html[ind] == '<' and
+                      self.__is_break_line_tag(html, ind + 1)):
+                    cleaned_text += c
+                    ind = html.find('>', ind) + 1
+                elif c == '*':
+                    while (html[ind] == '<' and 
+                           self.__is_text_format_tag(html, ind + 1)):
+                        ind = html.find('>', ind) + 1
+                elif (c == '-' or c == '.' or c.isdigit()):
+                    start_list_item = True
+                    while (html[ind] == '<' and self.__is_list_tag(html, ind + 1)):
+                        ind = html.find('>', ind) + 1
+                        if (ind < len(html) - 1 and html[ind] == ' ' and 
+                            html[ind + 1] == '<' and html[ind] != c):
+                            ind += 1
+            else:
+                while(html[ind] == '<' and c != '*' and not c in cf.BREAK_LINE):
+                    ind = html.find('>', ind) + 1
+                    if (ind < len(html) - 1 and html[ind] == ' ' and 
+                        html[ind + 1] == '<' and html[ind] != c):
+                        ind += 1
+                        
+                if c == html[ind]:
+                    cleaned_text += c
+                    ind += 1
+                    start_list_item = False
+                elif (c == '*' and html[ind] == '<' and
+                      self.__is_text_format_tag(html, ind + 1)):
+                    ind = html.find('>', ind) + 1
+                    start_list_item = False
+                elif (c in cf.BREAK_LINE and html[ind] == '<' and
+                      self.__is_break_line_tag(html, ind + 1)):
+                    cleaned_text += c
+                    ind = html.find('>', ind) + 1
+                    start_list_item = False
+                
+        return cleaned_text
         
     def __clean_decoded_text(self, text):
         """
@@ -187,6 +336,7 @@ class Preprocessor:
         Returns
         -------
         str: Message body without soft break lines.
+        
         """
         new_text = ""
         i = 0
@@ -194,11 +344,15 @@ class Preprocessor:
         while i < n:
             if (text[i] == '\r' and (i + 1 < n) and text[i + 1] == '\n'):
                 i += 2
+                if (i < n and text[i].isalpha() and new_text[-1].isalpha()):
+                    new_text += ' '
                 while((i + 1 < n) and text[i] == '\r' and text[i + 1] == '\n'):
                     new_text += text[i] + text[i + 1]
                     i += 2
             elif (text[i] == '\n'):
                 i += 1
+                if (i < n and text[i].isalpha() and new_text[-1].isalpha()):
+                    new_text += ' '
                 while((i < n) and text[i] == '\n'):
                     new_text += text[i]
                     i += 1

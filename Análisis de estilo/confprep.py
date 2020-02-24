@@ -6,7 +6,11 @@ Created on Sat Nov 30 18:50:23 2019
 """
 
 TAGS_BREAKS_LINE = {'/p', '/div', 'br', 'br/'}
+TAGS_FORMAT_TEXT = {'b', '/b', 'strong', '/strong', 'i', '/i', 'em', '/em',
+                    'u', '/u', 's', '/s', 'del', '/del'}
+TAGS_LIST = {'ul', 'ol', 'li'}
 BREAK_LINE = {'\n', '\r'}
+SPECIAL_CHAR = {'*', '-', '.', ' '}
 
 CHAR_ERROR = 3
 

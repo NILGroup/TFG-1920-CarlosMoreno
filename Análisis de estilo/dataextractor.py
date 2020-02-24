@@ -278,7 +278,7 @@ class DataExtractor:
         plain_found = False
         html_found = False
     
-        while (not(plain_found) and not(html_found) and i < n):
+        while (not(plain_found) or not(html_found) and i < n):
             part = msg_parts[i]
 
             p_type = self.__get_part_type(part)
