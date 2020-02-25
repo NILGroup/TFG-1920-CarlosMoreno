@@ -435,7 +435,7 @@ class TypoCorrector:
             if (extracted and prep_msg['bodyPlain']):
                 msg_typo = {}
                 
-                msg_typo['bodyPlain'] = prep_msg['bodyPlain']
+                msg_typo['bodyPlain'] = prep_msg.pop('bodyPlain')
                 msg_typo['doc'] = prep_msg.pop('doc')
                 msg_typo['sentences'] = prep_msg['sentences'].copy()
                 msg_typo['corrections'] = []
@@ -473,7 +473,8 @@ class TypoCorrector:
                 
                 if not(discard):
                     for j in range(len(prep_msg['sentences'])):
-                        prep_msg['sentences'][j] = [t.text for t in 
+                        prep_msg['sentences'][j] = [base64.urlsafe_b64encode(
+                            t.text.encode()).decode() for t in  
                             prep_msg['sentences'][j]['words']]
                     
                     self.__copy_data(prep_msg, msg_typo)
