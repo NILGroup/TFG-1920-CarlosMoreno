@@ -435,13 +435,13 @@ class TypoCorrector:
             if (extracted and prep_msg['bodyPlain']):
                 msg_typo = {}
                 
-                msg_typo['bodyPlain'] = prep_msg.pop('bodyPlain')
+                msg_typo['bodyPlain'] = prep_msg['bodyPlain']
                 msg_typo['doc'] = prep_msg.pop('doc')
                 msg_typo['sentences'] = prep_msg['sentences'].copy()
                 msg_typo['corrections'] = []
                 
                 discard = False
-                if (msg_typo['doc'][0].is_oov):
+                if (msg_typo['doc'][0].pos_ != 'SPACE' and msg_typo['doc'][0].is_oov):
                     print('Typographic error found in the begining of the message.\n')
                     print('This is the text:\n\n')
                     print(msg_typo['bodyPlain'])
@@ -460,7 +460,8 @@ class TypoCorrector:
                         s_ind += 1
                         s_ini = msg_typo['doc'][i].idx
                     
-                    if msg_typo['doc'][i].is_oov:
+                    if (msg_typo['doc'][i].pos_ != 'SPACE' and 
+                        msg_typo['doc'][i].is_oov):
                         i = self.__req_token_correction(i, msg_typo, s_ind, s_ini)
                         count += 1
                         
@@ -472,8 +473,7 @@ class TypoCorrector:
                 
                 if not(discard):
                     for j in range(len(prep_msg['sentences'])):
-                        prep_msg['sentences'][j] = [base64.urlsafe_b64encode(
-                            t.text.encode()).decode() for t in 
+                        prep_msg['sentences'][j] = [t.text for t in 
                             prep_msg['sentences'][j]['words']]
                     
                     self.__copy_data(prep_msg, msg_typo)
