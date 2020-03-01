@@ -7,6 +7,9 @@ In order to generate messages with the user's writing style, it is necessary to 
 In this section we are going to explain the architecture of this analyser (see \ref{ssection:stylearch}) and each of the modules that compose it (they are explained in sections \ref{ssection:extmod}, \ref{ssection:prepmod}, \ref{ssection:typomod} and \ref{ssection:measmod}). Finally, we are going to discuss the obtained results and analyse them for drawing a conclusion (this discussion can be looked up in \ref{ssection:resconc}).
 
 \subsection{Architecture} \label{ssection:stylearch}
+The first step when we are designing a system's architecture is to know its input and output. In this case, we want to implement a simple natural language processing system that analyses the writing style of emails. As we have previously mentioned, the writing style analysis will be represented through chosen metrics. Therefore, our system's output is going to be that chosen metrics (they are explained in section \ref{ssection:measmod}).
+
+En respect of the system's input, because of the nature of the problem we face, it is reasonable to think that it must be a single email. However, we do not have the corpus of emails to analyse. For this reason, our first step will be to extract the emails that will be analysed. Hence, our system's input is going to be the Gmail user for accesing to the information that we are interested in.
 
 \subsection{Extracting Module} \label{ssection:extmod}
 
