@@ -204,7 +204,8 @@ class StyleMeter:
                     
         metrics['wordLength'][len(t.text)] += 1
         m_sent['wordLength'][len(t.text)] += 1
-        words[t.lemma_] += 1
+        if t.lemma_:
+            words[t.lemma_] += 1
         metrics['numWords'] += 1
         m_sent['numWords'] += 1
                     
@@ -417,9 +418,9 @@ class StyleMeter:
         ind_sent = 0
         
         for s in cor_msg['sentences']:
-            m_sent = ['metricsSentences'][ind_sent]
+            m_sent = metrics['metricsSentences'][ind_sent]
             for t in s['words']:
-                if t.is_oov:
+                if t.pos_ != 'SPACE' and t.is_oov:
                     cor = cor_msg['corrections'].pop(0)
                     t = cor['token']
                     
@@ -513,6 +514,66 @@ class StyleMeter:
             writerMetrics = DictWriter(csvMetrics, fieldnames = cfs.CSV_MET_COL)
         return writerMetrics, csvMetrics
         
+    def __copy_metadata(self, metrics, cor_msg):
+        """
+        Copies the data from the corrected message to the dictionary that
+        stores the metrics.
+        
+        Parameters
+        ----------
+        prep_msg: dict
+            Dictionary which represents the preprocessed message. It has the
+            next structure:
+                {
+                'id' : string,
+                'threadId' : string,
+                'to' : [ string ],
+                'cc' : [ string ],
+                'bcc' : [ string ],
+                'from' : string,
+                'depth' : int,               # How many messages precede it
+                'date' : long,               # Epoch ms
+                'subject' : string,          # Optional
+                'bodyPlain' : string,
+                'bodyBase64Plain' : string,
+                'plainEncoding' : string,    # Optional
+                'charLength' : int
+                'doc' : Spacy's Doc
+                'sentences' : [
+                    {
+                        doc: Spacy's Doc of the sentence
+                        words: [Spacy's Tokens]
+                    }
+                ]
+                'corrections' : [
+                    {
+                        'token' : <MyToken class>
+                        'position' : int
+                        'sentenceIndex' : int
+                        'sentenceInit' : int
+                    }
+                ]
+            }
+        metrics: dict
+            Dictionary where the data is going to be copied.
+            
+        Returns
+        -------
+        None.
+        
+        """
+        metrics['id'] = cor_msg['id']
+        metrics['threadId'] = cor_msg['threadId']
+        metrics['to'] = cor_msg['to']
+        metrics['cc'] = cor_msg['cc']
+        metrics['bcc'] = cor_msg['bcc']
+        metrics['from'] = cor_msg['from']
+        metrics['depth'] = cor_msg['depth']
+        metrics['date'] = cor_msg['date']
+        
+        if 'subject' in cor_msg:
+            metrics['subject'] = cor_msg['subject']
+    
     def measure_style(self, user):
         """
         Measures the writting style of the messages of the given user.
@@ -545,6 +606,7 @@ class StyleMeter:
                 del cor_msg['bodyPlain']
                 doc = cor_msg.pop('doc')
                 self.__calculate_metrics(metrics, cor_msg, doc)
+                self.__copy_metadata(metrics, cor_msg)
                 
                 for j in range(len(cor_msg['sentences'])):
                     cor_msg['sentences'][j] = [base64.urlsafe_b64encode(
