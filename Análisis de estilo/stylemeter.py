@@ -120,7 +120,7 @@ class StyleMeter:
         metrics['num3Dots'] = 0
         metrics['numBrackets'] = 0
         
-        metrics['wordLength'] = {}
+        metrics['wordLength'] = {1:0, 2:0}
         metrics['charLength'] = 0
         metrics['numWords'] = 0
         
@@ -129,7 +129,7 @@ class StyleMeter:
         metrics['sentLength'] = {}
         metrics['sentNumWords'] = {}
         # Creates a dictionary of information for each sentence
-        metrics['metricsSentences'] = [met_sents for i in range(numSentences)]
+        metrics['metricsSentences'] = [met_sents.copy() for i in range(numSentences)]
         
     def __calculate_punct_metrics(self, metrics, m_sent, open_brackets, t):
         """
@@ -416,13 +416,15 @@ class StyleMeter:
         words = {}
         open_brackets = 0
         ind_sent = 0
+        ind_cor = 0
         
         for s in cor_msg['sentences']:
             m_sent = metrics['metricsSentences'][ind_sent]
             for t in s['words']:
                 if t.pos_ != 'SPACE' and t.is_oov:
-                    cor = cor_msg['corrections'].pop(0)
+                    cor = cor_msg['corrections'][ind_cor]
                     t = cor['token']
+                    ind_cor += 1
                     
                 if t.is_punct:
                     open_brackets = self.__calculate_punct_metrics(metrics, m_sent, 
@@ -521,7 +523,9 @@ class StyleMeter:
         
         Parameters
         ----------
-        prep_msg: dict
+        metrics: dict
+            Dictionary where the data is going to be copied.
+        cor_msg: dict
             Dictionary which represents the preprocessed message. It has the
             next structure:
                 {
@@ -554,8 +558,6 @@ class StyleMeter:
                     }
                 ]
             }
-        metrics: dict
-            Dictionary where the data is going to be copied.
             
         Returns
         -------

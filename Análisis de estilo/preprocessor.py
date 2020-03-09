@@ -514,13 +514,11 @@ class Preprocessor:
         sentences = [s.text for s in prep['doc'].sents]
         prep['sentences'] = []
         
-        nums = 0
         for s in sentences:
             prep['sentences'].append({})
-            prep['sentences'][nums]['doc'] = self.nlp(s)
-            prep['sentences'][nums]['words'] = [t for t in 
-                                                prep['sentences'][nums]['doc']]
-            nums += 1
+            prep['sentences'][-1]['doc'] = self.nlp(s)
+            prep['sentences'][-1]['words'] = [t for t in 
+                                                prep['sentences'][-1]['doc']]
                     
     def star_preprocessing(self, user, sign = None):
         """

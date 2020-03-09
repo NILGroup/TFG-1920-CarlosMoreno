@@ -4,8 +4,9 @@ Created on Sun Jan 26 11:20:48 2020
 
 @author: Carlos Moreno Morera
 """
+import mongoengine
 
-class MyToken:
+class MyToken(mongoengine.EmbeddedDocument):
     """
     MyToken class substitutes Spacy's Tokens when the word is out of vocabulary.
     
@@ -31,8 +32,30 @@ class MyToken:
         Part of speech.
     is_bracket: bool
         Is the token a bracket?
+    position: int
+        Index which indicates the position of the token.
+    sentenceIndex: int
+        Index of the sentence where the typographic error is.
+    sentenceInit: int
+        Index of the begining of the sentence in the complete text.
         
     """
+    
+    text = mongoengine.StringField()
+    is_punct = mongoengine.BooleanField(default = False)
+    is_right_punct = mongoengine.BooleanField(default = False)
+    is_left_punct = mongoengine.BooleanField(default = False)
+    like_url = mongoengine.BooleanField(default = False)
+    like_email = mongoengine.BooleanField(default = False)
+    lemma_ = mongoengine.StringField()
+    is_stop = mongoengine.BooleanField(default = False)
+    pos_ = mongoengine.StringField()
+    is_bracket = mongoengine.BooleanField(default = False)
+    
+    position = mongoengine.IntField()
+    sentenceIndex = mongoengine.IntField()
+    sentenceInit = mongoengine.IntField()
+    
     def __init__(self, text = '', is_punct = False, is_right_punct = False,
                  is_left_punct = False, like_url = False, like_email = False,
                  lemma_ = '', is_stop = False, pos_ = '', is_bracket = False):
