@@ -9,12 +9,13 @@ from __future__ import print_function
 from extractor import Extractor
 import quotaunits as qu
 import base64
+from messageinfo import MessageInfo
 
 class ThreadExtractor(Extractor):
     """
     Implements Extractor class
     """
-    def __init__(self, service, quota, msgs, cv, has_finished):
+    def __init__(self, service, quota):
         """
         Class constructor.
 
@@ -24,20 +25,13 @@ class ThreadExtractor(Extractor):
             Gmail API resource with an Gmail user session opened.
         quota: int
             Gmail API quota units available for message extraction.
-        msgs: list
-            List of information about extracted messages.
-        cv: multiprocessing.Condition
-            Conditional varable for accessing to msgs.
-        has_finished: multiprocessing.Event
-            Event which informs that the extraction has finished to the rest
-            of the preocesses.
 
         Returns
         -------
         Constructed ThreadExtractor class.
 
         """
-        super().__init__(service, quota, msgs, cv, has_finished)
+        super().__init__(service, quota)
         self.min_qu = qu.MIN_QUNITS_THRD
         self.list_key = 'threads'
 
@@ -90,65 +84,46 @@ class ThreadExtractor(Extractor):
 
     def extract_msgs_from_resource(self, res):
         """
-        Obtains a list with the information of the given thread.
+        Obtains a list of extracted messages.
 
         Parameters
         ----------
-        res : Gmail API users.threads resource
-            Gmail API users.threads resource.
+        res : Gmail API resource
+            Gmail API resource (threads or messages) the specific extractor.
 
         Returns
         -------
-        A list of messages with the following structure:
-        {
-            'id' : string,
-            'threadId' : string,
-            'to' : [ string ],
-            'cc' : [ string ],
-            'bcc' : [ string ],
-            'from' : string,
-            'depth' : int,               # How many messages precede it
-            'date' : long,               # Epoch ms
-            'subject' : string,
-            'bodyPlain' : string,
-            'bodyHtml' : string,
-            'bodyBase64Plain' : string,
-            'bodyBase64Html' : string,
-            'plainEncoding' : string,
-            'charLength' : int
-        }
+        A list of MessageInfo objects.
 
         """
         depth = 0
         l_msgs = []
-        for msg in res['messages']:
-            self.data_extractor.set_new_message(msg)
-            metadata = self.data_extractor.get_dict()
-            metadata['depth'] = depth
-
+        for m in res['messages']:
+            self.data_extractor.set_new_message(m)
+            msg = MessageInfo()
+            self.data_extractor.insert_metadata(msg)
+            msg.depth = depth
+    
             subject = self.data_extractor.get_subject()
             if subject is not None:
-                metadata['subject'] = subject
+                msg.subject = subject
     
             plain_text = self.data_extractor.get_plain_text()
             if plain_text is not None:
-                metadata['bodyPlain'] = plain_text
-                metadata['bodyBase64Plain'] = base64.urlsafe_b64encode(
+                msg.bodyBase64Plain = base64.urlsafe_b64encode(
                     plain_text.encode()).decode()
-                metadata['plainEncoding'] = self.data_extractor.get_plain_encod()
-                metadata['charLength'] = len(plain_text)
+                msg.plainEncoding = self.data_extractor.get_plain_encod()
+                msg.charLength = len(plain_text)
     
             html_text = self.data_extractor.get_html_text()
             if html_text is not None:
-                metadata['bodyHtml'] = html_text
-                metadata['bodyBase64Html'] = base64.urlsafe_b64encode(
+                msg.bodyBase64Html = base64.urlsafe_b64encode(
                     html_text.encode()).decode()
                 if (plain_text is None):
                     p_text = self.html_converter.handle(html_text)
-                    metadata['bodyPlain'] = p_text
-                    metadata['bodyBase64Plain'] = base64.urlsafe_b64encode(
+                    msg.bodyBase64Plain = base64.urlsafe_b64encode(
                         p_text.encode()).decode()
-                    metadata['charLength'] = len(p_text)
-            l_msgs.append(metadata)
+                    msg.charLength = len(p_text)
+            l_msgs.append(msg)
             depth += 1
         return l_msgs

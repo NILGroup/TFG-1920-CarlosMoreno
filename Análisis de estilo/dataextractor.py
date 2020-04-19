@@ -412,17 +412,27 @@ class DataExtractor:
         """
         return self.__references
 
-    def get_dict(self):
+    def insert_metadata(self, msg):
         """
-        Obtains the metadata of the message.
+        Inserts the metadata of the message in the given MessageInfo object.
+        
+        Parameters
+        ----------
+        msg: MessageInfo
+            MessageInfo object where the data is going to be stored.
 
         Returns
         -------
-        dict: which includes message id, thread id, a list of addresses,
-        a list of Cc addresses, a list of Bcc addresses, the message sender
-        and the date of the message.
+        None.
 
         """
-        return {'id' : self.__id, 'threadId' : self.__thread_id,
-                'to' : self.__to, 'cc' : self.__cc, 'bcc' : self.__bcc,
-                'from' : self.__from, 'date' : self.__date}
+        msg.msg_id = self.__id
+        msg.thread_id = self.__thread_id
+        for recipient in self.__to:
+            msg.to.append(recipient)
+        for recipient in self.__cc:
+            msg.cc.append(recipient)
+        for recipient in self.__bcc:
+            msg.bcc.append(recipient)
+        msg.sender = self.__from
+        msg.date = self.__date

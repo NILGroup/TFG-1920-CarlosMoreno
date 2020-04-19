@@ -14,6 +14,7 @@ from time import time
 from time import sleep
 from dataextractor import DataExtractor
 from html2text import HTML2Text
+from messageinfo import MessageInfo
 
 class Extractor(ABC):
     """
@@ -41,35 +42,9 @@ class Extractor(ABC):
     list_key: str (abstract attribute)
         Key of the dictionary given by the list request for accessing to the
         list of the resource.
-    msgs: list
-        Shared resource wich is a list of messages with the following structure:
-        {
-            'id' : string,
-            'threadId' : string,
-            'to' : [ string ],
-            'cc' : [ string ],
-            'bcc' : [ string ],
-            'from' : string,
-            'depth' : int,               # How many messages precede it
-            'date' : long,               # Epoch ms
-            'subject' : string,
-            'bodyPlain' : string,
-            'bodyHtml' : string,
-            'bodyBase64Plain' : string,
-            'bodyBase64Html' : string,
-            'plainEncoding' : string,
-            'charLength' : int
-        }
-    
-    cond_var: multiprocessing.Condition
-        Conditional variable which is needed to access to the shared 
-        resource (msgs).
-    has_finished: multiprocessing.Event
-        Event which informs that the extraction has finished to the rest
-        of the processes.
     
     """
-    def __init__(self, service, quota, msgs, cv, has_finished):
+    def __init__(self, service, quota):
         """
         Class constructor.
 
@@ -79,13 +54,6 @@ class Extractor(ABC):
             Gmail API resource with an Gmail user session opened.
         quota: int
             Gmail API quota units available for message extraction.
-        msgs: list
-            List of information about extracted messages.
-        cv: multiprocessing.Condition
-            Conditional variable for accessing to msgs.
-        has_finished: multiprocessing.Event
-            Event which informs that the extraction has finished to the rest
-            of the preocesses.
 
         Returns
         -------
@@ -96,9 +64,6 @@ class Extractor(ABC):
         self.service = service
         self.quota = quota
         self.quota_sec = qu.QUOTA_UNITS_PER_SECOND
-        self.msgs = msgs
-        self.cond_var = cv
-        self.has_finished = has_finished
         self.data_extractor = DataExtractor()
         self.html_converter = HTML2Text()
         self.html_converter.ignore_emphasis = True
@@ -213,24 +178,7 @@ class Extractor(ABC):
 
         Returns
         -------
-        A list of messages with the following structure:
-        {
-            'id' : string,
-            'threadId' : string,
-            'to' : [ string ],
-            'cc' : [ string ],
-            'bcc' : [ string ],
-            'from' : string,
-            'depth' : int,               # How many messages precede it
-            'date' : long,               # Epoch ms
-            'subject' : string,
-            'bodyPlain' : string,
-            'bodyHtml' : string,
-            'bodyBase64Plain' : string,
-            'bodyBase64Html' : string,
-            'plainEncoding' : string,
-            'charLength' : int
-        }
+        A list of MessageInfo objects.
 
         """
         pass
@@ -248,16 +196,18 @@ class Extractor(ABC):
 
         Returns
         -------
-        (int, int, str): If all the messages were extracted, it returns the
-        remaining quota units in first argument, number of extracted messages
-        in sencond argument and None in third argument. In other case, the 
-        third argument will be the page token where the last message
-        was extracted.
+        quota: int
+            Remaining quota units of Gmail API.
+        msgs_ids: list
+            List of all of extracted message's identifiers.
+        actual_page: str
+            Page token where the last message was extracted.
 
         """
         extracted = 0
         self.init_time = time()
         actual_page = ''
+        msgs_ids = []
         while (extracted < nmsg and self.quota >= self.min_qu):
             msg_list = self.get_list(nextPage)
             actual_page = nextPage
@@ -269,24 +219,20 @@ class Extractor(ABC):
             msg_list = msg_list[self.list_key]
             i = 0
             while (i < lst_size and self.quota >= self.min_qu):
-                # Obtains the resource (message or thread) with the given id
-                res = self.get_resource(msg_list[i]['id'])
-                extracted_msgs = self.extract_msgs_from_resource(res)
-                # Inserts the messages in the shared resource
-                self.cond_var.acquire()
-                for m in extracted_msgs:
-                    self.msgs.append(m)
-                self.cond_var.notify()
-                self.cond_var.release()
+                # If the resource was not extracted before
+                if not(MessageInfo.objects(msg_id = msg_list[i]['id']).first()):
+                    # Obtains the resource (message or thread) with the given id
+                    res = self.get_resource(msg_list[i]['id'])
+                    extracted_msgs = self.extract_msgs_from_resource(res)
+                   
+                    # Save the message in database
+                    for m in extracted_msgs:
+                        m.save()
+                        msgs_ids.append(m.msg_id)
+                        
+                    extracted += 1
 
                 i += 1
-                extracted += 1
-        
-        # Informs the rest of the processes that the extraction has finished
-        self.cond_var.acquire()
-        self.has_finished.set()
-        self.cond_var.notify()
-        self.cond_var.release()
         
         with open('log.txt', 'a') as f:
             f.write('\n\nEXTRACTION FINISHED:\n')
@@ -296,3 +242,5 @@ class Extractor(ABC):
             if extracted < nmsg:
                 f.write('Actual Page Token: ' + actual_page + '\n')
                 f.write('Next Page Token: '+ nextPage + '\n')
+                
+        return self.quota, msgs_ids, actual_page
