@@ -4,16 +4,16 @@ Created on Tue Nov 12 14:32:54 2019
 
 @author: Carlos Moreno Morera
 """
+import os, sys
+if not(os.getcwd() in sys.path):
+    sys.path.append(os.getcwd())
 
 from __future__ import print_function
-import quotaunits as qu
-from messageextractor import MessageExtractor
-from threadextractor import ThreadExtractor
-import multiprocessing
-import spacy
-from preprocessor import Preprocessor
-from typocorrector import TypoCorrector
-from stylemeter import StyleMeter
+import extraction.quotaunits as qu
+from extraction.messageextractor import MessageExtractor
+from extraction.threadextractor import ThreadExtractor
+from typocorrection.typocorrector import TypoCorrector
+from stylemeasuring.stylemeter import StyleMeter
 import confanalyser as cfa
 
 class Analyser:
