@@ -134,6 +134,8 @@ class MessageExtractor(Extractor):
             msg.depth = self.__count_num_ref(refer)
         else:
             msg.depth = 0
+            
+        msg.charLength = 0
 
         plain_text = self.data_extractor.get_plain_text()
         if plain_text is not None:

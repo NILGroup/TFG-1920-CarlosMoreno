@@ -507,7 +507,7 @@ class Preprocessor:
         msg.charLength = prep['charLength']
         msg.save()
                     
-    def preprocessed_message(self, raw_msg, sign = None):
+    def preprocess_message(self, raw_msg, sign = None):
         """
         Obtains the extracted messages and preprocessed them by extracting only
         the body message (removing the sign, the replied message, ...) and 

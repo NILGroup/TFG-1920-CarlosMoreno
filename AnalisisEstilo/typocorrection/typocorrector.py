@@ -20,74 +20,6 @@ class TypoCorrector:
     
     Attributes
     ----------
-    prep: list
-        Shared resource wich is a list of messages with the following structure:
-            {
-                'id' : string,
-                'threadId' : string,
-                'to' : [ string ],
-                'cc' : [ string ],
-                'bcc' : [ string ],
-                'from' : string,
-                'depth' : int,               # How many messages precede it
-                'date' : long,               # Epoch ms
-                'subject' : string,          # Optional
-                'bodyPlain' : string,
-                'bodyBase64Plain' : string,
-                'bodyBase64Html' : string,   # Optional
-                'plainEncoding' : string,    # Optional
-                'charLength' : int
-                'doc' : Spacy's Doc
-                'sentences' : [
-                    {
-                        doc: Spacy's Doc of the sentence
-                        words: [Spacy's Tokens]
-                    }
-                ]
-            }
-    corrected: list
-        Shared resource wich is a list of messages with the following structure:
-            {
-                'id' : string,
-                'threadId' : string,
-                'to' : [ string ],
-                'cc' : [ string ],
-                'bcc' : [ string ],
-                'from' : string,
-                'depth' : int,               # How many messages precede it
-                'date' : long,               # Epoch ms
-                'subject' : string,          # Optional
-                'bodyPlain' : string,
-                'bodyBase64Plain' : string,
-                'plainEncoding' : string,    # Optional
-                'charLength' : int
-                'doc' : Spacy's Doc
-                'sentences' : [
-                    {
-                        doc: Spacy's Doc of the sentence
-                        words: [Spacy's Tokens]
-                    }
-                ]
-                'corrections' : [
-                    {
-                        'token' : <MyToken class>
-                        'position' : int
-                        'sentenceIndex' : int
-                        'sentenceInit' : int
-                    }
-                ]
-            }
-    prep_cv: multiprocessing.Condition
-        Conditional variable which is needed to access to the shared 
-        resource (prep).
-    corrected_cv: multiprocessing.Condition
-        Conditional variable which is needed to access to the shared 
-        resource (corrected).
-    pre_fin: multiprocessing.Event
-        Event which informs that the process in charge of the message 
-        preprocessing has finished.
-    typo_fin: multiprocessing.Event
-        Event which informs that this process has finished.
     nlp: Spacy model
         Spacy's trained model which will be used for correcting typographic errors.
     oov: dict
@@ -100,27 +32,12 @@ class TypoCorrector:
             
     """
     
-    def __init__(self, prep, corrected, prep_cv, cor_cv, prep_fin, typo_fin, nlp):
+    def __init__(self, nlp):
         """
         Class constructor.
 
         Parameters
         ----------
-        prep : list
-            List of preprocessed messages.
-        corrected : list
-            List of preprocessed messages whose typographical errors have been 
-            corrected.
-        prep_cv : multiprocessing.Condition
-            Conditional variable for accessing to prep.
-        cor_cv : multiprocessing.Condition
-            Conditional variable for accessing to corrected.
-        prep_fin : multiprocessing.Event
-            Event which informs whether or not the preprocessing of messages has
-            finished.
-        typo_fin : multiprocessing.Event
-            Event which informs whether or not the typographic correction of messages 
-            has finished.
         nlp : spacy model
             Spacy's trained model which will be used to processed.
 
@@ -129,12 +46,6 @@ class TypoCorrector:
         Constructed TypoCorrector class.
 
         """
-        self.prep = prep
-        self.corrected = corrected
-        self.prep_cv = prep_cv
-        self.corrected_cv = cor_cv
-        self.pre_fin = prep_fin
-        self.typo_fin = typo_fin
         self.oov = {}
         self.__load_words_oov()
         self.nlp = nlp

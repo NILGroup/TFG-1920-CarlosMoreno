@@ -107,6 +107,8 @@ class ThreadExtractor(Extractor):
             subject = self.data_extractor.get_subject()
             if subject is not None:
                 msg.subject = subject
+                
+            msg.charLength = 0
     
             plain_text = self.data_extractor.get_plain_text()
             if plain_text is not None:
