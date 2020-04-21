@@ -8,10 +8,9 @@ Created on Sun Nov 17 18:27:33 2019
 from __future__ import print_function
 from email_reply_parser import EmailReplyParser
 import base64
-import os
-from csv import DictWriter
 from re import search
 import confprep as cf
+from preprocessedmessage import PreprocessedMessage
 
 class Preprocessor:
     """
@@ -334,7 +333,7 @@ class Preprocessor:
         else:
             return text
         
-    def __extract_body_msg(self, msg_prep, msg_raw):
+    def __extract_body_msg(self, prep_msg, raw_msg):
         """
         Extracts the body message from the raw message. For achieving this
         goal, this function removes the text of the replied email (if it
@@ -342,9 +341,9 @@ class Preprocessor:
 
         Parameters
         ----------
-        msg_prep : dict
+        prep_msg : dict
             Dictionary where the extracted text is going to be stored.
-        msg_raw : dict
+        raw_msg : dict
             Dictionary with the raw information of the message.
 
         Returns
@@ -352,35 +351,35 @@ class Preprocessor:
         None.
 
         """
-        if msg_raw['depth'] > 0:
-            ind = msg_raw['bodyPlain'].find(cf.FOWARD_LINE)
+        if raw_msg['depth'] > 0:
+            ind = raw_msg['bodyPlain'].find(cf.FOWARD_LINE)
             if (ind >= 0):
                 # As we can't detect (without comparing it) which 
                 # part of the message is originally text of the 
                 # forwarded message, we delete all that part.
-                msg_raw['bodyPlain'] = msg_raw['bodyPlain'][:ind]
-            msg_prep['bodyPlain'] = EmailReplyParser.parse_reply(
-                msg_raw['bodyPlain'])
-            msg_prep['bodyPlain'] = self.__remove_header_replied(
-                msg_prep['bodyPlain'])
+                raw_msg['bodyPlain'] = raw_msg['bodyPlain'][:ind]
+            prep_msg['bodyPlain'] = EmailReplyParser.parse_reply(
+                raw_msg['bodyPlain'])
+            prep_msg['bodyPlain'] = self.__remove_header_replied(
+                prep_msg['bodyPlain'])
                 
-            if 'bodyHtml' in msg_raw:
-                msg_prep['bodyPlain'] = self.__remove_soft_breaks(
-                    msg_prep['bodyPlain'], msg_raw.pop('bodyHtml'))
-            elif ('plainEncoding' in msg_raw and 
-                  msg_raw['plainEncoding'] == 'quoted-printable'):
-                msg_prep['bodyPlain'] = self.__clean_decoded_text(
-                    msg_prep['bodyPlain'])
+            if 'bodyHtml' in raw_msg:
+                prep_msg['bodyPlain'] = self.__remove_soft_breaks(
+                    prep_msg['bodyPlain'], raw_msg.pop('bodyHtml'))
+            elif ('plainEncoding' in raw_msg and 
+                  raw_msg['plainEncoding'] == 'quoted-printable'):
+                prep_msg['bodyPlain'] = self.__clean_decoded_text(
+                    prep_msg['bodyPlain'])
                     
-        elif 'bodyHtml' in msg_raw:
-            msg_prep['bodyPlain'] = self.__remove_soft_breaks(
-                msg_raw['bodyPlain'], msg_raw.pop('bodyHtml'))
-        elif ('plainEncoding' in msg_raw and 
-              msg_raw['plainEncoding'] == 'quoted-printable'):
-            msg_prep['bodyPlain'] = self.__clean_decoded_text(
-                msg_raw['bodyPlain'])
+        elif 'bodyHtml' in raw_msg:
+            prep_msg['bodyPlain'] = self.__remove_soft_breaks(
+                raw_msg['bodyPlain'], raw_msg.pop('bodyHtml'))
+        elif ('plainEncoding' in raw_msg and 
+              raw_msg['plainEncoding'] == 'quoted-printable'):
+            prep_msg['bodyPlain'] = self.__clean_decoded_text(
+                raw_msg['bodyPlain'])
         else:
-            msg_prep['bodyPlain'] = msg_raw['bodyPlain']
+            prep_msg['bodyPlain'] = raw_msg['bodyPlain']
             
     def __copy_metadata(self, prep, raw):
         """
@@ -444,15 +443,97 @@ class Preprocessor:
             prep['sentences'][-1]['doc'] = self.nlp(s)
             prep['sentences'][-1]['words'] = [t for t in 
                                                 prep['sentences'][-1]['doc']]
-                    
-    def star_preprocessing(self, sign = None):
+            
+    def __save_prep_msg(self, prep):
         """
-        Obtains the messages extracted and preprocessed them by extracting only
+        Save in the database the preprocessed message.
+
+        Parameters
+        ----------
+        prep : dict
+            Preprocessed message with the following estructure:
+            {
+                'id' : string,
+                'threadId' : string,
+                'to' : [ string ],
+                'cc' : [ string ],
+                'bcc' : [ string ],
+                'from' : string,
+                'depth' : int,               # How many messages precede it
+                'date' : long,               # Epoch ms
+                'subject' : string,          # Optional
+                'bodyPlain' : string,
+                'bodyBase64Plain' : string,
+                'bodyBase64Html' : string,   # Optional
+                'plainEncoding' : string,    # Optional
+                'charLength' : int
+                'doc' : Spacy's Doc
+                'sentences' : [
+                    {
+                        doc: Spacy's Doc of the sentence
+                        words: [Spacy's Tokens]
+                    }
+                ]
+            }
+
+        Returns
+        -------
+        None.
+
+        """
+        msg = PreprocessedMessage()
+        msg.msg_id = prep['id']
+        msg.thread_id = prep['threadId']
+        for recipient in prep['to']:
+            msg.to.append(recipient)
+        for recipient in prep['cc']:
+            msg.cc.append(recipient)
+        for recipient in prep['bcc']:
+            msg.bcc.append(recipient)
+        msg.sender = prep['from']
+        msg.date = prep['date']
+        
+        if 'subject' in prep:
+            msg.subject = prep['subject']
+            
+        msg.depth = prep['depth']
+        msg.bodyBase64Plain = prep['bodyBase64Plain']
+        
+        if 'plainEncoding' in prep:
+            msg.plainEncoding = prep['plainEncoding']
+        if 'bodyBase64Html' in prep:
+            msg.bodyBase64Html = prep['bodyBase64Html']
+
+        msg.charLength = prep['charLength']
+        msg.save()
+                    
+    def preprocessed_message(self, raw_msg, sign = None):
+        """
+        Obtains the extracted messages and preprocessed them by extracting only
         the body message (removing the sign, the replied message, ...) and 
-        getting a list of sentences and different words in the text.
+        getting a list of sentences and different words in the text. Besides
+        this method saves the raw messages before the preprocessing.
         
         Parameters
         ----------
+        raw_msg: dict
+            Extracted message which is going to be preprocessed. It has the
+            following strcture:
+            {
+                'id' : string,
+                'threadId' : string,
+                'to' : [ string ],
+                'cc' : [ string ],
+                'bcc' : [ string ],
+                'from' : string,
+                'depth' : int,               # How many messages precede it
+                'date' : long,               # Epoch ms
+                'subject' : string,          # Optional
+                'bodyBase64Plain' : string,  # Optional
+                'bodyBase64Html' : string,   # Optional
+                'plainEncoding' : string,    # Optional
+                'charLength' : int           # Optional
+            }
         sign: str (optional)
             Sign of the person who writes the emails.
             
@@ -460,46 +541,27 @@ class Preprocessor:
         -------
         None.
         
-        """        
-        self.cv_raw.acquire()
-        while (not(self.extract_finished.is_set()) or len(self.raw) > 0):
-            extracted = False
-            while (len(self.raw) == 0 and not(self.extract_finished.is_set())):
-                self.cv_raw.wait()
-            if (len(self.raw) > 0):
-                msg_raw = self.raw.pop()
-                extracted = True
-            self.cv_raw.release()
+        """
+        if ('bodyBase64Plain' in raw_msg):
+            prep_msg = {}
+            raw_msg['bodyPlain'] = base64.urlsafe_b64decode(
+                raw_msg['bodyBase64Plain'].encode()).decode()
+            raw_msg['bodyHtml'] = base64.urlsafe_b64decode(
+                raw_msg['bodyBase64Html'].encode()).decode()
+            self.__extract_body_msg(prep_msg, raw_msg)
             
-            if (extracted and 'bodyPlain' in msg_raw):
-                msg_prep = {}
-                self.__extract_body_msg(msg_prep, msg_raw)
-                
-                writer.writerow(msg_raw)
-                if sign is not None:
-                    msg_prep['bodyPlain'] = self.__remove_signature(
-                        msg_prep['bodyPlain'], sign)
-                
-                msg_prep['bodyBase64Plain'] = base64.urlsafe_b64encode(
-                    msg_prep['bodyPlain'].encode()).decode()
-                
-                self.__copy_metadata(msg_prep, msg_raw)
-                msg_prep['charLength'] = len(msg_prep['bodyPlain'])
-                
-                self.__get_structured_text(msg_prep)
-                
-                self.cv_msgs.acquire()
-                self.preprocessed.append(msg_prep)
-                self.cv_msgs.notify()
-                self.cv_msgs.release()
-                
-            self.cv_raw.acquire()
-        
-        self.cv_raw.release()
-        
-        self.cv_msgs.acquire()
-        self.prep_finished.set()
-        self.cv_msgs.notify()
-        self.cv_msgs.release()
-        
-        csvfile.close()
+            if sign is not None:
+                prep_msg['bodyPlain'] = self.__remove_signature(
+                    prep_msg['bodyPlain'], sign)
+            
+            prep_msg['bodyBase64Plain'] = base64.urlsafe_b64encode(
+                prep_msg['bodyPlain'].encode()).decode()
+                            
+            
+            self.__copy_metadata(prep_msg, raw_msg)
+            prep_msg['charLength'] = len(prep_msg['bodyPlain'])
+            
+            self.__get_structured_text(prep_msg)
+            self.__save_prep_msg(prep_msg)
+            
+            return prep_msg
