@@ -9,7 +9,7 @@ from __future__ import print_function
 from extractor import Extractor
 import quotaunits as qu
 import base64
-from messageinfo import MessageInfo
+from extractedmessage import ExtractedMessage
 
 class MessageExtractor(Extractor):
     """
@@ -122,7 +122,7 @@ class MessageExtractor(Extractor):
 
         """
         self.data_extractor.set_new_message(res)
-        msg = MessageInfo()
+        msg = ExtractedMessage()
         self.data_extractor.insert_metadata(msg)
 
         subject = self.data_extractor.get_subject()

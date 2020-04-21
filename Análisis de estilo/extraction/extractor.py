@@ -14,7 +14,7 @@ from time import time
 from time import sleep
 from dataextractor import DataExtractor
 from html2text import HTML2Text
-from messageinfo import MessageInfo
+from extractedmessage import ExtractedMessage
 
 class Extractor(ABC):
     """
@@ -220,7 +220,7 @@ class Extractor(ABC):
             i = 0
             while (i < lst_size and self.quota >= self.min_qu):
                 # If the resource was not extracted before
-                if not(MessageInfo.objects(msg_id = msg_list[i]['id']).first()):
+                if not(ExtractedMessage.objects(msg_id = msg_list[i]['id']).first()):
                     # Obtains the resource (message or thread) with the given id
                     res = self.get_resource(msg_list[i]['id'])
                     extracted_msgs = self.extract_msgs_from_resource(res)

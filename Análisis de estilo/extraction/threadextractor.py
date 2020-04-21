@@ -9,7 +9,7 @@ from __future__ import print_function
 from extractor import Extractor
 import quotaunits as qu
 import base64
-from messageinfo import MessageInfo
+from extractedmessage import ExtractedMessage
 
 class ThreadExtractor(Extractor):
     """
@@ -100,7 +100,7 @@ class ThreadExtractor(Extractor):
         l_msgs = []
         for m in res['messages']:
             self.data_extractor.set_new_message(m)
-            msg = MessageInfo()
+            msg = ExtractedMessage()
             self.data_extractor.insert_metadata(msg)
             msg.depth = depth
     

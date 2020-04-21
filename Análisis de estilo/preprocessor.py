@@ -20,86 +20,17 @@ class Preprocessor:
     
     Attributes
     ----------
-    raw: list
-        Shared resource wich is a list of messages with the following structure:
-        {
-            'id' : string,
-            'threadId' : string,
-            'to' : [ string ],
-            'cc' : [ string ],
-            'bcc' : [ string ],
-            'from' : string,
-            'depth' : int,               # How many messages precede it
-            'date' : long,               # Epoch ms
-            'subject' : string,          # Optional
-            'bodyPlain' : string,        # Optional
-            'bodyHtml' : string,         # Optional
-            'bodyBase64Plain' : string,  # Optional
-            'bodyBase64Html' : string,   # Optional
-            'plainEncoding' : string,    # Optional
-            'charLength' : int           # Optional
-        }
-    preprocessed: list
-        Shared resource wich is a list of messages with the following structure:
-            {
-                'id' : string,
-                'threadId' : string,
-                'to' : [ string ],
-                'cc' : [ string ],
-                'bcc' : [ string ],
-                'from' : string,
-                'depth' : int,               # How many messages precede it
-                'date' : long,               # Epoch ms
-                'subject' : string,          # Optional
-                'bodyPlain' : string,
-                'bodyBase64Plain' : string,
-                'bodyBase64Html' : string,   # Optional
-                'plainEncoding' : string,    # Optional
-                'charLength' : int
-                'doc' : Spacy's Doc
-                'sentences' : [
-                    {
-                        doc: Spacy's Doc of the sentence
-                        words: [Spacy's Tokens]
-                    }
-                ]
-            }
-    cv_raw: multiprocessing.Condition
-        Conditional variable which is needed to access to the shared 
-        resource (raw).
-    cv_msgs: multiprocessing.Condition
-        Conditional variable which is needed to access to the shared 
-        resource (preprocessed).
-    extract_finished: multiprocessing.Event
-        Event which informs that the process in charge of the message 
-        extraction has finished.
-    prep_finished: multiprocessing.Event
-        Event which informs that this process has finished.
     nlp: Spacy model
         Spacy's trained model which will be used for preprocessing.
         
     """
     
-    def __init__(self, raw_msgs, msgs, cv_raw, cv_msgs, ext_fin, prp_fin, nlp):
+    def __init__(self, nlp):
         """
         Class constructor.
         
         Parameters
         ----------
-        raw_msgs: list
-            List of extracted messages.
-        msgs: list
-            List of preprocessed messages which were obtained from raw_msgs.
-        cv_raw: multiprocessing.Condition
-            Conditional variable for accessing raw_msgs.
-        cv_msgs: multiprocessing.Condition
-            Conditional variable for accessing to msgs.
-        ext_fin: multiprocessing.Event
-            Event which informs whether or not the extraction of messages has
-            finished.
-        prp_fin: multiprocessing.Event
-            Event which informs whether or not the preprocessing of messages has
-            finished.
         nlp: spacy model
             Spacy's trained model which will be used to processed.
 
@@ -108,12 +39,6 @@ class Preprocessor:
         Constructed Preprocessor class.
 
         """
-        self.raw = raw_msgs
-        self.preprocessed = msgs
-        self.cv_raw = cv_raw
-        self.cv_msgs = cv_msgs
-        self.extract_finished = ext_fin
-        self.prep_finished = prp_fin
         self.nlp = nlp
         
     def __extract_html_tag(self, html, pos):
@@ -520,17 +445,14 @@ class Preprocessor:
             prep['sentences'][-1]['words'] = [t for t in 
                                                 prep['sentences'][-1]['doc']]
                     
-    def star_preprocessing(self, user, sign = None):
+    def star_preprocessing(self, sign = None):
         """
         Obtains the messages extracted and preprocessed them by extracting only
         the body message (removing the sign, the replied message, ...) and 
-        getting a list of sentences and different words in the text. Besides
-        this method saves the raw messages before the preprocessing.
+        getting a list of sentences and different words in the text.
         
         Parameters
         ----------
-        user: str
-            User name of the owner of the messages.
         sign: str (optional)
             Sign of the person who writes the emails.
             
@@ -538,18 +460,7 @@ class Preprocessor:
         -------
         None.
         
-        """
-        if not os.path.exists(user + '/Extraction'):
-            os.mkdir(user + '/Extraction')
-        
-        if not os.path.exists(user + '/Extraction/extracted.csv'):
-            csvfile = open(user + '/Extraction/extracted.csv', 'w')
-            writer = DictWriter(csvfile, fieldnames = cf.CSV_COL)
-            writer.writeheader()
-        else:
-            csvfile = open(user + '/Extraction/extracted.csv', 'a')
-            writer = DictWriter(csvfile, fieldnames = cf.CSV_COL)
-        
+        """        
         self.cv_raw.acquire()
         while (not(self.extract_finished.is_set()) or len(self.raw) > 0):
             extracted = False
