@@ -4,10 +4,17 @@ Created on Tue Apr 21 13:49:01 2020
 
 @author: Carlos
 """
+import os, sys
+initial_dir = os.getcwd()
+os.chdir('../')
+if not(os.getcwd() in sys.path):
+    sys.path.append(os.getcwd())
 
 from flask import Flask, jsonify, request
-from preprocessor import Preprocessor
+from preprocess.preprocessor import Preprocessor
 from confanalyser import NLP
+
+os.chdir(initial_dir)
 
 app = Flask(__name__)
 preprocessor = Preprocessor(NLP)

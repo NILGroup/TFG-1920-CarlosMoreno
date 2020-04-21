@@ -12,9 +12,9 @@ from abc import ABC
 from abc import ABCMeta
 from time import time
 from time import sleep
-from dataextractor import DataExtractor
+from extraction.dataextractor import DataExtractor
 from html2text import HTML2Text
-from extractedmessage import ExtractedMessage
+from extraction.extractedmessage import ExtractedMessage
 
 class Extractor(ABC):
     """

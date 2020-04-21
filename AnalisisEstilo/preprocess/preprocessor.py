@@ -9,8 +9,8 @@ from __future__ import print_function
 from email_reply_parser import EmailReplyParser
 import base64
 from re import search
-import confprep as cf
-from preprocessedmessage import PreprocessedMessage
+import preprocess.confprep as cf
+from preprocess.preprocessedmessage import PreprocessedMessage
 
 class Preprocessor:
     """

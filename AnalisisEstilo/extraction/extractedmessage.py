@@ -58,3 +58,8 @@ class ExtractedMessage(mongoengine.Document):
     bodyBase64Html = mongoengine.StringField()
     plainEncoding = mongoengine.StringField()
     charLength = mongoengine.IntField()
+    
+    meta = {
+        'db_alias': 'core',
+        'collection': 'extractedmessage'
+    }

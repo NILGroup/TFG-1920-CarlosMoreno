@@ -10,6 +10,8 @@ from googleapiclient.discovery import build
 import config
 import auth
 from analyser import Analyser
+import os
+import sys
 
 def yes_no_question(question):
         """
@@ -36,6 +38,9 @@ def main():
     """
     Analyse the emails of the user and obtain the style metrics
     """
+    if not(os.getcwd() in sys.path):
+        sys.path.append(os.getcwd())
+    
     #Creation of a Gmail resource
     service = build('gmail', 'v1',
                     credentials = auth.get_credentials(config.SCOPES, config.CREDS))
@@ -46,23 +51,23 @@ def main():
         if (yes_no_question('Was it with the same user?')):
             ext = yes_no_question('Was the previously executed by extracting messages?')
             nextPageToken = input('Introduce NextPageToken: ')
-            anls = Analyser(service, q, ext)
+            num_res = int(input('How many Gmail resources were extracted? '))
+            anls = Analyser(service, q, ext, num_res)
         else:
             anls = Analyser(service, q)
     else:
         anls = Analyser(service)
         
-    user = input('Introduce user: ')
     if (yes_no_question('Has the user an email signature?')):
-        print('Introduce the signature and finish it with with the word "STOP".\n')
+        print('Introduce the signature and finish it with the word "STOP".\n')
         entr = input()
         sign = ''
         while (entr != 'STOP'):
             sign += entr + '\n'
             entr = input()
-        anls.analyse(user, nextPageToken, sign)
+        anls.analyse(nextPageToken, sign)
     else:
-        anls.analyse(user, nextPageToken)
+        anls.analyse(nextPageToken)
 
 if __name__ == '__main__':
     main()

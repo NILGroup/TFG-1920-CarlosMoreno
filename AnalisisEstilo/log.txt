@@ -1,0 +1,19 @@
+Message extractor has been selected.
+
+
+EXTRACTION FINISHED:
+Extracted resources: 10
+Remaining quota: 999999944
+Message extractor has been selected.
+Message extractor has been selected.
+
+
+EXTRACTION FINISHED:
+Extracted resources: 10
+Remaining quota: 999999944
+Message extractor has been selected.
+
+
+EXTRACTION FINISHED:
+Extracted resources: 10
+Remaining quota: 999999944

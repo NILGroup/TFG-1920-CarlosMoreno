@@ -6,10 +6,10 @@ Created on Tue Nov 12 14:32:54 2019
 """
 
 from __future__ import print_function
-from extractor import Extractor
+from extraction.extractor import Extractor
 import quotaunits as qu
 import base64
-from extractedmessage import ExtractedMessage
+from extraction.extractedmessage import ExtractedMessage
 
 class ThreadExtractor(Extractor):
     """
