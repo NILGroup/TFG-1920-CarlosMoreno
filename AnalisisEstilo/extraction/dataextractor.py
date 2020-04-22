@@ -414,12 +414,12 @@ class DataExtractor:
 
     def insert_metadata(self, msg):
         """
-        Inserts the metadata of the message in the given MessageInfo object.
+        Inserts the metadata of the message in the given ExtractedMessage object.
         
         Parameters
         ----------
-        msg: MessageInfo
-            MessageInfo object where the data is going to be stored.
+        msg: ExtractedMessage
+            ExtractedMessage object where the data is going to be stored.
 
         Returns
         -------

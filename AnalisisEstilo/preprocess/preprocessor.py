@@ -539,15 +539,41 @@ class Preprocessor:
             
         Returns
         -------
-        None.
+        prep : dict
+            Preprocessed message with the following estructure:
+            {
+                'id' : string,
+                'threadId' : string,
+                'to' : [ string ],
+                'cc' : [ string ],
+                'bcc' : [ string ],
+                'from' : string,
+                'depth' : int,               # How many messages precede it
+                'date' : long,               # Epoch ms
+                'subject' : string,          # Optional
+                'bodyPlain' : string,
+                'bodyBase64Plain' : string,
+                'bodyBase64Html' : string,   # Optional
+                'plainEncoding' : string,    # Optional
+                'charLength' : int
+                'doc' : Spacy's Doc
+                'sentences' : [
+                    {
+                        doc: Spacy's Doc of the sentence
+                        words: [Spacy's Tokens]
+                    }
+                ]
+            }
         
         """
         if ('bodyBase64Plain' in raw_msg):
             prep_msg = {}
             raw_msg['bodyPlain'] = base64.urlsafe_b64decode(
                 raw_msg['bodyBase64Plain'].encode()).decode()
-            raw_msg['bodyHtml'] = base64.urlsafe_b64decode(
-                raw_msg['bodyBase64Html'].encode()).decode()
+            
+            if 'bodyBase64Html' in raw_msg:
+                raw_msg['bodyHtml'] = base64.urlsafe_b64decode(
+                    raw_msg['bodyBase64Html'].encode()).decode()
             self.__extract_body_msg(prep_msg, raw_msg)
             
             if sign is not None:

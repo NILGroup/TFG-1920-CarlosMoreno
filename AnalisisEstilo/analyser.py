@@ -13,6 +13,10 @@ import mongoengine
 import requests
 from extraction.extractedmessage import ExtractedMessage
 import json
+from initdb import init_db
+
+# A borrar
+from preprocess.preprocessedmessage import PreprocessedMessage
 
 class Analyser:
     """
@@ -129,13 +133,15 @@ class Analyser:
         None.
         
         """
-        mongoengine.register_connection(alias='core', name='analysis')
+        init_db()
         ExtractedMessage.objects().delete()
-        msg_ids = self.extractor.extract_sent_msg(self.nres, nextPageToken)
+        self.quota, msg_ids, nextPage = self.extractor.extract_sent_msg(self.nres,
+                                                                        nextPageToken)
         
         for ide in msg_ids:
             ext_msg = ExtractedMessage.objects(msg_id = ide).first().to_json()
             ext_msg = json.loads(ext_msg)
+            print(ext_msg['_id'])
             response = requests.post(cfa.URL_PREP, json = {'message' : ext_msg,
                                                   'sign': sign})
             print(response.url)
@@ -143,3 +149,7 @@ class Analyser:
                 print(response.content)
             else:
                 print(response.status_code)
+                
+        for ide in msg_ids:
+            ext_msg = PreprocessedMessage.objects(msg_id = ide).first().to_json()
+            print(ext_msg['_id'])

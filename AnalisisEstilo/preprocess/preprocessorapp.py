@@ -13,6 +13,7 @@ if not(os.getcwd() in sys.path):
 from flask import Flask, jsonify, request
 from preprocess.preprocessor import Preprocessor
 from confanalyser import NLP
+from initdb import init_db
 
 os.chdir(initial_dir)
 
@@ -24,7 +25,7 @@ def preprocess_message():
     msg = request.json['message']
     
     raw = {
-        'id': msg['msg_id'],
+        'id': msg['_id'],
         'threadId': msg['thread_id'],
         'to': msg['to'],
         'cc': msg['cc'],
@@ -47,4 +48,5 @@ def preprocess_message():
     return jsonify(preprocessor.preprocess_message(raw, request.json['sign']))
 
 if __name__ == '__main__':
+    init_db()
     app.run(debug=True)
