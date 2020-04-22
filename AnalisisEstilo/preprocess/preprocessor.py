@@ -16,29 +16,8 @@ class Preprocessor:
     """
     Preprocessor class performs the task of preprocessing the extracted messages
     in order to being analysed then.
-    
-    Attributes
-    ----------
-    nlp: Spacy model
-        Spacy's trained model which will be used for preprocessing.
         
     """
-    
-    def __init__(self, nlp):
-        """
-        Class constructor.
-        
-        Parameters
-        ----------
-        nlp: spacy model
-            Spacy's trained model which will be used to processed.
-
-        Returns
-        -------
-        Constructed Preprocessor class.
-
-        """
-        self.nlp = nlp
         
     def __extract_html_tag(self, html, pos):
         """
@@ -412,38 +391,6 @@ class Preprocessor:
         if ('bodyBase64Html' in raw):
             prep['bodyBase64Html'] = raw['bodyBase64Html']
             
-    def __get_structured_text(self, prep):
-        """
-        Adds to the prep dictionary a key 'doc', whose value will correspond with
-        the Spacy's Doc of the body of the message, and a key 'sentences', whose
-        value will have the next structure:
-            [
-                {
-                    doc: Spacy's Doc of the sentence
-                    words: [Spacy's Tokens]
-                }
-            ]
-
-        Parameters
-        ----------
-        prep : dict
-            Dictionary of the preprocessed message.
-
-        Returns
-        -------
-        None.
-
-        """
-        prep['doc'] = self.nlp(prep['bodyPlain'])
-        sentences = [s.text for s in prep['doc'].sents]
-        prep['sentences'] = []
-        
-        for s in sentences:
-            prep['sentences'].append({})
-            prep['sentences'][-1]['doc'] = self.nlp(s)
-            prep['sentences'][-1]['words'] = [t for t in 
-                                                prep['sentences'][-1]['doc']]
-            
     def __save_prep_msg(self, prep):
         """
         Save in the database the preprocessed message.
@@ -467,13 +414,6 @@ class Preprocessor:
                 'bodyBase64Html' : string,   # Optional
                 'plainEncoding' : string,    # Optional
                 'charLength' : int
-                'doc' : Spacy's Doc
-                'sentences' : [
-                    {
-                        doc: Spacy's Doc of the sentence
-                        words: [Spacy's Tokens]
-                    }
-                ]
             }
 
         Returns
@@ -556,13 +496,6 @@ class Preprocessor:
                 'bodyBase64Html' : string,   # Optional
                 'plainEncoding' : string,    # Optional
                 'charLength' : int
-                'doc' : Spacy's Doc
-                'sentences' : [
-                    {
-                        doc: Spacy's Doc of the sentence
-                        words: [Spacy's Tokens]
-                    }
-                ]
             }
         
         """
@@ -587,7 +520,6 @@ class Preprocessor:
             self.__copy_metadata(prep_msg, raw_msg)
             prep_msg['charLength'] = len(prep_msg['bodyPlain'])
             
-            self.__get_structured_text(prep_msg)
             self.__save_prep_msg(prep_msg)
             
             return prep_msg

@@ -9,14 +9,10 @@ import quotaunits as qu
 from extraction.messageextractor import MessageExtractor
 from extraction.threadextractor import ThreadExtractor
 import confanalyser as cfa
-import mongoengine
 import requests
 from extraction.extractedmessage import ExtractedMessage
 import json
 from initdb import init_db
-
-# A borrar
-from preprocess.preprocessedmessage import PreprocessedMessage
 
 class Analyser:
     """
@@ -134,22 +130,14 @@ class Analyser:
         
         """
         init_db()
-        ExtractedMessage.objects().delete()
         self.quota, msg_ids, nextPage = self.extractor.extract_sent_msg(self.nres,
                                                                         nextPageToken)
         
         for ide in msg_ids:
             ext_msg = ExtractedMessage.objects(msg_id = ide).first().to_json()
             ext_msg = json.loads(ext_msg)
-            print(ext_msg['_id'])
             response = requests.post(cfa.URL_PREP, json = {'message' : ext_msg,
                                                   'sign': sign})
-            print(response.url)
-            if response.status_code == 200:
-                print(response.content)
-            else:
-                print(response.status_code)
-                
-        for ide in msg_ids:
-            ext_msg = PreprocessedMessage.objects(msg_id = ide).first().to_json()
-            print(ext_msg['_id'])
+            if response.status_code != 200:
+                with open('logerror.txt', 'a') as f:
+                    f.write(f"Error en el preprocesado de {ext_msg['_id']}.\n")

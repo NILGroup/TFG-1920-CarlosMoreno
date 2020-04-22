@@ -12,13 +12,12 @@ if not(os.getcwd() in sys.path):
 
 from flask import Flask, jsonify, request
 from preprocess.preprocessor import Preprocessor
-from confanalyser import NLP
 from initdb import init_db
 
 os.chdir(initial_dir)
 
 app = Flask(__name__)
-preprocessor = Preprocessor(NLP)
+preprocessor = Preprocessor()
 
 @app.route('/preprocessor', methods=['POST'])
 def preprocess_message():
