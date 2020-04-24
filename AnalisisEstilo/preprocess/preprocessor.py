@@ -410,6 +410,7 @@ class Preprocessor:
                 'date' : long,               # Epoch ms
                 'subject' : string,          # Optional
                 'bodyPlain' : string,
+                'bodyHtml': string,          # Optional
                 'bodyBase64Plain' : string,
                 'bodyBase64Html' : string,   # Optional
                 'plainEncoding' : string,    # Optional

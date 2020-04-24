@@ -89,6 +89,35 @@ class TypoCorrector:
             
         with open('oov.json', 'w') as fp:
             json.dump(d, fp)
+            
+    def __get_structured_text(self, typo):
+        """
+        Adds to the typo dictionary a key 'doc', whose value will correspond with
+        the Spacy's Doc of the body of the message, and a key 'sentences', whose
+        value will have the next structure:
+            [
+                {
+                    doc: Spacy's Doc of the sentence
+                    words: [Spacy's Tokens]
+                }
+            ]
+        Parameters
+        ----------
+        typo : dict
+            Dictionary of the preprocessed message.
+        Returns
+        -------
+        None.
+        """
+        typo['doc'] = self.nlp(typo['bodyPlain'])
+        sentences = [s.text for s in typo['doc'].sents]
+        typo['sentences'] = []
+
+        for s in sentences:
+            typo['sentences'].append({})
+            typo['sentences'][-1]['doc'] = self.nlp(s)
+            typo['sentences'][-1]['words'] = [t for t in 
+                                                typo['sentences'][-1]['doc']]
     
     def __correct_typo(self, ind, msg_typo, s_ind, s_ini):
         """
@@ -260,7 +289,7 @@ class TypoCorrector:
         if 'plainEncoding' in prep_msg:
             msg_typo['plainEncoding'] = prep_msg['plainEncoding']
         
-    def correct_msgs(self):
+    def correct_msgs(self, prep_msg, i):
         """
         Obtains the preprocessed messages and corrects all the typographic errors
         on them. Besides this method saves the preprocessed messages before the 
@@ -268,73 +297,83 @@ class TypoCorrector:
         
         Parameters
         ----------
-        user: str
-            User name of the owner of the messages.
+        prep_msg: dict
+            Preprocessed message with the following estructure:
+            {
+                'id' : string,
+                'threadId' : string,
+                'to' : [ string ],
+                'cc' : [ string ],
+                'bcc' : [ string ],
+                'from' : string,
+                'depth' : int,               # How many messages precede it
+                'date' : long,               # Epoch ms
+                'subject' : string,          # Optional
+                'bodyBase64Plain' : string,
+                'bodyBase64Html' : string,   # Optional
+                'plainEncoding' : string,    # Optional
+                'charLength' : int
+            }
+        i: int
+            It indicates the position of the word from which the typographic 
+            correction should be made.
             
         Returns
         -------
         None.
         
-        """        
-        while (not(self.pre_fin.is_set()) or len(self.prep) > 0):
-            extracted = False
-            while (len(self.prep) == 0 and not(self.pre_fin.is_set())):
-                self.prep_cv.wait()
-            if (len(self.prep) > 0):
-                prep_msg = self.prep.pop()
-                extracted = True
-            self.prep_cv.release()
+        """
+        prep_msg['bodyPlain'] = base64.urlsafe_b64decode(
+                prep_msg['bodyBase64Plain'].encode()).decode()
+        # If the body is not an empty string
+        if (len(prep_msg['bodyPlain']) > 0):
+            msg_typo = {}
             
-            # If the body is not an empty string
-            if (extracted and prep_msg['bodyPlain']):
-                msg_typo = {}
+            msg_typo['bodyPlain'] = prep_msg['bodyPlain']
+            self.__get_structured_text(msg_typo)
+            msg_typo['corrections'] = []
+            
+            discard = False
+            if (msg_typo['doc'][0].pos_ != 'SPACE' and msg_typo['doc'][0].is_oov):
+                print('Typographic error found in the begining of the message.\n')
+                print('This is the text:\n\n')
+                print(msg_typo['bodyPlain'])
+                discard = self.__yes_no_question(cft.DISC_MSG)
+            
+            i = 0
+            # Sentence index: indicates the initial token of the sentence
+            s_ind = -1
+            # Sentence init: indicates the position of the first chartacter
+            s_ini = 0
+            # Number of typo errors detected
+            count = 0
+            while (i < len(msg_typo['doc']) and not(discard)):
+                # If the token stars a sentence
+                if msg_typo['doc'][i].is_sent_start:
+                    s_ind += 1
+                    s_ini = msg_typo['doc'][i].idx
                 
-                msg_typo['bodyPlain'] = prep_msg.pop('bodyPlain')
-                msg_typo['doc'] = prep_msg.pop('doc')
-                msg_typo['sentences'] = prep_msg['sentences'].copy()
-                msg_typo['corrections'] = []
-                
-                discard = False
-                if (msg_typo['doc'][0].pos_ != 'SPACE' and msg_typo['doc'][0].is_oov):
-                    print('Typographic error found in the begining of the message.\n')
-                    print('This is the text:\n\n')
-                    print(msg_typo['bodyPlain'])
-                    discard = self.__yes_no_question(cft.DISC_MSG)
-                
-                i = 0
-                # Sentence index: indicates the initial token of the sentence
-                s_ind = -1
-                # Sentence init: indicates the position of the first chartacter
-                s_ini = 0
-                # Number of typo errors detected
-                count = 0
-                while (i < len(msg_typo['doc']) and not(discard)):
-                    # If the token stars a sentence
-                    if msg_typo['doc'][i].is_sent_start:
-                        s_ind += 1
-                        s_ini = msg_typo['doc'][i].idx
+                if (msg_typo['doc'][i].pos_ != 'SPACE' and 
+                    msg_typo['doc'][i].is_oov):
+                    i = self.__req_token_correction(i, msg_typo, s_ind, s_ini)
+                    count += 1
                     
-                    if (msg_typo['doc'][i].pos_ != 'SPACE' and 
-                        msg_typo['doc'][i].is_oov):
-                        i = self.__req_token_correction(i, msg_typo, s_ind, s_ini)
-                        count += 1
-                        
-                        if count == cft.TOO_MANY_TYPO:
-                            print(f'{count} typographic errors found.')
-                            discard = self.__yes_no_question(cft.DISC_MSG)
-                    else:
-                        i += 1
+                    if count == cft.TOO_MANY_TYPO:
+                        print(f'{count} typographic errors found.')
+                        discard = self.__yes_no_question(cft.DISC_MSG)
+                else:
+                    i += 1
+            
+            if not(discard):
+                for j in range(len(prep_msg['sentences'])):
+                    prep_msg['sentences'][j] = [base64.urlsafe_b64encode(
+                        t.text.encode()).decode() for t in  
+                        prep_msg['sentences'][j]['words']]
                 
-                if not(discard):
-                    for j in range(len(prep_msg['sentences'])):
-                        prep_msg['sentences'][j] = [base64.urlsafe_b64encode(
-                            t.text.encode()).decode() for t in  
-                            prep_msg['sentences'][j]['words']]
-                    
-                    self.__copy_data(prep_msg, msg_typo)
-                    
-                    msg_typo['charLength'] = len(msg_typo['bodyPlain'])
-                    msg_typo['bodyBase64Plain'] = base64.urlsafe_b64encode(
-                        msg_typo['bodyPlain'].encode()).decode()
-        
+                self.__copy_data(prep_msg, msg_typo)
+                
+                msg_typo['charLength'] = len(msg_typo['bodyPlain'])
+                msg_typo['bodyBase64Plain'] = base64.urlsafe_b64encode(
+                    msg_typo['bodyPlain'].encode()).decode()
+    
         self.__save_words_oov()
