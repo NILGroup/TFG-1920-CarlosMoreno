@@ -8,7 +8,6 @@ Created on Fri Dec 20 22:09:13 2019
 from __future__ import print_function
 import os
 import json
-import conftypo as cft
 import base64
 from mytoken import MyToken
 
@@ -118,126 +117,9 @@ class TypoCorrector:
             typo['sentences'][-1]['doc'] = self.nlp(s)
             typo['sentences'][-1]['words'] = [t for t in 
                                                 typo['sentences'][-1]['doc']]
-    
-    def __correct_typo(self, ind, msg_typo, s_ind, s_ini):
-        """
-        Corrects a typographic error of the token which is in the index given
-        position.
-        
-        Parameters
-        ----------
-        ind: int
-            Index which indicates the position of the token which has the 
-            typographic error.
-        msg_typo: dict
-            Dictionary where the body of the message and the spacy's doc of
-            it are stored.
-        s_ind: int
-            Index of the sentence where the typographic error is.
-        s_ini: int
-            Index of the begining of the sentence in the complete text.
-        
-        Returns
-        -------
-        None.
-        
-        """
-        chosen = False
-        while not chosen:
-            print('Possible solutions:\n')
-            print('1.- Remove word.\n')
-            print('2.- Rewrite word.\n')
-            try:
-                opt = int(input('Choose an option: '))
-                chosen = opt in {0, 1, 2}
-            except ValueError:
-                print('Invalid input.\n')
-        
-        token = msg_typo['doc'][ind]
-        sentence = msg_typo['sentences'][s_ind]
-        
-        begining = msg_typo['bodyPlain'][:token.idx]
-        s_begining = sentence['doc'].text[:token.idx - s_ini]
-        ending = msg_typo['bodyPlain'][token.idx + len(token):]
-        s_ending = sentence['doc'].text[token.idx - s_ini + len(token):]
-        
-        if opt == 1:            
-            msg_typo['bodyPlain'] = begining + ending[1:]
-            sent_text = s_begining + s_ending[1:]
-        else:
-            new_word = self.__req_verified_answer('Introduce the correct word: ')
             
-            msg_typo['bodyPlain'] = begining + new_word + ending
-            sent_text = s_begining + new_word + s_ending
-        
-        msg_typo['doc'] = self.nlp(msg_typo['bodyPlain'])
-        sentence['doc'] = self.nlp(sent_text)
-        sentence['words'] = [t for t in sentence['doc']]
-            
-    def __req_token_correction(self, ind, msg_typo, s_ind, s_ini):
-        """
-        Requests a token correction when the module has found a typographic
-        error (which is given).
-        
-        Parameters
-        ----------
-        ind: int
-            Index which indicates the position of the token which has the 
-            typographic error.
-        msg_typo: dict
-            Dictionary where the body of the message and the spacy's doc of
-            it are stored.
-        s_ind: int
-            Index of the sentence where the typographic error is.
-        s_ini: int
-            Index of the begining of the sentence in the complete text.
-        
-        Returns
-        -------
-        int: index of the next word which has to be analysed.
-        
-        """
-        print(f'Typographic error: {msg_typo["doc"][ind].text}\n')
-        print('Body message:\n\n')
-        print(msg_typo['bodyPlain'])
-        
-        if (self.__yes_no_question('Is it a real typographic error?')):
-            self.__correct_typo(ind, msg_typo, s_ind, s_ini)
-            return ind
-        elif msg_typo['doc'][ind].text in self.oov:
-            cor = {'position' : ind, 'sentenceIndex' : s_ind, 'sentenceInit' : s_ini,
-                   'token' : self.oov[msg_typo['doc'][ind].text]}
-            msg_typo['corrections'].append(cor)
-            return ind + 1
-        else:
-            ling_feat = MyToken(msg_typo['doc'][ind].text)
-            
-            print('You will need to introduce some linguistic features:\n')
-            
-            ling_feat.is_punct = self.__yes_no_question('Is the token punctuation?')
-            if ling_feat.is_punct:
-                ling_feat.is_left_punct = self.__yes_no_question(cft.IS_LPUNCT)
-                ling_feat.is_right_punct = self.__yes_no_question(cft.IS_RPUNCT)
-                ling_feat.is_bracket = self.__yes_no_question(cft.IS_BRACKET)
-        
-            ling_feat.like_url = self.__yes_no_question('Is it an url?')
-            ling_feat.like_email = self.__yes_no_question('Is it an email?')
-            
-            if (self.__yes_no_question("Do you know the token's lemma?")):
-                ling_feat.lemma_ = self.__req_verified_answer(cft.TOK_LEM)
-                
-            ling_feat.is_stop = self.__yes_no_question('Is a stop word?')
-            
-            if (self.__yes_no_question("Do you know the token's part-of-speech?")):
-                ling_feat.pos_ = self.__req_verified_answer(cft.TOK_POS)
-            
-            if (self.__yes_no_question(cft.SAVE_OOV)):
-                self.oov[msg_typo['doc'][ind].text] = ling_feat
-            
-            cor = {'position' : ind, 'sentenceIndex' : s_ind, 'sentenceInit' : s_ini,
-                   'token' : ling_feat}
-            msg_typo['corrections'].append(cor)
-            return ind + 1
+    def __is_there_errors(self, tok):
+        return tok.pos_ != 'SPACE' and tok.is_oov
     
     def __copy_data(self, prep_msg, msg_typo):
         """
@@ -323,57 +205,46 @@ class TypoCorrector:
         None.
         
         """
-        prep_msg['bodyPlain'] = base64.urlsafe_b64decode(
-                prep_msg['bodyBase64Plain'].encode()).decode()
+        if not('bodyPlain' in prep_msg):
+            prep_msg['bodyPlain'] = base64.urlsafe_b64decode(
+                        prep_msg['bodyBase64Plain'].encode()).decode()
         # If the body is not an empty string
         if (len(prep_msg['bodyPlain']) > 0):
             msg_typo = {}
             
             msg_typo['bodyPlain'] = prep_msg['bodyPlain']
             self.__get_structured_text(msg_typo)
-            msg_typo['corrections'] = []
+            if 'corrections' in prep_msg:
+                msg_typo['corrections'] = prep_msg['corrections']
+            else:
+                msg_typo['corrections'] = []
             
-            discard = False
-            if (msg_typo['doc'][0].pos_ != 'SPACE' and msg_typo['doc'][0].is_oov):
-                print('Typographic error found in the begining of the message.\n')
-                print('This is the text:\n\n')
-                print(msg_typo['bodyPlain'])
-                discard = self.__yes_no_question(cft.DISC_MSG)
-            
-            i = 0
             # Sentence index: indicates the initial token of the sentence
             s_ind = -1
             # Sentence init: indicates the position of the first chartacter
             s_ini = 0
-            # Number of typo errors detected
-            count = 0
-            while (i < len(msg_typo['doc']) and not(discard)):
+            
+            no_errors = True
+            while (i < len(msg_typo['doc']) and no_errors):
                 # If the token stars a sentence
                 if msg_typo['doc'][i].is_sent_start:
                     s_ind += 1
                     s_ini = msg_typo['doc'][i].idx
                 
-                if (msg_typo['doc'][i].pos_ != 'SPACE' and 
-                    msg_typo['doc'][i].is_oov):
-                    i = self.__req_token_correction(i, msg_typo, s_ind, s_ini)
-                    count += 1
-                    
-                    if count == cft.TOO_MANY_TYPO:
-                        print(f'{count} typographic errors found.')
-                        discard = self.__yes_no_question(cft.DISC_MSG)
-                else:
+                no_errors = self.__is_there_errors(msg_typo['doc'][i])
+                
+                if no_errors:
                     i += 1
             
-            if not(discard):
-                for j in range(len(prep_msg['sentences'])):
-                    prep_msg['sentences'][j] = [base64.urlsafe_b64encode(
-                        t.text.encode()).decode() for t in  
-                        prep_msg['sentences'][j]['words']]
-                
-                self.__copy_data(prep_msg, msg_typo)
-                
-                msg_typo['charLength'] = len(msg_typo['bodyPlain'])
-                msg_typo['bodyBase64Plain'] = base64.urlsafe_b64encode(
-                    msg_typo['bodyPlain'].encode()).decode()
+            for j in range(len(prep_msg['sentences'])):
+                prep_msg['sentences'][j] = [base64.urlsafe_b64encode(
+                    t.text.encode()).decode() for t in  
+                    prep_msg['sentences'][j]['words']]
+            
+            self.__copy_data(prep_msg, msg_typo)
+            
+            msg_typo['charLength'] = len(msg_typo['bodyPlain'])
+            msg_typo['bodyBase64Plain'] = base64.urlsafe_b64encode(
+                msg_typo['bodyPlain'].encode()).decode()
     
         self.__save_words_oov()
