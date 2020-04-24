@@ -13,6 +13,28 @@ import requests
 from extraction.extractedmessage import ExtractedMessage
 import json
 from initdb import init_db
+from preprocess.preprocessedmessage import PreprocessedMessage
+
+def yes_no_question(question):
+        """
+        Asks the user the given yes or no question.
+        
+        Parameters
+        ----------
+        question: str
+            Question which is going to be asked.
+        
+        Returns
+        -------
+        bool: true if the answer is yes and false if it is not.
+        
+        """
+        answ = input(f'\n{question} [y/n] ')
+        while(not answ in {'y', 'n'}):
+            print('Please write "y" or "n" to answer the question.\n')
+            answ = input(f'{question} [y/n] ')
+            
+        return answ == 'y'
 
 class Analyser:
     """
@@ -113,6 +135,29 @@ class Analyser:
         """
         return listcost * (numres // cfa.NUM_RESOURCE_PER_LIST + 1) + getcost * numres
     
+    def __req_verified_answer(self, question):
+        """
+        Asks the user the given question and it makes sure that the answer is
+        correct.
+        
+        Parameters
+        ----------
+        question: str
+            Question which is going to be asked.
+        
+        Returns
+        -------
+        str: verified answer.
+        
+        """
+        answ = input(question)
+            
+        sure = f'Introduced answer is: {answ}\nIs it correct?'
+        while (not yes_no_question(sure)):
+            answ = input(question)
+            sure = f'Introduced answer is: {answ}\nIs it correct?'
+        return answ
+    
     def analyse(self, nextPageToken = None, sign = None):
         """
         Analyses all the messages of the given user.
@@ -130,10 +175,13 @@ class Analyser:
         
         """
         init_db()
-        self.quota, msg_ids, nextPage = self.extractor.extract_sent_msg(self.nres,
+        # ExtractedMessage.objects().delete()
+        # PreprocessedMessage.objects().delete()
+        self.quota, ext_ids, nextPage = self.extractor.extract_sent_msg(self.nres,
                                                                         nextPageToken)
-        
-        for ide in msg_ids:
+        prep_ids = []
+        cor_ids = []
+        for ide in ext_ids:
             ext_msg = ExtractedMessage.objects(msg_id = ide).first().to_json()
             ext_msg = json.loads(ext_msg)
             response = requests.post(cfa.URL_PREP, json = {'message' : ext_msg,
@@ -141,3 +189,7 @@ class Analyser:
             if response.status_code != 200:
                 with open('logerror.txt', 'a') as f:
                     f.write(f"Error en el preprocesado de {ext_msg['_id']}.\n")
+            else:
+                prep_ids.append(json.loads(response.content)['id'])
+                
+        

@@ -10,29 +10,9 @@ from googleapiclient.discovery import build
 import config
 import auth
 from analyser import Analyser
+from analyser import yes_no_question
 import os
 import sys
-
-def yes_no_question(question):
-        """
-        Asks the user the given yes or no question.
-        
-        Parameters
-        ----------
-        question: str
-            Question which is going to be asked.
-        
-        Returns
-        -------
-        bool: true if the answer is yes and false if it is not.
-        
-        """
-        answ = input(f'\n{question} [y/n] ')
-        while(not answ in {'y', 'n'}):
-            print('Please write "y" or "n" to answer the question.\n')
-            answ = input(f'{question} [y/n] ')
-            
-        return answ == 'y'
 
 def main():
     """

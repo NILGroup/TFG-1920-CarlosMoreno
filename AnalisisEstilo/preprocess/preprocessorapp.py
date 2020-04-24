@@ -21,6 +21,15 @@ preprocessor = Preprocessor()
 
 @app.route('/preprocessor', methods=['POST'])
 def preprocess_message():
+    """
+    Preprocess the extracted message given by the post method.
+
+    Returns
+    -------
+    json: Dictionary in json format which only has the 'id' of the preprocessed
+    message.
+
+    """
     msg = request.json['message']
     
     raw = {
@@ -44,7 +53,8 @@ def preprocess_message():
     if ('plainEncoding' in msg) and (msg['plainEncoding'] is not None):
         raw['plainEncoding'] = msg['plainEncoding']
         
-    return jsonify(preprocessor.preprocess_message(raw, request.json['sign']))
+    return jsonify({'id' : 
+                    preprocessor.preprocess_message(raw, request.json['sign'])})
 
 if __name__ == '__main__':
     init_db()

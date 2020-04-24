@@ -479,24 +479,8 @@ class Preprocessor:
             
         Returns
         -------
-        prep : dict
-            Preprocessed message with the following estructure:
-            {
-                'id' : string,
-                'threadId' : string,
-                'to' : [ string ],
-                'cc' : [ string ],
-                'bcc' : [ string ],
-                'from' : string,
-                'depth' : int,               # How many messages precede it
-                'date' : long,               # Epoch ms
-                'subject' : string,          # Optional
-                'bodyPlain' : string,
-                'bodyBase64Plain' : string,
-                'bodyBase64Html' : string,   # Optional
-                'plainEncoding' : string,    # Optional
-                'charLength' : int
-            }
+        prep['id'] : str
+            Message identifier.
         
         """
         if ('bodyBase64Plain' in raw_msg):
@@ -522,4 +506,4 @@ class Preprocessor:
             
             self.__save_prep_msg(prep_msg)
             
-            return prep_msg
+            return prep_msg['id']

@@ -14,10 +14,6 @@ TOK_POS = "Introduce the token's pos: "
 
 SAVE_OOV = 'Do you want to save this information in order to know what to do in the future?'
 
-CSV_COL = ['id', 'threadId', 'to', 'cc', 'bcc', 'from', 'depth', 'date', 'subject', 
-               'bodyBase64Plain', 'bodyBase64Html', 'plainEncoding', 'charLength', 
-               'sentences']
-
 TYPO_BEG = 'Typographic error found in the begining of the message.'
 
 TOO_MANY_TYPO = 5

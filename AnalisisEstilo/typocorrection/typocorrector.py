@@ -8,7 +8,6 @@ Created on Fri Dec 20 22:09:13 2019
 from __future__ import print_function
 import os
 import json
-from csv import DictWriter
 import conftypo as cft
 import base64
 from mytoken import MyToken
@@ -90,50 +89,6 @@ class TypoCorrector:
             
         with open('oov.json', 'w') as fp:
             json.dump(d, fp)
-            
-    def __yes_no_question(self, question):
-        """
-        Asks the user the given yes or no question.
-        
-        Parameters
-        ----------
-        question: str
-            Question which is going to be asked.
-        
-        Returns
-        -------
-        bool: true if the answer is yes and false if it is not.
-        
-        """
-        answ = input(f'\n{question} [y/n] ')
-        while(not answ in {'y', 'n'}):
-            print('Please write "y" or "n" to answer the question.\n')
-            answ = input(f'{question} [y/n] ')
-            
-        return answ == 'y'
-    
-    def __req_verified_answer(self, question):
-        """
-        Asks the user the given question and it makes sure that the answer is
-        correct.
-        
-        Parameters
-        ----------
-        question: str
-            Question which is going to be asked.
-        
-        Returns
-        -------
-        str: verified answer.
-        
-        """
-        answ = input(question)
-            
-        sure = f'Introduced answer is: {answ}\nIs it correct?'
-        while (not self.__yes_no_question(sure)):
-            answ = input(question)
-            sure = f'Introduced answer is: {answ}\nIs it correct?'
-        return answ
     
     def __correct_typo(self, ind, msg_typo, s_ind, s_ini):
         """
@@ -305,7 +260,7 @@ class TypoCorrector:
         if 'plainEncoding' in prep_msg:
             msg_typo['plainEncoding'] = prep_msg['plainEncoding']
         
-    def correct_msgs(self, user):
+    def correct_msgs(self):
         """
         Obtains the preprocessed messages and corrects all the typographic errors
         on them. Besides this method saves the preprocessed messages before the 
@@ -320,19 +275,7 @@ class TypoCorrector:
         -------
         None.
         
-        """
-        if not os.path.exists(user + '/Preprocessing'):
-            os.mkdir(user + '/Preprocessing')
-            
-        if not os.path.exists(user + '/Preprocessing/preprocessed.csv'):
-            csvfile = open(user + '/Preprocessing/preprocessed.csv', 'w')
-            writer = DictWriter(csvfile, fieldnames = cft.CSV_COL)
-            writer.writeheader()
-        else:
-            csvfile = open(user + '/Preprocessing/preprocessed.csv', 'a')
-            writer = DictWriter(csvfile, fieldnames = cft.CSV_COL)
-        
-        self.prep_cv.acquire()
+        """        
         while (not(self.pre_fin.is_set()) or len(self.prep) > 0):
             extracted = False
             while (len(self.prep) == 0 and not(self.pre_fin.is_set())):
@@ -389,25 +332,9 @@ class TypoCorrector:
                             prep_msg['sentences'][j]['words']]
                     
                     self.__copy_data(prep_msg, msg_typo)
-                    writer.writerow(prep_msg)
                     
                     msg_typo['charLength'] = len(msg_typo['bodyPlain'])
                     msg_typo['bodyBase64Plain'] = base64.urlsafe_b64encode(
                         msg_typo['bodyPlain'].encode()).decode()
-                    
-                    self.corrected_cv.acquire()
-                    self.corrected.append(msg_typo)
-                    self.corrected_cv.notify()
-                    self.corrected_cv.release()
-                
-            self.prep_cv.acquire()
         
-        self.prep_cv.release()
-        
-        self.corrected_cv.acquire()
-        self.typo_fin.set()
-        self.corrected_cv.notify()
-        self.corrected_cv.release()
-        
-        csvfile.close()
         self.__save_words_oov()

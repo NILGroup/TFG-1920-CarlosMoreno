@@ -18,7 +18,6 @@ class CorrectedMessage(mongoengine.Document):
     depth = mongoengine.IntField(required = True)
     date = mongoengine.LongField(required = True)
     subject = mongoengine.StringField()
-    bodyPlain = mongoengine.StringField()
     bodyBase64Plain = mongoengine.StringField()
     plainEncoding = mongoengine.StringField()
     charLength = mongoengine.IntField()
