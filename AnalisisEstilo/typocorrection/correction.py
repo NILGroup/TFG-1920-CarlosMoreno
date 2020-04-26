@@ -35,14 +35,10 @@ class Correction(mongoengine.EmbeddedDocument):
         Is the token a bracket?
     position: int
         Index which indicates the position of the token.
-    sentenceIndex: int
-        Index of the sentence where the typographic error is.
-    sentenceInit: int
-        Index of the begining of the sentence in the complete text.
         
     """
     
-    text = mongoengine.StringField()
+    text = mongoengine.StringField(required = True)
     is_punct = mongoengine.BooleanField(default = False)
     is_right_punct = mongoengine.BooleanField(default = False)
     is_left_punct = mongoengine.BooleanField(default = False)
@@ -54,5 +50,3 @@ class Correction(mongoengine.EmbeddedDocument):
     is_bracket = mongoengine.BooleanField(default = False)
     
     position = mongoengine.IntField()
-    sentenceIndex = mongoengine.IntField()
-    sentenceInit = mongoengine.IntField()

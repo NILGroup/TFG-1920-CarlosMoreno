@@ -8,6 +8,8 @@ Created on Fri Dec 20 22:09:13 2019
 from __future__ import print_function
 import base64
 from mytoken import MyToken
+from correctedmessage import CorrectedMessage
+from correction import Correction
 
 class TypoCorrector:
     """
@@ -102,6 +104,79 @@ class TypoCorrector:
         
         if 'plainEncoding' in prep_msg:
             msg_typo['plainEncoding'] = prep_msg['plainEncoding']
+            
+    def __save_cor_msg(self, typo):
+        """
+        Save in the database the corrected message.
+
+        Parameters
+        ----------
+        typo : dict
+            Corrected message with the following estructure:
+            {
+                'id' : string,
+                'threadId' : string,
+                'to' : [ string ],
+                'cc' : [ string ],
+                'bcc' : [ string ],
+                'from' : string,
+                'depth' : int,               # How many messages precede it
+                'date' : long,               # Epoch ms
+                'subject' : string,          # Optional
+                'bodyPlain' : string,
+                'bodyBase64Plain' : string,
+                'plainEncoding' : string,    # Optional
+                'charLength' : int
+                'doc' : Spacy's Doc
+                'corrections' : [
+                    {
+                        'text': str
+                        'is_punct': bool
+                        'is_right_punct': bool
+                        'is_left_punct': bool
+                        'like_url': bool
+                        'like_email': bool
+                        'lemma_': str
+                        'is_stop': bool
+                        'pos_': str
+                        'is_bracket': bool
+                        'position': int
+                    }
+                ]
+            }
+
+        Returns
+        -------
+        None.
+
+        """
+        msg = CorrectedMessage()
+        msg.msg_id = typo['id']
+        msg.thread_id = typo['threadId']
+        for recipient in typo['to']:
+            msg.to.append(recipient)
+        for recipient in typo['cc']:
+            msg.cc.append(recipient)
+        for recipient in typo['bcc']:
+            msg.bcc.append(recipient)
+        msg.sender = typo['from']
+        msg.date = typo['date']
+        
+        if 'subject' in typo:
+            msg.subject = typo['subject']
+            
+        msg.depth = typo['depth']
+        msg.bodyBase64Plain = typo['bodyBase64Plain']
+        
+        if 'plainEncoding' in typo:
+            msg.plainEncoding = typo['plainEncoding']
+        
+        for c in typo['corrections']:
+            cor = Correction(**c)
+            msg.corrections.append(cor)
+
+        msg.charLength = typo['charLength']
+        msg.save()
         
     def correct_msgs(self, prep_msg, i):
         """
@@ -153,7 +228,7 @@ class TypoCorrector:
             
             no_errors = True
             while (i < len(msg_typo['doc']) and no_errors):
-                no_errors = self.__is_there_errors(msg_typo['doc'][i])
+                no_errors = not(self.__is_there_errors(msg_typo['doc'][i]))
                 
                 if no_errors:
                     i += 1
@@ -163,3 +238,6 @@ class TypoCorrector:
             msg_typo['charLength'] = len(msg_typo['bodyPlain'])
             msg_typo['bodyBase64Plain'] = base64.urlsafe_b64encode(
                 msg_typo['bodyPlain'].encode()).decode()
+            
+            if no_errors:
+                self.__save_cor_msg(msg_typo)
