@@ -89,36 +89,21 @@ class TypoCorrector:
         with open('oov.json', 'w') as fp:
             json.dump(d, fp)
             
-    def __get_structured_text(self, typo):
+    def __is_there_errors(self, tok):
         """
-        Adds to the typo dictionary a key 'doc', whose value will correspond with
-        the Spacy's Doc of the body of the message, and a key 'sentences', whose
-        value will have the next structure:
-            [
-                {
-                    doc: Spacy's Doc of the sentence
-                    words: [Spacy's Tokens]
-                }
-            ]
+        Given a token checks if it is out of the vocabulary of our model.
+
         Parameters
         ----------
-        typo : dict
-            Dictionary of the preprocessed message.
+        tok : spacy.Token
+            Token which we have to check if it is out of vocabulary.
+
         Returns
         -------
-        None.
-        """
-        typo['doc'] = self.nlp(typo['bodyPlain'])
-        sentences = [s.text for s in typo['doc'].sents]
-        typo['sentences'] = []
+        bool: False if it is a token in the vocabulary of our model and True
+        otherwise.
 
-        for s in sentences:
-            typo['sentences'].append({})
-            typo['sentences'][-1]['doc'] = self.nlp(s)
-            typo['sentences'][-1]['words'] = [t for t in 
-                                                typo['sentences'][-1]['doc']]
-            
-    def __is_there_errors(self, tok):
+        """
         return tok.pos_ != 'SPACE' and tok.is_oov
     
     def __copy_data(self, prep_msg, msg_typo):
@@ -145,8 +130,6 @@ class TypoCorrector:
                     'bodyBase64Html' : string,   # Optional
                     'plainEncoding' : string,    # Optional
                     'charLength' : int
-                    'sentences' : [ [ string ] ]
-                    ]
                 }
         msg_typo: dict
             Dictionary where the data is going to be copied.
@@ -213,24 +196,14 @@ class TypoCorrector:
             msg_typo = {}
             
             msg_typo['bodyPlain'] = prep_msg['bodyPlain']
-            self.__get_structured_text(msg_typo)
+            msg_typo['doc'] = self.nlp(msg_typo['bodyPlain'])
             if 'corrections' in prep_msg:
                 msg_typo['corrections'] = prep_msg['corrections']
             else:
                 msg_typo['corrections'] = []
             
-            # Sentence index: indicates the initial token of the sentence
-            s_ind = -1
-            # Sentence init: indicates the position of the first chartacter
-            s_ini = 0
-            
             no_errors = True
             while (i < len(msg_typo['doc']) and no_errors):
-                # If the token stars a sentence
-                if msg_typo['doc'][i].is_sent_start:
-                    s_ind += 1
-                    s_ini = msg_typo['doc'][i].idx
-                
                 no_errors = self.__is_there_errors(msg_typo['doc'][i])
                 
                 if no_errors:
