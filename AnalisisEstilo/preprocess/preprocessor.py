@@ -381,7 +381,7 @@ class Preprocessor:
         prep['to'] = raw['to']
         prep['cc'] = raw['cc']
         prep['bcc'] = raw['bcc']
-        prep['from'] = raw['from']
+        prep['sender'] = raw['sender']
         prep['depth'] = raw['depth']
         prep['date'] = raw['date']
         if 'subject' in raw:
@@ -405,7 +405,7 @@ class Preprocessor:
                 'to' : [ string ],
                 'cc' : [ string ],
                 'bcc' : [ string ],
-                'from' : string,
+                'sender' : string,
                 'depth' : int,               # How many messages precede it
                 'date' : long,               # Epoch ms
                 'subject' : string,          # Optional
@@ -424,14 +424,14 @@ class Preprocessor:
         """
         msg = PreprocessedMessage()
         msg.msg_id = prep['id']
-        msg.thread_id = prep['threadId']
+        msg.threadId = prep['threadId']
         for recipient in prep['to']:
             msg.to.append(recipient)
         for recipient in prep['cc']:
             msg.cc.append(recipient)
         for recipient in prep['bcc']:
             msg.bcc.append(recipient)
-        msg.sender = prep['from']
+        msg.sender = prep['sender']
         msg.date = prep['date']
         
         if 'subject' in prep:
@@ -450,10 +450,9 @@ class Preprocessor:
                     
     def preprocess_message(self, raw_msg, sign = None):
         """
-        Obtains the extracted messages and preprocessed them by extracting only
-        the body message (removing the sign, the replied message, ...) and 
-        getting a list of sentences and different words in the text. Besides
-        this method saves the raw messages before the preprocessing.
+        Obtains the extracted message and preprocessed it by extracting only
+        the body message (removing the sign, the replied message, ...). Besides
+        this method saves the preprocessed messages.
         
         Parameters
         ----------
@@ -466,7 +465,7 @@ class Preprocessor:
                 'to' : [ string ],
                 'cc' : [ string ],
                 'bcc' : [ string ],
-                'from' : string,
+                'sender' : string,
                 'depth' : int,               # How many messages precede it
                 'date' : long,               # Epoch ms
                 'subject' : string,          # Optional

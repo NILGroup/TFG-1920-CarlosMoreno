@@ -12,3 +12,5 @@ NUM_RESOURCE_PER_LIST = 100
 NLP = spacy.load('es_core_news_md')
 
 URL_PREP = "http://localhost:5000/preprocessor"
+
+URL_TYPO_CORRECT = "http://localhost:5000/typocorrector/correct"

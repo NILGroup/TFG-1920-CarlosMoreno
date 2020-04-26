@@ -19,7 +19,7 @@ class DataExtractor:
     ----------
     __id: str
         Identifier of the given message.
-    __thread_id: str
+    __threadId: str
         Identifier of the given message's thread.
     __to: list
         List of addresses of the primary recipients of the given message.
@@ -39,7 +39,7 @@ class DataExtractor:
         Body, as html text, of the given message.
     __plain_encod : str
         Enconding of the plain text.
-    __from: str
+    __sender: str
         Sender of the message
     __references: str
         Identifiers of previous messages of the same thread.
@@ -54,7 +54,7 @@ class DataExtractor:
 
         """
         self.__id = None
-        self.__thread_id = None
+        self.__threadId = None
         self.__to = []
         self.__cc = []
         self.__bcc = []
@@ -63,7 +63,7 @@ class DataExtractor:
         self.__plain_text = None
         self.__html_text = None
         self.__plain_encod = None
-        self.__from = None
+        self.__sender = None
         self.__references = None
 
     def __dec_b64(self, text):
@@ -123,7 +123,7 @@ class DataExtractor:
                 self.__subject = headers[i]['value']
                 found += 1
             elif (headers[i]['name'] == 'From'):
-                self.__from = headers[i]['value']
+                self.__sender = headers[i]['value']
                 found += 1
             elif (headers[i]['name'] == 'To' 
                   and headers[i]['value'] != 'undisclosed-recipients:;'):
@@ -344,7 +344,7 @@ class DataExtractor:
         None.
         """
         self.__id = msg['id']
-        self.__thread_id = msg['threadId']
+        self.__threadId = msg['threadId']
         self.__to = []
         self.__cc = []
         self.__bcc = []
@@ -353,7 +353,7 @@ class DataExtractor:
         self.__plain_text = None
         self.__plain_encod = None
         self.__html_text = None
-        self.__from = None
+        self.__sender = None
         self.__references = None
         self.__get_message_text(msg)
 
@@ -427,12 +427,12 @@ class DataExtractor:
 
         """
         msg.msg_id = self.__id
-        msg.thread_id = self.__thread_id
+        msg.threadId = self.__threadId
         for recipient in self.__to:
             msg.to.append(recipient)
         for recipient in self.__cc:
             msg.cc.append(recipient)
         for recipient in self.__bcc:
             msg.bcc.append(recipient)
-        msg.sender = self.__from
+        msg.sender = self.__sender
         msg.date = self.__date

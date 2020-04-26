@@ -16,7 +16,7 @@ class ExtractedMessage(mongoengine.Document):
     msg_id: mongoengine.StringField
         Message's identifier. It must be unique because we will identify each
         message by using it.
-    thread_id: mongoengine.StringField
+    threadId: mongoengine.StringField
         Identifier of the message's thread.
     to: mongoengine.ListField
         List of direct message's recipients.
@@ -46,7 +46,7 @@ class ExtractedMessage(mongoengine.Document):
     
     """
     msg_id = mongoengine.StringField(required=True, primary_key = True)
-    thread_id = mongoengine.StringField(required = True)
+    threadId = mongoengine.StringField(required = True)
     to = mongoengine.ListField()
     cc = mongoengine.ListField()
     bcc = mongoengine.ListField()

@@ -34,11 +34,11 @@ def preprocess_message():
     
     raw = {
         'id': msg['_id'],
-        'threadId': msg['thread_id'],
+        'threadId': msg['threadId'],
         'to': msg['to'],
         'cc': msg['cc'],
         'bcc': msg['bcc'],
-        'from': msg['sender'],
+        'sender': msg['sender'],
         'depth': msg['depth'],
         'date': msg['date'],
         'charLength': msg['charLength']

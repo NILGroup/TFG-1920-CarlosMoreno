@@ -185,7 +185,8 @@ class Extractor(ABC):
 
     def extract_sent_msg(self, nmsg, nextPage = None):
         """
-        Extracts all the sent messages by using the Gmail API.
+        Extracts all the sent messages by using the Gmail API. Besides it saves
+        all the extracted messages.
 
         Parameters
         ----------

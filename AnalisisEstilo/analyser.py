@@ -14,6 +14,8 @@ from extraction.extractedmessage import ExtractedMessage
 import json
 from initdb import init_db
 from preprocess.preprocessedmessage import PreprocessedMessage
+from typocorrection.typocode import TypoCode
+from typocorrection.correctedmessage import CorrectedMessage
 
 def yes_no_question(question):
         """
@@ -158,6 +160,83 @@ class Analyser:
             sure = f'Introduced answer is: {answ}\nIs it correct?'
         return answ
     
+    def __preprocess_message(self, ide, sign, prep_ids):
+        """
+        Preprocess the extracted message which has the given identifier.
+
+        Parameters
+        ----------
+        ide : str
+            Identifier of the extracted message which is going to be
+            preprocessed.
+        sign : str
+            Signature of the user in his emails.
+        prep_ids : list
+            List of the identifiers of the messages which have been
+            preprocessed.
+
+        Returns
+        -------
+        None.
+
+        """
+        ext_msg = ExtractedMessage.objects(msg_id = ide).first().to_json()
+        ext_msg = json.loads(ext_msg)
+        response = requests.post(cfa.URL_PREP, json = {'message' : ext_msg,
+                                              'sign': sign})
+        if response.status_code != 200:
+            with open('logerror.txt', 'a') as f:
+                f.write(f"Preprocess error of {ext_msg['_id']}.\n")
+        else:
+            response_dic = json.loads(response.content)
+            if response_dic['id'] is not None:
+                prep_ids.append(response_dic['id'])
+                
+    def __correct_message(self, ide, cor_ids):
+        """
+        Corrects the typographic errors of the preprocessed message which has
+        the given identifier.
+        
+        Parameters
+        ----------
+        ide : str
+            Identifier of the preprocessed message which is going to be
+            corrected.
+        cor_ids : list
+            List of the identifiers of the messages which have been
+            corrected.
+
+        Returns
+        -------
+        None.
+        
+        """
+        prep_msg = PreprocessedMessage.objects(msg_id = ide).first().to_json()
+        prep_msg = json.loads(prep_msg)
+        response = requests.post(cfa.URL_TYPO_CORRECT, json = {
+                                                    'message' : prep_msg,
+                                                    'index' : 0})
+        if response.status_code != 200:
+            with open('logerror.txt', 'a') as f:
+                f.write(f"Typo-correction error of {prep_msg['_id']}.\n")
+        else:
+            response_dic = json.loads(response.content)
+            
+            while (response.status_code == 200 and 
+                   response_dic['typoCode'] == TypoCode.typoFound):
+                #CAMBIAR
+                response = requests.post(cfa.URL_TYPO_CORRECT, json = {
+                                                    'message' : prep_msg,
+                                                    'index' : 0})
+                if response.status_code == 200:
+                    response_dic = json.loads(response.content)
+            
+            if response.status_code != 200:
+                with open('logerror.txt', 'a') as f:
+                    f.write(f"Typo-correction error of {prep_msg['_id']}.\n")
+            elif response_dic['typoCode'] == TypoCode.successful:
+                    cor_ids.append(response_dic['message']['id'])
+    
     def analyse(self, nextPageToken = None, sign = None):
         """
         Analyses all the messages of the given user.
@@ -177,19 +256,14 @@ class Analyser:
         init_db()
         # ExtractedMessage.objects().delete()
         # PreprocessedMessage.objects().delete()
+        # CorrectedMessage.objetcs().delete()
         self.quota, ext_ids, nextPage = self.extractor.extract_sent_msg(self.nres,
                                                                         nextPageToken)
         prep_ids = []
         cor_ids = []
         for ide in ext_ids:
-            ext_msg = ExtractedMessage.objects(msg_id = ide).first().to_json()
-            ext_msg = json.loads(ext_msg)
-            response = requests.post(cfa.URL_PREP, json = {'message' : ext_msg,
-                                                  'sign': sign})
-            if response.status_code != 200:
-                with open('logerror.txt', 'a') as f:
-                    f.write(f"Error en el preprocesado de {ext_msg['_id']}.\n")
-            else:
-                prep_ids.append(json.loads(response.content)['id'])
+            self.__preprocess_message(ide, sign, prep_ids)
                 
+        for ide in prep_ids:
+            self.__correct_message(ide, cor_ids)
         
