@@ -6,8 +6,6 @@ Created on Fri Dec 20 22:09:13 2019
 """
 
 from __future__ import print_function
-import os
-import json
 import base64
 from mytoken import MyToken
 
@@ -20,13 +18,6 @@ class TypoCorrector:
     ----------
     nlp: Spacy model
         Spacy's trained model which will be used for correcting typographic errors.
-    oov: dict
-        Dictionary where tokens out of vocabulary are stored in order to use
-        them if they appears later in the correction. It has the following
-        structure:
-            {
-            <token.text> : <MyToken class>
-            }
             
     """
     
@@ -44,51 +35,8 @@ class TypoCorrector:
         Constructed TypoCorrector class.
 
         """
-        self.oov = {}
-        self.__load_words_oov()
         self.nlp = nlp
-        
-    def __load_words_oov(self):
-        """
-        Loads the words which are considered out of vocabulary by the spacy
-        model and they are correctly written.
-
-        Returns
-        -------
-        None.
-
-        """
-        if os.path.exists('oov.json'):
-            with open('oov.json', 'r') as fp:
-                d = json.load(fp)
-            for key in d:
-                w = d[key]
-                tok = MyToken(w['text'], w['punct'], w['rpunct'], w['lpunct'], 
-                              w['url'], w['email'], w['lemma'], w['stop'], w['pos'],
-                              w['bracket'])
-                self.oov[key] = tok
-                
-    def __save_words_oov(self):
-        """
-        Saves the words which are considered out of vocabulary by the spacy
-        model and they are correctly written.
-
-        Returns
-        -------
-        None.
-
-        """
-        d = {}
-        for key in self.oov:
-            t = self.oov[key]
-            d[key] = {'text' : t.text, 'punct': t.is_punct, 'rpunct' : t.is_right_punct,
-                      'lpunct' : t.is_left_punct, 'url' : t.like_url,
-                      'email' : t.like_email, 'lemma' : t.lemma_, 'stop' : t.is_stop,
-                      'pos' : t.pos_, 'bracket' : t.is_bracket}
-            
-        with open('oov.json', 'w') as fp:
-            json.dump(d, fp)
-            
+                                    
     def __is_there_errors(self, tok):
         """
         Given a token checks if it is out of the vocabulary of our model.
@@ -104,7 +52,8 @@ class TypoCorrector:
         otherwise.
 
         """
-        return tok.pos_ != 'SPACE' and tok.is_oov
+        return (tok.pos_ != 'SPACE' and tok.is_oov and 
+                (MyToken.objects(text = tok.text).first() is None))
     
     def __copy_data(self, prep_msg, msg_typo):
         """
@@ -209,15 +158,8 @@ class TypoCorrector:
                 if no_errors:
                     i += 1
             
-            for j in range(len(prep_msg['sentences'])):
-                prep_msg['sentences'][j] = [base64.urlsafe_b64encode(
-                    t.text.encode()).decode() for t in  
-                    prep_msg['sentences'][j]['words']]
-            
             self.__copy_data(prep_msg, msg_typo)
             
             msg_typo['charLength'] = len(msg_typo['bodyPlain'])
             msg_typo['bodyBase64Plain'] = base64.urlsafe_b64encode(
                 msg_typo['bodyPlain'].encode()).decode()
-    
-        self.__save_words_oov()

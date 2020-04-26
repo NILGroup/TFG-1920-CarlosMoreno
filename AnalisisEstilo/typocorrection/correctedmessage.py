@@ -6,7 +6,7 @@ Created on Mon Mar  9 19:03:23 2020
 """
 
 import mongoengine
-from mytoken import MyToken
+from correction import Correction
 
 class CorrectedMessage(mongoengine.Document):
     msg_id = mongoengine.StringField(required=True, primary_key = True)
@@ -21,4 +21,9 @@ class CorrectedMessage(mongoengine.Document):
     bodyBase64Plain = mongoengine.StringField()
     plainEncoding = mongoengine.StringField()
     charLength = mongoengine.IntField()
-    corrections = mongoengine.EmbeddedDocumentListField(MyToken)
+    corrections = mongoengine.EmbeddedDocumentListField(Correction)
+    
+    meta = {
+        'db_alias': 'core',
+        'collection': 'correctedmessage'
+    }

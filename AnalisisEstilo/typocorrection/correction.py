@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sun Jan 26 11:20:48 2020
+Created on Sun Apr 26 14:59:28 2020
 
-@author: Carlos Moreno Morera
+@author: Carlos
 """
+
 import mongoengine
 
-class MyToken(mongoengine.EmbeddedDocument):
+class Correction(mongoengine.EmbeddedDocument):
     """
-    MyToken class manage mongoDB table which stores Spacy's Tokens which are
-    out of vocabulary and they are right.
+    Correction class substitutes Spacy's Tokens when the word is out of vocabulary.
     
     Attributes
     ----------
@@ -33,10 +33,16 @@ class MyToken(mongoengine.EmbeddedDocument):
         Part of speech.
     is_bracket: bool
         Is the token a bracket?
+    position: int
+        Index which indicates the position of the token.
+    sentenceIndex: int
+        Index of the sentence where the typographic error is.
+    sentenceInit: int
+        Index of the begining of the sentence in the complete text.
         
     """
     
-    text = mongoengine.StringField(required=True, primary_key = True)
+    text = mongoengine.StringField()
     is_punct = mongoengine.BooleanField(default = False)
     is_right_punct = mongoengine.BooleanField(default = False)
     is_left_punct = mongoengine.BooleanField(default = False)
@@ -47,7 +53,6 @@ class MyToken(mongoengine.EmbeddedDocument):
     pos_ = mongoengine.StringField()
     is_bracket = mongoengine.BooleanField(default = False)
     
-    meta = {
-        'db_alias': 'core',
-        'collection': 'mytoken'
-    }
+    position = mongoengine.IntField()
+    sentenceIndex = mongoengine.IntField()
+    sentenceInit = mongoengine.IntField()
