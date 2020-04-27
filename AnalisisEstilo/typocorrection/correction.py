@@ -5,48 +5,48 @@ Created on Sun Apr 26 14:59:28 2020
 @author: Carlos
 """
 
-import mongoengine
+import mongoengine as db
 
-class Correction(mongoengine.EmbeddedDocument):
+class Correction(db.EmbeddedDocument):
     """
     Correction class substitutes Spacy's Tokens when the word is out of vocabulary.
     
     Attributes
     ----------
-    text: str
+    text: db.StringField
         Verbatim text content.
-    is_punct: bool
+    is_punct: db.BooleanField
         Is the token punctuation?
-    is_right_punct: bool
+    is_right_punct: db.BooleanField
         Is the token a right punctuation mark?
-    is_left_punct: bool
+    is_left_punct: db.BooleanField
         Is the token a left punctuation mark?
-    like_url: bool
+    like_url: db.BooleanField
         Does the token resemble a URL?
-    like_email: bool
+    like_email: db.BooleanField
         Does the token resemble an email address?
-    lemma_: str
+    lemma_: db.StringField
         Base form of the token, with no inflectional suffixes.
-    is_stop: bool
+    is_stop: db.BooleanField
         Is the token a stop word?
-    pos_: str
+    pos_: db.StringField
         Part of speech.
-    is_bracket: bool
+    is_bracket: db.BooleanField
         Is the token a bracket?
-    position: int
+    position: db.IntField
         Index which indicates the position of the token.
         
     """
     
-    text = mongoengine.StringField(required = True)
-    is_punct = mongoengine.BooleanField(default = False)
-    is_right_punct = mongoengine.BooleanField(default = False)
-    is_left_punct = mongoengine.BooleanField(default = False)
-    like_url = mongoengine.BooleanField(default = False)
-    like_email = mongoengine.BooleanField(default = False)
-    lemma_ = mongoengine.StringField()
-    is_stop = mongoengine.BooleanField(default = False)
-    pos_ = mongoengine.StringField()
-    is_bracket = mongoengine.BooleanField(default = False)
+    text = db.StringField(required = True)
+    is_punct = db.BooleanField(default = False)
+    is_right_punct = db.BooleanField(default = False)
+    is_left_punct = db.BooleanField(default = False)
+    like_url = db.BooleanField(default = False)
+    like_email = db.BooleanField(default = False)
+    lemma_ = db.StringField()
+    is_stop = db.BooleanField(default = False)
+    pos_ = db.StringField()
+    is_bracket = db.BooleanField(default = False)
     
-    position = mongoengine.IntField()
+    position = db.IntField()

@@ -16,7 +16,12 @@ import sys
 
 def main():
     """
-    Analyse the emails of the user and obtain the style metrics
+    Analyse the emails of the user and obtain the style metrics.
+    
+    Returns
+    -------
+    None.
+    
     """
     if not(os.getcwd() in sys.path):
         sys.path.append(os.getcwd())

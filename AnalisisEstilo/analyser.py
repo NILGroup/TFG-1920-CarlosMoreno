@@ -15,7 +15,9 @@ import json
 from initdb import init_db
 from preprocess.preprocessedmessage import PreprocessedMessage
 from typocorrection.typocode import TypoCode
+
 from typocorrection.correctedmessage import CorrectedMessage
+from typocorrection.mytoken import MyToken
 
 def yes_no_question(question):
         """
@@ -137,29 +139,6 @@ class Analyser:
         """
         return listcost * (numres // cfa.NUM_RESOURCE_PER_LIST + 1) + getcost * numres
     
-    def __req_verified_answer(self, question):
-        """
-        Asks the user the given question and it makes sure that the answer is
-        correct.
-        
-        Parameters
-        ----------
-        question: str
-            Question which is going to be asked.
-        
-        Returns
-        -------
-        str: verified answer.
-        
-        """
-        answ = input(question)
-            
-        sure = f'Introduced answer is: {answ}\nIs it correct?'
-        while (not yes_no_question(sure)):
-            answ = input(question)
-            sure = f'Introduced answer is: {answ}\nIs it correct?'
-        return answ
-    
     def __preprocess_message(self, ide, sign, prep_ids):
         """
         Preprocess the extracted message which has the given identifier.
@@ -192,6 +171,136 @@ class Analyser:
             if response_dic['id'] is not None:
                 prep_ids.append(response_dic['id'])
                 
+    def __req_verified_answer(self, question):
+        """
+        Asks the user the given question and it makes sure that the answer is
+        correct.
+        
+        Parameters
+        ----------
+        question: str
+            Question which is going to be asked.
+        
+        Returns
+        -------
+        str: verified answer.
+        
+        """
+        answ = input(question)
+
+        sure = f'Introduced answer is: {answ}\nIs it correct?'
+        while (not yes_no_question(sure)):
+            answ = input(question)
+            sure = f'Introduced answer is: {answ}\nIs it correct?'
+        return answ
+                
+    def __correct_typo(self, ind, msg_typo, typoError, token_idx):
+        """
+        Corrects a typographic error of the token which is in the index given
+        position.
+        
+        Parameters
+        ----------
+        ind: int
+            Index which indicates the position of the token which has the 
+            typographic error.
+        msg_typo: dict
+            Dictionary where the body of the message and the spacy's doc of
+            it are stored.
+        typoError: str
+            Text of the token which has the typographic error.
+        token_idx: int
+            Integer which indicates the position of the first character of the
+            token recognised as a typographic error.
+        
+        Returns
+        -------
+        None.
+        
+        """
+        chosen = False
+        while not chosen:
+            print('Possible solutions:\n')
+            print('1.- Remove word.\n')
+            print('2.- Rewrite word.\n')
+            try:
+                opt = int(input('Choose an option: '))
+                chosen = opt in {0, 1, 2}
+            except ValueError:
+                print('Invalid input.\n')
+
+        begining = msg_typo['bodyPlain'][:token_idx]
+        ending = msg_typo['bodyPlain'][token_idx + len(typoError):]
+
+        if opt == 1:            
+            msg_typo['bodyPlain'] = begining + ending[1:]
+        else:
+            new_word = self.__req_verified_answer('Introduce the correct word: ')
+            msg_typo['bodyPlain'] = begining + new_word + ending
+                
+    def __req_token_correction(self, ind, msg_typo, typoError, token_idx):
+        """
+        Requests a token correction when the module has found a typographic
+        error (which is given).
+        
+        Parameters
+        ----------
+        ind: int
+            Index which indicates the position of the token which has the 
+            typographic error.
+        msg_typo: dict
+            Dictionary where the body of the message and the spacy's doc of
+            it are stored.
+        typoError: str
+            Text of the token which has the typographic error.
+        token_idx: int
+            Integer which indicates the position of the first character of the
+            token recognised as a typographic error.
+        
+        Returns
+        -------
+        int: index of the next word which has to be analysed.
+        
+        """
+        print(f'Typographic error: {typoError}\n')
+        print('Body message:\n\n')
+        print(msg_typo['bodyPlain'])
+
+        if (yes_no_question('Is it a real typographic error?')):
+            self.__correct_typo(ind, msg_typo, typoError, token_idx)
+            return ind
+        else:
+            ling_feat = {'text' : typoError}
+
+            print('You will need to introduce some linguistic features:\n')
+
+            ling_feat['is_punct'] = yes_no_question('Is the token punctuation?')
+            if ling_feat['is_punct']:
+                ling_feat['is_left_punct'] = yes_no_question(cfa.IS_LPUNCT)
+                ling_feat['is_right_punct'] = yes_no_question(cfa.IS_RPUNCT)
+                ling_feat['is_bracket'] = yes_no_question(cfa.IS_BRACKET)
+
+            ling_feat['like_url'] = yes_no_question('Is it an url?')
+            ling_feat['like_email'] = yes_no_question('Is it an email?')
+
+            if (yes_no_question("Do you know the token's lemma?")):
+                ling_feat['lemma_'] = self.__req_verified_answer(cfa.TOK_LEM)
+
+            ling_feat['is_stop'] = yes_no_question('Is a stop word?')
+
+            if (yes_no_question("Do you know the token's part-of-speech?")):
+                ling_feat['pos_'] = self.__req_verified_answer(cfa.TOK_POS)
+
+            if (yes_no_question(cfa.SAVE_OOV)):
+                response = requests.post(cfa.URL_TYPO_SAVE, json = ling_feat)
+                if response.status_code != 200:
+                    with open('logerror.txt', 'a') as f:
+                        f.write(f"Save-oov error with {ling_feat['text']}.\n")
+            
+            ling_feat['position'] = ind
+            msg_typo['corrections'].append(ling_feat)
+            return ind + 1
+                
     def __correct_message(self, ide, cor_ids):
         """
         Corrects the typographic errors of the preprocessed message which has
@@ -220,22 +329,33 @@ class Analyser:
             with open('logerror.txt', 'a') as f:
                 f.write(f"Typo-correction error of {prep_msg['_id']}.\n")
         else:
-            response_dic = json.loads(response.content)
+            resp_dic = json.loads(response.content)
             
-            while (response.status_code == 200 and 
-                   response_dic['typoCode'] == TypoCode.typoFound):
-                #CAMBIAR
-                response = requests.post(cfa.URL_TYPO_CORRECT, json = {
-                                                    'message' : prep_msg,
-                                                    'index' : 0})
-                if response.status_code == 200:
-                    response_dic = json.loads(response.content)
-            
-            if response.status_code != 200:
-                with open('logerror.txt', 'a') as f:
-                    f.write(f"Typo-correction error of {prep_msg['_id']}.\n")
-            elif response_dic['typoCode'] == TypoCode.successful:
-                    cor_ids.append(response_dic['message']['id'])
+            discard = False
+            if resp_dic['typoCode'] == TypoCode.typoFound.name:
+                print('Typographic error found.\n')
+                print('This is the text:\n\n')
+                print(resp_dic['message']['bodyPlain'])
+                discard = yes_no_question(cfa.DISC_MSG)
+                
+            if not(discard):
+                while (response.status_code == 200 and 
+                       resp_dic['typoCode'] == TypoCode.typoFound.name):
+                    prep_msg = resp_dic['message']
+                    ind = self.__req_token_correction(resp_dic['index'], 
+                                                      prep_msg, resp_dic['typoError'],
+                                                      resp_dic['token_idx'])
+                    response = requests.post(cfa.URL_TYPO_CORRECT, json = {
+                                                        'message' : prep_msg,
+                                                        'index' : ind})
+                    if response.status_code == 200:
+                        resp_dic = json.loads(response.content)
+                
+                if response.status_code != 200:
+                    with open('logerror.txt', 'a') as f:
+                        f.write(f"Typo-correction error of {prep_msg['id']}.\n")
+                elif resp_dic['typoCode'] == TypoCode.successful.name:
+                        cor_ids.append(resp_dic['message']['id'])
     
     def analyse(self, nextPageToken = None, sign = None):
         """
@@ -254,9 +374,10 @@ class Analyser:
         
         """
         init_db()
-        # ExtractedMessage.objects().delete()
-        # PreprocessedMessage.objects().delete()
-        # CorrectedMessage.objetcs().delete()
+        ExtractedMessage.objects().delete()
+        PreprocessedMessage.objects().delete()
+        CorrectedMessage.objects().delete()
+        MyToken.objects().delete()
         self.quota, ext_ids, nextPage = self.extractor.extract_sent_msg(self.nres,
                                                                         nextPageToken)
         prep_ids = []

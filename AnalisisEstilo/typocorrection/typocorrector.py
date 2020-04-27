@@ -8,9 +8,9 @@ Created on Fri Dec 20 22:09:13 2019
 from __future__ import print_function
 import base64
 from mytoken import MyToken
-from correctedmessage import CorrectedMessage
 from correction import Correction
-from typoresponse import TypoCode
+from correctedmessage import CorrectedMessage
+from typocode import TypoCode
 
 class TypoCorrector:
     """
@@ -131,16 +131,16 @@ class TypoCorrector:
                 'doc' : Spacy's Doc
                 'corrections' : [
                     {
-                        'text': str
-                        'is_punct': bool
-                        'is_right_punct': bool
-                        'is_left_punct': bool
-                        'like_url': bool
-                        'like_email': bool
-                        'lemma_': str
-                        'is_stop': bool
-                        'pos_': str
-                        'is_bracket': bool
+                        'text': str,
+                        'is_punct': bool,
+                        'is_right_punct': bool,
+                        'is_left_punct': bool,
+                        'like_url': bool,
+                        'like_email': bool,
+                        'lemma_': str,
+                        'is_stop': bool,
+                        'pos_': str,
+                        'is_bracket': bool,
                         'position': int
                     }
                 ]
@@ -214,6 +214,8 @@ class TypoCorrector:
             {
                 'typoCode': <enum 'TypoCode'>,
                 'index': int,
+                'typoError': str,
+                'token_idx': int,
                 'message': {
                     'id' : string,
                     'threadId' : string,
@@ -227,19 +229,19 @@ class TypoCorrector:
                     'bodyPlain' : string,
                     'bodyBase64Plain' : string,
                     'plainEncoding' : string,    # Optional
-                    'charLength' : int
+                    'charLength' : int,
                     'corrections' : [
                         {
-                            'text': str
-                            'is_punct': bool
-                            'is_right_punct': bool
-                            'is_left_punct': bool
-                            'like_url': bool
-                            'like_email': bool
-                            'lemma_': str
-                            'is_stop': bool
-                            'pos_': str
-                            'is_bracket': bool
+                            'text': str,
+                            'is_punct': bool,
+                            'is_right_punct': bool,
+                            'is_left_punct': bool,
+                            'like_url': bool,
+                            'like_email': bool,
+                            'lemma_': str,
+                            'is_stop': bool,
+                            'pos_': str,
+                            'is_bracket': bool,
                             'position': int
                         }
                     ]
@@ -248,13 +250,14 @@ class TypoCorrector:
         
         """
         response = TypoCode.notAnalysed
+        word = None
+        tok_idx = None
         
         if not('bodyPlain' in prep_msg):
             prep_msg['bodyPlain'] = base64.urlsafe_b64decode(
                         prep_msg['bodyBase64Plain'].encode()).decode()
         # If the body is not an empty string
         if (len(prep_msg['bodyPlain']) > 0):
-            response = TypoCode.typoFound
             msg_typo = {}
             
             msg_typo['bodyPlain'] = prep_msg['bodyPlain']
@@ -280,7 +283,41 @@ class TypoCorrector:
             if no_errors:
                 self.__save_cor_msg(msg_typo)
                 response = TypoCode.successful
+            else:
+                response = TypoCode.typoFound
+                word = msg_typo['doc'][i].text
+                tok_idx = msg_typo['doc'][i].idx
                 
             del msg_typo['doc']
                 
-        return {'typoCode' : response, 'index' : i, 'message' : msg_typo}
+        return {'typoCode' : response.name, 'index' : i, 'typoError': word, 
+                'token_idx' : tok_idx, 'message' : msg_typo}
+    
+    def save_oov(self, new_tok):
+        """
+        Saves the given token in the mongoDB.
+
+        Parameters
+        ----------
+        new_tok : dict
+            Token which we are going to save. It has the following structure:
+                {
+                    'text': str,
+                    'is_punct': bool,
+                    'is_right_punct': bool,
+                    'is_left_punct': bool,
+                    'like_url': bool,
+                    'like_email': bool,
+                    'lemma_': str,
+                    'is_stop': bool,
+                    'pos_': str,
+                    'is_bracket': bool
+                }
+
+        Returns
+        -------
+        None.
+
+        """
+        t = MyToken(**new_tok)
+        t.save()

@@ -6,7 +6,7 @@ Created on Sun Jan 26 11:20:48 2020
 """
 import mongoengine
 
-class MyToken(mongoengine.EmbeddedDocument):
+class MyToken(mongoengine.Document):
     """
     MyToken class manage mongoDB table which stores Spacy's Tokens which are
     out of vocabulary and they are right.

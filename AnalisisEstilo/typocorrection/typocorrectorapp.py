@@ -65,6 +65,21 @@ def correct_message():
         
     return jsonify(typocorrector.correct_msg(prep, request.json['index']))
 
+@app.route('/typocorrector/saveoov', methods=['POST'])
+def save_oov():
+    """
+    Saves a new token in the mongoDB which Spacy's model has recognised as
+    a typographic error. It is given by the post method.
+
+    Returns
+    -------
+    None.
+
+    """
+    new_tok = request.json
+    typocorrector.save_oov(new_tok)
+    return 'Successfully saved'
+
 if __name__ == '__main__':
     init_db()
-    app.run(debug=True)
+    app.run(debug=True, port = 4000)
