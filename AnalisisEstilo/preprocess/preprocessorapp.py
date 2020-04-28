@@ -32,29 +32,11 @@ def preprocess_message():
     """
     msg = request.json['message']
     
-    raw = {
-        'id': msg['_id'],
-        'threadId': msg['threadId'],
-        'to': msg['to'],
-        'cc': msg['cc'],
-        'bcc': msg['bcc'],
-        'sender': msg['sender'],
-        'depth': msg['depth'],
-        'date': msg['date'],
-        'charLength': msg['charLength']
-    }
+    msg['id'] = msg['_id']
+    del msg['_id']
     
-    if ('subject' in msg) and (msg['subject'] is not None):
-        raw['subject'] = msg['subject']
-    if ('bodyBase64Plain' in msg) and (msg['bodyBase64Plain'] is not None):
-        raw['bodyBase64Plain'] = msg['bodyBase64Plain']
-    if ('bodyBase64Html' in msg) and (msg['bodyBase64Html'] is not None):
-        raw['bodyBase64Html'] = msg['bodyBase64Html']
-    if ('plainEncoding' in msg) and (msg['plainEncoding'] is not None):
-        raw['plainEncoding'] = msg['plainEncoding']
-        
     return jsonify({'id' : 
-                    preprocessor.preprocess_message(raw, request.json['sign'])})
+                    preprocessor.preprocess_message(msg, request.json['sign'])})
 
 if __name__ == '__main__':
     init_db()

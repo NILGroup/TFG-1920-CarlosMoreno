@@ -6,8 +6,6 @@ Created on Thu Jan 23 16:17:23 2020
 """
 
 from __future__ import print_function
-import os
-from csv import DictWriter
 import confstyle as cfs
 import math
 import base64
@@ -16,75 +14,30 @@ class StyleMeter:
     """
     StyleMeter class performs the task of calculating some metrics which describes
     the writting style of the message.
-    
+        
     Attributes
     ----------
-    corrected : list
-        List of preprocessed messages whose typographical errors have been 
-        corrected. Shared resource wich is a list of messages with the following 
-        structure:
-            {
-                'id' : string,
-                'threadId' : string,
-                'to' : [ string ],
-                'cc' : [ string ],
-                'bcc' : [ string ],
-                'from' : string,
-                'depth' : int,               # How many messages precede it
-                'date' : long,               # Epoch ms
-                'subject' : string,          # Optional
-                'bodyPlain' : string,
-                'bodyBase64Plain' : string,
-                'plainEncoding' : string,    # Optional
-                'charLength' : int
-                'doc' : Spacy's Doc
-                'sentences' : [
-                    {
-                        doc: Spacy's Doc of the sentence
-                        words: [Spacy's Tokens]
-                    }
-                ]
-                'corrections' : [
-                    {
-                        'token' : <MyToken class>
-                        'position' : int
-                        'sentenceIndex' : int
-                        'sentenceInit' : int
-                    }
-                ]
-            }
-    cor_cv: multiprocessing.Condition
-        Conditional variable which is needed to access to the shared 
-        resource (corrected).
-    pre_fin: multiprocessing.Event
-        Event which informs that the process in charge of the message 
-        typographical correcting has finished.
+    nlp: Spacy model
+        Spacy's trained model which will be used for calculating all the style
+        metrics.
         
     """
     
-    def __init__(self, corrected, cor_cv, typo_fin):
+    def __init__(self, nlp):
         """
         Class constructor.
-
+        
         Parameters
         ----------
-        corrected : list
-            List of preprocessed messages whose typographical errors have been 
-            corrected.
-        cor_cv : multiprocessing.Condition
-            Conditional variable for accessing to corrected.
-        typo_fin : multiprocessing.Event
-            Event which informs whether or not the typographic correction of messages 
-            has finished.
-
+        nlp: Spacy model
+            Spacy's trained model which will be used for calculating all the
+            style metrics.
         Returns
         -------
         Constructed StyleMeter class.
-
+        
         """
-        self.corrected = corrected
-        self.cor_cv = cor_cv
-        self.typo_fin = typo_fin
+        self.nlp = nlp
         
     def __initialize_metrics(self, metrics, numSentences):
         """
@@ -461,61 +414,6 @@ class StyleMeter:
         metrics['SimpsonIndex'] = self.__Simpson_Index(M, metrics['richnessYule'])
         metrics['entropy'] = self.__entropy(words, metrics['numWords'])
         
-    def __create_typo_writer(self, user):
-        """
-        Creates a csv dictionary writer for the messages that have been typographical
-        corrected.
-        
-        Parameters
-        ----------
-        user: str
-            Gmail user.
-        
-        Returns
-        -------
-        DictWriter: csv dictionary writer.
-        File descriptor: csv file descriptor.
-        
-        """
-        if not os.path.exists(user + '/TypoCorrection'):
-            os.mkdir(user + '/TypoCorrection')
-            
-        if not os.path.exists(user + '/TypoCorrection/typocorrected.csv'):
-            csvtypo = open(user + '/TypoCorrection/typocorrected.csv', 'w')
-            writerTypo = DictWriter(csvtypo, fieldnames = cfs.CSV_TYPO_COL)
-            writerTypo.writeheader()
-        else:
-            csvtypo = open(user + '/TypoCorrection/typocorrected.csv', 'a')
-            writerTypo = DictWriter(csvtypo, fieldnames = cfs.CSV_TYPO_COL)
-        return writerTypo, csvtypo
-    
-    def __create_metrics_writer(self, user):
-        """
-        Creates a csv dictionary writer for the calculated metrics.
-        
-        Parameters
-        ----------
-        user: str
-            Gmail user.
-        
-        Returns
-        -------
-        DictWriter: csv dictionary writer.
-        File descriptor: csv file descriptor.
-        
-        """
-        if not os.path.exists(user + '/Metrics'):
-            os.mkdir(user + '/Metrics')
-                
-        if not os.path.exists(user + '/Metrics/stylemetrics.csv'):
-            csvMetrics = open(user + '/Metrics/stylemetrics.csv', 'w')
-            writerMetrics = DictWriter(csvMetrics, fieldnames = cfs.CSV_MET_COL)
-            writerMetrics.writeheader()
-        else:
-            csvMetrics = open(user + '/Metrics/stylemetrics.csv', 'a')
-            writerMetrics = DictWriter(csvMetrics, fieldnames = cfs.CSV_MET_COL)
-        return writerMetrics, csvMetrics
-        
     def __copy_metadata(self, metrics, cor_msg):
         """
         Copies the data from the corrected message to the dictionary that
@@ -534,7 +432,7 @@ class StyleMeter:
                 'to' : [ string ],
                 'cc' : [ string ],
                 'bcc' : [ string ],
-                'from' : string,
+                'sender' : string,
                 'depth' : int,               # How many messages precede it
                 'date' : long,               # Epoch ms
                 'subject' : string,          # Optional
@@ -569,60 +467,39 @@ class StyleMeter:
         metrics['to'] = cor_msg['to']
         metrics['cc'] = cor_msg['cc']
         metrics['bcc'] = cor_msg['bcc']
-        metrics['from'] = cor_msg['from']
+        metrics['sender'] = cor_msg['sender']
         metrics['depth'] = cor_msg['depth']
         metrics['date'] = cor_msg['date']
         
         if 'subject' in cor_msg:
             metrics['subject'] = cor_msg['subject']
     
-    def measure_style(self, user):
+    def measure_style(self, cor_msg):
         """
-        Measures the writting style of the messages of the given user.
+        Measures the writting style of the given message.
 
         Parameters
         ----------
-        user : str
-            Gmail user.
+        cor_msg : dict
+            DESCRIPTION
 
         Returns
         -------
         None.
 
         """
-        writerTypo, csvtypo = self.__create_typo_writer(user)
-        writerMetrics, csvMetrics = self.__create_metrics_writer(user)
+        metrics = {}
+        del cor_msg['bodyPlain']
+        doc = cor_msg.pop('doc')
+        self.__calculate_metrics(metrics, cor_msg, doc)
+        self.__copy_metadata(metrics, cor_msg)
+        
+        for j in range(len(cor_msg['sentences'])):
+            cor_msg['sentences'][j] = [base64.urlsafe_b64encode(
+                t.text.encode()).decode() for t in 
+                cor_msg['sentences'][j]['words']]
             
-        self.cor_cv.acquire()
-        while (not(self.typo_fin.is_set()) or len(self.corrected) > 0):
-            extracted = False
-            while (len(self.corrected) == 0 and not(self.typo_fin.is_set())):
-                self.cor_cv.wait()
-            if (len(self.corrected) > 0):
-                cor_msg = self.corrected.pop()
-                extracted = True
-            self.cor_cv.release()
-            
-            if extracted:
-                metrics = {}
-                del cor_msg['bodyPlain']
-                doc = cor_msg.pop('doc')
-                self.__calculate_metrics(metrics, cor_msg, doc)
-                self.__copy_metadata(metrics, cor_msg)
+        for j in range(len(cor_msg['corrections'])):
+            cor_msg['corrections'][j] = base64.urlsafe_b64encode(
+                cor_msg['corrections'][j]['token'].text.encode()).decode()
                 
-                for j in range(len(cor_msg['sentences'])):
-                    cor_msg['sentences'][j] = [base64.urlsafe_b64encode(
-                        t.text.encode()).decode() for t in 
-                        cor_msg['sentences'][j]['words']]
-                    
-                for j in range(len(cor_msg['corrections'])):
-                    cor_msg['corrections'][j] = base64.urlsafe_b64encode(
-                        cor_msg['corrections'][j]['token'].text.encode()).decode()
-                
-            writerTypo.writerow(cor_msg)
-            writerMetrics.writerow(metrics)
-            self.cor_cv.acquire()
-            
-        self.cor_cv.release()
-        csvtypo.close()
-        csvMetrics.close()

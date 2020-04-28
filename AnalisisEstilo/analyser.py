@@ -249,8 +249,7 @@ class Analyser:
             Index which indicates the position of the token which has the 
             typographic error.
         msg_typo: dict
-            Dictionary where the body of the message and the spacy's doc of
-            it are stored.
+            Dictionary where the body of the message is stored.
         typoError: str
             Text of the token which has the typographic error.
         token_idx: int
@@ -374,10 +373,10 @@ class Analyser:
         
         """
         init_db()
-        ExtractedMessage.objects().delete()
-        PreprocessedMessage.objects().delete()
-        CorrectedMessage.objects().delete()
-        MyToken.objects().delete()
+        # ExtractedMessage.objects().delete()
+        # PreprocessedMessage.objects().delete()
+        # CorrectedMessage.objects().delete()
+        # MyToken.objects().delete()
         self.quota, ext_ids, nextPage = self.extractor.extract_sent_msg(self.nres,
                                                                         nextPageToken)
         prep_ids = []

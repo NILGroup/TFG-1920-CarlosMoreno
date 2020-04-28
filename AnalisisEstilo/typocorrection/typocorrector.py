@@ -150,7 +150,7 @@ class TypoCorrector:
         -------
         None.
 
-        """
+        """        
         msg = CorrectedMessage()
         msg.msg_id = typo['id']
         msg.threadId = typo['threadId']

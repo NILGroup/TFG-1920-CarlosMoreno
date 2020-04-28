@@ -35,35 +35,11 @@ def correct_message():
     """
     msg = request.json['message']
     
-    prep = {
-        'threadId': msg['threadId'],
-        'to': msg['to'],
-        'cc': msg['cc'],
-        'bcc': msg['bcc'],
-        'sender': msg['sender'],
-        'depth': msg['depth'],
-        'date': msg['date'],
-        'charLength': msg['charLength']
-    }
     if ('_id' in msg) and (msg['_id'] is not None):
-        prep['id'] = msg['_id']
-    elif ('id' in msg) and (msg['id'] is not None):
-        prep['id'] = msg['id']
-    
-    if ('subject' in msg) and (msg['subject'] is not None):
-        prep['subject'] = msg['subject']
-    if ('bodyBase64Plain' in msg) and (msg['bodyBase64Plain'] is not None):
-        prep['bodyBase64Plain'] = msg['bodyBase64Plain']
-    if ('bodyBase64Html' in msg) and (msg['bodyBase64Html'] is not None):
-        prep['bodyBase64Html'] = msg['bodyBase64Html']
-    if ('plainEncoding' in msg) and (msg['plainEncoding'] is not None):
-        prep['plainEncoding'] = msg['plainEncoding']
-    if ('bodyPlain' in msg) and (msg['bodyPlain'] is not None):
-        prep['bodyPlain'] = msg['bodyPlain']
-    if ('corrections' in msg) and (msg['corrections'] is not None):
-        prep['corrections'] = msg['corrections']
+        msg['id'] = msg['_id']
+        del msg['_id']
         
-    return jsonify(typocorrector.correct_msg(prep, request.json['index']))
+    return jsonify(typocorrector.correct_msg(msg, request.json['index']))
 
 @app.route('/typocorrector/saveoov', methods=['POST'])
 def save_oov():
@@ -73,11 +49,10 @@ def save_oov():
 
     Returns
     -------
-    None.
+    str: Message which confirms that it was successfully saved.
 
     """
-    new_tok = request.json
-    typocorrector.save_oov(new_tok)
+    typocorrector.save_oov(request.json)
     return 'Successfully saved'
 
 if __name__ == '__main__':
