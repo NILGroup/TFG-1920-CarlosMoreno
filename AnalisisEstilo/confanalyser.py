@@ -14,6 +14,7 @@ NLP = spacy.load('es_core_news_md')
 URL_PREP = "http://localhost:5000/preprocessor"
 URL_TYPO_CORRECT = "http://localhost:4000/typocorrector/correct"
 URL_TYPO_SAVE = "http://localhost:4000/typocorrector/saveoov"
+URL_MET = "http://localhost:6000/stylemeter"
 
 IS_LPUNCT = 'Is it left punctuation?'
 IS_RPUNCT = 'Is it right punctuation?'

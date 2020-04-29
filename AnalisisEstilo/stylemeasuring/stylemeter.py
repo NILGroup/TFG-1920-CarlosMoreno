@@ -6,9 +6,10 @@ Created on Thu Jan 23 16:17:23 2020
 """
 
 from __future__ import print_function
-import confstyle as cfs
+import stylemeasuring.confstyle as cfs
 import math
 import base64
+from stylemeasuring.metrics import Metrics
 
 class StyleMeter:
     """
@@ -38,6 +39,36 @@ class StyleMeter:
         
         """
         self.nlp = nlp
+        
+    def __get_structured_text(self, msg):
+        """
+        Adds to the msg dictionary a key 'doc', whose value will correspond with
+        the Spacy's Doc of the body of the message, and a key 'sentences', whose
+        value will have the next structure:
+            [
+                {
+                    doc: Spacy's Doc of the sentence
+                    words: [Spacy's Tokens]
+                }
+            ]
+        Parameters
+        ----------
+        msg : dict
+            Dictionary of the corrected message.
+        Returns
+        -------
+        None.
+        
+        """
+        msg['doc'] = self.nlp(msg['bodyPlain'])
+        sentences = [s.text for s in msg['doc'].sents]
+        msg['sentences'] = []
+
+        for s in sentences:
+            msg['sentences'].append({})
+            msg['sentences'][-1]['doc'] = self.nlp(s)
+            msg['sentences'][-1]['words'] = [t for t in 
+                                                msg['sentences'][-1]['doc']]
         
     def __initialize_metrics(self, metrics, numSentences):
         """
@@ -73,7 +104,7 @@ class StyleMeter:
         metrics['num3Dots'] = 0
         metrics['numBrackets'] = 0
         
-        metrics['wordLength'] = {1:0, 2:0}
+        metrics['wordLength'] = {'1':0, '2':0}
         metrics['charLength'] = 0
         metrics['numWords'] = 0
         
@@ -97,7 +128,7 @@ class StyleMeter:
             Dictionary of the metrics of the sentence where the given token is.
         open_brackets: int
             Number of open and non-closed brackets found previously in the text.
-        t: Spacy's Token or MyToken class
+        t: Spacy's Token
             Token which is going to be analysed.
             
         Returns
@@ -150,13 +181,13 @@ class StyleMeter:
         if t.lemma_ != '' and not(t.lemma_ in words):
             words[t.lemma_] = 0
                     
-        if not(len(t.text) in metrics['wordLength']):
-            metrics['wordLength'][len(t.text)] = 0
-        if not(len(t.text) in m_sent['wordLength']):
-            m_sent['wordLength'][len(t.text)] = 0
+        if not(str(len(t.text)) in metrics['wordLength']):
+            metrics['wordLength'][str(len(t.text))] = 0
+        if not(str(len(t.text)) in m_sent['wordLength']):
+            m_sent['wordLength'][str(len(t.text))] = 0
                     
-        metrics['wordLength'][len(t.text)] += 1
-        m_sent['wordLength'][len(t.text)] += 1
+        metrics['wordLength'][str(len(t.text))] += 1
+        m_sent['wordLength'][str(len(t.text))] += 1
         if t.lemma_:
             words[t.lemma_] += 1
         metrics['numWords'] += 1
@@ -186,7 +217,7 @@ class StyleMeter:
         w_len = metrics['wordLength']
         total_char = 0
         for key in w_len:
-            total_char += key * w_len[key]
+            total_char += int(key) * w_len[key]
         
         return total_char/metrics['numWords']
             
@@ -210,13 +241,13 @@ class StyleMeter:
         """
         m_sent['charLength'] = len(s['doc'].text)
             
-        if not(m_sent['numWords'] in metrics['sentNumWords']):
-            metrics['sentNumWords'][m_sent['numWords']] = 0
-        if not(m_sent['charLength'] in metrics['sentLength']):
-            metrics['sentLength'][m_sent['charLength']] = 0
+        if not(str(m_sent['numWords']) in metrics['sentNumWords']):
+            metrics['sentNumWords'][str(m_sent['numWords'])] = 0
+        if not(str(m_sent['charLength']) in metrics['sentLength']):
+            metrics['sentLength'][str(m_sent['charLength'])] = 0
                 
-        metrics['sentNumWords'][m_sent['numWords']] += 1
-        metrics['sentLength'][m_sent['charLength']] += 1
+        metrics['sentNumWords'][str(m_sent['numWords'])] += 1
+        metrics['sentLength'][str(m_sent['charLength'])] += 1
         
         # Ril, Y., Y.C. & Fonseca, E. (2014) Determination of writing styles
         m_sent['stopRatio'] = (m_sent['numStopWords']/m_sent['numWords']) * 100
@@ -242,7 +273,7 @@ class StyleMeter:
         float: lambda parameter.
         
         """
-        one_syllable = metrics['wordLength'][1] + metrics['wordLength'][2]
+        one_syllable = metrics['wordLength']['1'] + metrics['wordLength']['2']
         return (one_syllable * 100)/metrics['numWords']
     
     def __Flesch_Kincaid_Index(self, metrics):
@@ -264,7 +295,7 @@ class StyleMeter:
         """
         beta = 0
         for key in metrics['sentNumWords']:
-            beta += key * metrics['sentNumWords'][key]
+            beta += int(key) * metrics['sentNumWords'][key]
         
         beta = beta/len(metrics['metricsSentences'])
         
@@ -293,13 +324,13 @@ class StyleMeter:
         
         """
         for key in words:
-            if not(words[key] in words_appearance):
-                words_appearance[words[key]] = 0
-            words_appearance[words[key]] += 1
+            if not(str(words[key]) in words_appearance):
+                words_appearance[str(words[key])] = 0
+            words_appearance[str(words[key])] += 1
             
         yule_sum = 0
         for i in words_appearance:
-            yule_sum += (math.pow(i, 2) * words_appearance[i] - M)
+            yule_sum += (math.pow(int(i), 2) * words_appearance[i] - M)
             
         return (math.pow(10, 4) * yule_sum) / math.pow(M, 2)
     
@@ -376,7 +407,7 @@ class StyleMeter:
             for t in s['words']:
                 if t.pos_ != 'SPACE' and t.is_oov:
                     cor = cor_msg['corrections'][ind_cor]
-                    t = cor['token']
+                    t = cfs.MyToken(**cor)
                     ind_cor += 1
                     
                 if t.is_punct:
@@ -424,7 +455,7 @@ class StyleMeter:
         metrics: dict
             Dictionary where the data is going to be copied.
         cor_msg: dict
-            Dictionary which represents the preprocessed message. It has the
+            Dictionary which represents the corrected message. It has the
             next structure:
                 {
                 'id' : string,
@@ -439,20 +470,27 @@ class StyleMeter:
                 'bodyPlain' : string,
                 'bodyBase64Plain' : string,
                 'plainEncoding' : string,    # Optional
-                'charLength' : int
-                'doc' : Spacy's Doc
+                'charLength' : int,
+                'doc' : Spacy's Doc,
                 'sentences' : [
                     {
                         doc: Spacy's Doc of the sentence
                         words: [Spacy's Tokens]
                     }
-                ]
+                ],
                 'corrections' : [
                     {
-                        'token' : <MyToken class>
-                        'position' : int
-                        'sentenceIndex' : int
-                        'sentenceInit' : int
+                        'text': str,
+                        'is_punct': bool,
+                        'is_right_punct': bool,
+                        'is_left_punct': bool,
+                        'like_url': bool,
+                        'like_email': bool,
+                        'lemma_': str,
+                        'is_stop': bool,
+                        'pos_': str,
+                        'is_bracket': bool,
+                        'position': int
                     }
                 ]
             }
@@ -481,7 +519,37 @@ class StyleMeter:
         Parameters
         ----------
         cor_msg : dict
-            DESCRIPTION
+            Dictionary which represents the corrected message. It has the
+            next structure:
+                {
+                'id' : string,
+                'threadId' : string,
+                'to' : [ string ],
+                'cc' : [ string ],
+                'bcc' : [ string ],
+                'sender' : string,
+                'depth' : int,               # How many messages precede it
+                'date' : long,               # Epoch ms
+                'subject' : string,          # Optional
+                'bodyBase64Plain' : string,
+                'plainEncoding' : string,    # Optional
+                'charLength' : int,
+                'corrections' : [
+                    {
+                        'text': str,
+                        'is_punct': bool,
+                        'is_right_punct': bool,
+                        'is_left_punct': bool,
+                        'like_url': bool,
+                        'like_email': bool,
+                        'lemma_': str,
+                        'is_stop': bool,
+                        'pos_': str,
+                        'is_bracket': bool,
+                        'position': int
+                    }
+                ]
+            }
 
         Returns
         -------
@@ -489,17 +557,13 @@ class StyleMeter:
 
         """
         metrics = {}
-        del cor_msg['bodyPlain']
+        if not('bodyPlain' in cor_msg):
+            cor_msg['bodyPlain'] = base64.urlsafe_b64decode(
+                        cor_msg['bodyBase64Plain'].encode()).decode()
+        self.__get_structured_text(cor_msg)
         doc = cor_msg.pop('doc')
         self.__calculate_metrics(metrics, cor_msg, doc)
         self.__copy_metadata(metrics, cor_msg)
-        
-        for j in range(len(cor_msg['sentences'])):
-            cor_msg['sentences'][j] = [base64.urlsafe_b64encode(
-                t.text.encode()).decode() for t in 
-                cor_msg['sentences'][j]['words']]
-            
-        for j in range(len(cor_msg['corrections'])):
-            cor_msg['corrections'][j] = base64.urlsafe_b64encode(
-                cor_msg['corrections'][j]['token'].text.encode()).decode()
+        met = Metrics(**metrics)
+        met.save()
                 

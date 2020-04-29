@@ -15,9 +15,10 @@ import json
 from initdb import init_db
 from preprocess.preprocessedmessage import PreprocessedMessage
 from typocorrection.typocode import TypoCode
-
 from typocorrection.correctedmessage import CorrectedMessage
+
 from typocorrection.correction import Correction
+from stylemeasuring.metrics import Metrics
 
 def yes_no_question(question):
         """
@@ -272,23 +273,29 @@ class Analyser:
             ling_feat = {'text' : typoError}
 
             print('You will need to introduce some linguistic features:\n')
-
-            ling_feat['is_punct'] = yes_no_question('Is the token punctuation?')
-            if ling_feat['is_punct']:
-                ling_feat['is_left_punct'] = yes_no_question(cfa.IS_LPUNCT)
-                ling_feat['is_right_punct'] = yes_no_question(cfa.IS_RPUNCT)
-                ling_feat['is_bracket'] = yes_no_question(cfa.IS_BRACKET)
-
-            ling_feat['like_url'] = yes_no_question('Is it an url?')
-            ling_feat['like_email'] = yes_no_question('Is it an email?')
+            
+            if yes_no_question('Is it a NOUN'):
+                ling_feat['is_punct'] = False
+                ling_feat['like_url'] = False
+                ling_feat['like_email'] = False
+                ling_feat['pos_'] = 'NOUN'
+            else:
+                ling_feat['is_punct'] = yes_no_question('Is the token punctuation?')
+                if ling_feat['is_punct']:
+                    ling_feat['is_left_punct'] = yes_no_question(cfa.IS_LPUNCT)
+                    ling_feat['is_right_punct'] = yes_no_question(cfa.IS_RPUNCT)
+                    ling_feat['is_bracket'] = yes_no_question(cfa.IS_BRACKET)
+    
+                ling_feat['like_url'] = yes_no_question('Is it an url?')
+                ling_feat['like_email'] = yes_no_question('Is it an email?')
+                
+                if (yes_no_question("Do you know the token's part-of-speech?")):
+                    ling_feat['pos_'] = self.__req_verified_answer(cfa.TOK_POS)
 
             if (yes_no_question("Do you know the token's lemma?")):
                 ling_feat['lemma_'] = self.__req_verified_answer(cfa.TOK_LEM)
 
             ling_feat['is_stop'] = yes_no_question('Is a stop word?')
-
-            if (yes_no_question("Do you know the token's part-of-speech?")):
-                ling_feat['pos_'] = self.__req_verified_answer(cfa.TOK_POS)
 
             if (yes_no_question(cfa.SAVE_OOV)):
                 response = requests.post(cfa.URL_TYPO_SAVE, json = ling_feat)
@@ -355,6 +362,27 @@ class Analyser:
                         f.write(f"Typo-correction error of {prep_msg['id']}.\n")
                 elif resp_dic['typoCode'] == TypoCode.successful.name:
                         cor_ids.append(resp_dic['message']['id'])
+                        
+    def __measure_style(self, ide):
+        """
+        Measures the writting style of the message with the given identifier.
+
+        Parameters
+        ----------
+        ide : str
+            Identifier of the message which is going to be analysed.
+
+        Returns
+        -------
+        None.
+
+        """
+        cor_msg = CorrectedMessage.objects(msg_id = ide).first().to_json()
+        cor_msg = json.loads(cor_msg)
+        response = requests.post(cfa.URL_MET, json = {'message' : cor_msg})
+        if response.status_code != 200:
+            with open('logerror.txt', 'a') as f:
+                f.write(f"Metrics error with {cor_msg['_id']}.\n")
     
     def analyse(self, nextPageToken = None, sign = None):
         """
@@ -377,6 +405,7 @@ class Analyser:
         PreprocessedMessage.objects().delete()
         CorrectedMessage.objects().delete()
         Correction.objects().delete()
+        Metrics.objects().delete()
         self.quota, ext_ids, nextPage = self.extractor.extract_sent_msg(self.nres,
                                                                         nextPageToken)
         prep_ids = []
@@ -386,4 +415,7 @@ class Analyser:
                 
         for ide in prep_ids:
             self.__correct_message(ide, cor_ids)
+            
+        for ide in cor_ids:
+            self.__measure_style(ide)
         
