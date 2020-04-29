@@ -7,7 +7,6 @@ Created on Fri Dec 20 22:09:13 2019
 
 from __future__ import print_function
 import base64
-from mytoken import MyToken
 from correction import Correction
 from correctedmessage import CorrectedMessage
 from typocode import TypoCode
@@ -56,7 +55,7 @@ class TypoCorrector:
 
         """
         return (tok.pos_ != 'SPACE' and tok.is_oov and 
-                (MyToken.objects(text = tok.text).first() is None))
+                (Correction.objects(text = tok.text).first() is None))
     
     def __copy_data(self, prep_msg, msg_typo):
         """
@@ -172,9 +171,9 @@ class TypoCorrector:
         if 'plainEncoding' in typo:
             msg.plainEncoding = typo['plainEncoding']
         
+        msg.corrections = []
         for c in typo['corrections']:
-            cor = Correction(**c)
-            msg.corrections.append(cor)
+            msg.corrections.append(c)
 
         msg.charLength = typo['charLength']
         msg.save()
@@ -293,14 +292,14 @@ class TypoCorrector:
         return {'typoCode' : response.name, 'index' : i, 'typoError': word, 
                 'token_idx' : tok_idx, 'message' : msg_typo}
     
-    def save_oov(self, new_tok):
+    def save_oov(self, cor):
         """
         Saves the given token in the mongoDB.
 
         Parameters
         ----------
-        new_tok : dict
-            Token which we are going to save. It has the following structure:
+        cor : dict
+            Correction which we are going to save. It has the following structure:
                 {
                     'text': str,
                     'is_punct': bool,
@@ -319,5 +318,5 @@ class TypoCorrector:
         None.
 
         """
-        t = MyToken(**new_tok)
-        t.save()
+        c = Correction(**cor)
+        c.save()

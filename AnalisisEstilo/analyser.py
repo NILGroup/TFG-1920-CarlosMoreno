@@ -17,7 +17,7 @@ from preprocess.preprocessedmessage import PreprocessedMessage
 from typocorrection.typocode import TypoCode
 
 from typocorrection.correctedmessage import CorrectedMessage
-from typocorrection.mytoken import MyToken
+from typocorrection.correction import Correction
 
 def yes_no_question(question):
         """
@@ -373,10 +373,10 @@ class Analyser:
         
         """
         init_db()
-        # ExtractedMessage.objects().delete()
-        # PreprocessedMessage.objects().delete()
-        # CorrectedMessage.objects().delete()
-        # MyToken.objects().delete()
+        ExtractedMessage.objects().delete()
+        PreprocessedMessage.objects().delete()
+        CorrectedMessage.objects().delete()
+        Correction.objects().delete()
         self.quota, ext_ids, nextPage = self.extractor.extract_sent_msg(self.nres,
                                                                         nextPageToken)
         prep_ids = []

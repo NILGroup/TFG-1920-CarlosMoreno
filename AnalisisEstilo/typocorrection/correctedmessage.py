@@ -6,7 +6,6 @@ Created on Mon Mar  9 19:03:23 2020
 """
 
 import mongoengine as db
-from typocorrection.correction import Correction
 
 class CorrectedMessage(db.Document):
     """
@@ -42,7 +41,7 @@ class CorrectedMessage(db.Document):
         Original message's encoding.
     charLength: db.IntField
         Number of characters of the message's body.
-    corrections: db.EmbeddedDocumentListField
+    corrections: db.ListField
         Information about the words that the Spacy's model considers out of
         vocabulary and they are not typographic errors.
         
@@ -59,7 +58,7 @@ class CorrectedMessage(db.Document):
     bodyBase64Plain = db.StringField()
     plainEncoding = db.StringField()
     charLength = db.IntField()
-    corrections = db.EmbeddedDocumentListField(Correction, default = [])
+    corrections = db.ListField()
     
     meta = {
         'db_alias': 'core',
