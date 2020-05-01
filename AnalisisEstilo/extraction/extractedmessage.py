@@ -5,59 +5,59 @@ Created on Mon Mar  9 17:45:20 2020
 @author: Carlos Moreno Morera
 """
 
-import mongoengine
+import mongoengine as db
 
-class ExtractedMessage(mongoengine.Document):
+class ExtractedMessage(db.Document):
     """
     Class which manage the MongoDB table about the extracted messages.
     
     Attributes
     ----------
-    msg_id: mongoengine.StringField
+    msg_id: db.StringField
         Message's identifier. It must be unique because we will identify each
         message by using it.
-    threadId: mongoengine.StringField
+    threadId: db.StringField
         Identifier of the message's thread.
-    to: mongoengine.ListField
+    to: db.ListField
         List of direct message's recipients.
-    cc: mongoengine.ListField
+    cc: db.ListField
         List of message's recipients who recieved the message as a copy of the
         information sent to the recipients in 'to' attributte.
-    bcc: mongoengine.ListField
+    bcc: db.ListField
         List of message's recipients who recieved the message as a copy of the
         information sent to the recipients in 'to' attributte. Each bcc 
         addressee is hidden from the rest of recipients.
-    sender: mongoengine.StringField
+    sender: db.StringField
         Message's sender.
-    depth: mongoengine.IntField
+    depth: db.IntField
         Number of messages which precede it.
-    date: mongoengine.LongField
+    date: db.LongField
         Epoch ms.
-    subject: mongoengine.StringField
+    subject: db.StringField
         Message's subject.
-    bodyBase64Plain: mongoengine.StringField
+    bodyBase64Plain: db.StringField
         Message's body as a Base64 encoded plain text.
-    bodyBase64Html: mongoengine.StringField
+    bodyBase64Html: db.StringField
         Message's body as a Base64 encoded html text.
-    plainEncoding: mongoengine.StringField
+    plainEncoding: db.StringField
         Original message's encoding.
-    charLength: mongoengine.IntField
+    charLength: db.IntField
         Number of characters of the message's body.
     
     """
-    msg_id = mongoengine.StringField(required=True, primary_key = True)
-    threadId = mongoengine.StringField(required = True)
-    to = mongoengine.ListField()
-    cc = mongoengine.ListField()
-    bcc = mongoengine.ListField()
-    sender = mongoengine.StringField(required = True)
-    depth = mongoengine.IntField(required = True)
-    date = mongoengine.LongField(required = True)
-    subject = mongoengine.StringField()
-    bodyBase64Plain = mongoengine.StringField()
-    bodyBase64Html = mongoengine.StringField()
-    plainEncoding = mongoengine.StringField()
-    charLength = mongoengine.IntField()
+    msg_id = db.StringField(required=True, primary_key = True)
+    threadId = db.StringField(required = True)
+    to = db.ListField()
+    cc = db.ListField()
+    bcc = db.ListField()
+    sender = db.StringField(required = True)
+    depth = db.IntField(required = True)
+    date = db.LongField(required = True)
+    subject = db.StringField()
+    bodyBase64Plain = db.StringField()
+    bodyBase64Html = db.StringField()
+    plainEncoding = db.StringField()
+    charLength = db.IntField()
     
     meta = {
         'db_alias': 'core',

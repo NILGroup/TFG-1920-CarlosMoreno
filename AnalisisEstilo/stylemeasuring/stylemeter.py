@@ -557,14 +557,15 @@ class StyleMeter:
         None.
 
         """
-        metrics = {}
-        if not('bodyPlain' in cor_msg):
-            cor_msg['bodyPlain'] = base64.urlsafe_b64decode(
-                        cor_msg['bodyBase64Plain'].encode()).decode()
-        self.__get_structured_text(cor_msg)
-        doc = cor_msg.pop('doc')
-        self.__calculate_metrics(metrics, cor_msg, doc)
-        self.__copy_metadata(metrics, cor_msg)
-        met = Metrics(**metrics)
-        met.save()
+        if not(Metrics.objects(msg_id = cor_msg['id']).first()):
+            metrics = {}
+            if not('bodyPlain' in cor_msg):
+                cor_msg['bodyPlain'] = base64.urlsafe_b64decode(
+                            cor_msg['bodyBase64Plain'].encode()).decode()
+            self.__get_structured_text(cor_msg)
+            doc = cor_msg.pop('doc')
+            self.__calculate_metrics(metrics, cor_msg, doc)
+            self.__copy_metadata(metrics, cor_msg)
+            met = Metrics(**metrics)
+            met.save()
                 

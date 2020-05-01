@@ -483,7 +483,8 @@ class Preprocessor:
             Message identifier.
         
         """
-        if ('bodyBase64Plain' in raw_msg):
+        if ('bodyBase64Plain' in raw_msg and 
+            not(PreprocessedMessage.objects(msg_id = raw_msg['id']).first())):
             prep_msg = {}
             raw_msg['bodyPlain'] = base64.urlsafe_b64decode(
                 raw_msg['bodyBase64Plain'].encode()).decode()

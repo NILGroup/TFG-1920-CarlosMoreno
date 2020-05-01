@@ -252,7 +252,8 @@ class TypoCorrector:
         word = None
         tok_idx = None
         
-        if not('bodyPlain' in prep_msg):
+        if (not('bodyPlain' in prep_msg) and 
+            not(CorrectedMessage.objects(msg_id = prep_msg['id']).first())):
             prep_msg['bodyPlain'] = base64.urlsafe_b64decode(
                         prep_msg['bodyBase64Plain'].encode()).decode()
         # If the body is not an empty string
