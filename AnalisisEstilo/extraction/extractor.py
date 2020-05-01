@@ -201,8 +201,6 @@ class Extractor(ABC):
             Remaining quota units of Gmail API.
         msgs_ids: list
             List of all of extracted message's identifiers.
-        actual_page: str
-            Page token where the last message was extracted.
 
         """
         extracted = 0
@@ -237,11 +235,11 @@ class Extractor(ABC):
         
         with open('log.txt', 'a') as f:
             f.write('\n\nEXTRACTION FINISHED:\n')
-            f.write(f'Extracted resources: {extracted}\n')
+            f.write(f'Extracted resources: {extracted}/{nmsg}\n')
             f.write(f'Remaining quota: {self.quota}\n')
                     
             if extracted < nmsg:
                 f.write('Actual Page Token: ' + actual_page + '\n')
                 f.write('Next Page Token: '+ nextPage + '\n')
                 
-        return self.quota, msgs_ids, actual_page
+        return self.quota, msgs_ids

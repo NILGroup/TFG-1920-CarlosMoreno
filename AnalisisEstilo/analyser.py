@@ -17,9 +17,6 @@ from preprocess.preprocessedmessage import PreprocessedMessage
 from typocorrection.typocode import TypoCode
 from typocorrection.correctedmessage import CorrectedMessage
 
-from typocorrection.correction import Correction
-from stylemeasuring.metrics import Metrics
-
 def yes_no_question(question):
         """
         Asks the user the given yes or no question.
@@ -62,10 +59,7 @@ class Analyser:
         preprocessed messages in order to being analysed then.
     nres: int
         Number of the resource that is going to be extracted (messages or threads).
-    meter: StyleMeter
-        Object which performs the task of measuring the writting style from
-        corrected messages.
-    
+            
     """
     def __init__(self, service, quota = qu.QUOTA_UNITS_PER_DAY, ext_msg = None,
                  num_extracted = None):
@@ -401,13 +395,7 @@ class Analyser:
         
         """
         init_db()
-        ExtractedMessage.objects().delete()
-        PreprocessedMessage.objects().delete()
-        CorrectedMessage.objects().delete()
-        Correction.objects().delete()
-        Metrics.objects().delete()
-        self.quota, ext_ids, nextPage = self.extractor.extract_sent_msg(self.nres,
-                                                                        nextPageToken)
+        self.quota, ext_ids = self.extractor.extract_sent_msg(self.nres, nextPageToken)
         prep_ids = []
         cor_ids = []
         for ide in ext_ids:
@@ -418,4 +406,10 @@ class Analyser:
             
         for ide in cor_ids:
             self.__measure_style(ide)
+        
+        with open('log.txt', 'a') as f:
+            f.write('Analysis finished.\n')
+            f.write(f'{len(ext_ids)} messages have been preprocessed.\n')
+            f.write(f'{len(prep_ids)} messages have been typo-corrected.\n')
+            f.write(f'{len(cor_ids)} messages have been measured.\n')
         

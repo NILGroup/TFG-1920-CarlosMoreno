@@ -2,7 +2,7 @@
 """
 Created on Tue Apr 21 13:49:01 2020
 
-@author: Carlos
+@author: Carlos Moreno Morera
 """
 import os, sys
 initial_dir = os.getcwd()

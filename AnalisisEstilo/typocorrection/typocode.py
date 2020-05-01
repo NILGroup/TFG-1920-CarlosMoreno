@@ -2,7 +2,7 @@
 """
 Created on Sun Apr 26 23:27:13 2020
 
-@author: Carlos
+@author: Carlos Moreno Morera
 """
 
 from enum import Enum
