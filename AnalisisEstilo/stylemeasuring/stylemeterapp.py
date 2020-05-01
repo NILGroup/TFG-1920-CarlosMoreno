@@ -2,7 +2,7 @@
 """
 Created on Wed Apr 29 21:03:09 2020
 
-@author: Carlos
+@author: Carlos Moreno Morera
 """
 
 import os, sys

@@ -33,6 +33,7 @@ class StyleMeter:
         nlp: Spacy model
             Spacy's trained model which will be used for calculating all the
             style metrics.
+            
         Returns
         -------
         Constructed StyleMeter class.

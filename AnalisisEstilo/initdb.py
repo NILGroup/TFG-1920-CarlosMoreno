@@ -2,7 +2,7 @@
 """
 Created on Wed Apr 22 17:50:25 2020
 
-@author: Carlos
+@author: Carlos Moreno Morera
 """
 
 import mongoengine
@@ -17,3 +17,4 @@ def init_db():
 
     """
     mongoengine.register_connection(alias='core', name='analysis')
+    mongoengine.connect('analysis', alias='default')
