@@ -119,7 +119,155 @@ class Preprocessor:
         """
         tag = self.__extract_html_tag(html, pos)
         return ((tag in cf.TAGS_BREAKS_LINE) or (tag in cf.TAGS_LIST))
+    
+    def __carriage_return_followed_by_newline(self, pos, plain):
+        """
+        Checks if the character of is a carriage return character followed 
+        by a newline character.
         
+        Parameters
+        ----------
+        pos: int
+            Position of the character that we want to check.
+        plain: str
+            Message body as plain text.
+            
+        Returns
+        -------
+        bool: True if it is a carriage return character followed by a newline
+        character and False otherwise.
+        
+        """
+        return (plain[pos] == '\r' and pos < len(plain) - 1 and 
+                plain[pos + 1] == '\n')
+    
+    def __find_first_known_tag(self, c, html, ind):
+        """
+        Finds the first known tag.
+        
+        Parameters
+        ----------
+        c : str
+            Character of the plain text.
+        html : str
+            Message body represented as html.
+        ind : int
+            Position from which we will look for a known label.
+            
+        Returns
+        -------
+        ind : int
+            Position where the known label is.
+        
+        """
+        while (html[ind] == '<' and not self.__is_known_tag(html, ind + 1)):
+            ind = html.find('>', ind) + 1
+            if (ind < len(html) - 1 and html[ind] == ' ' and 
+                html[ind + 1] == '<' and html[ind] != c):
+                ind += 1
+                
+        return ind
+        
+    def __char_equal(self, c, html, ind):
+        """
+        Checks if the given character is equal to the character that represents
+        the given position of the html text.
+
+        Parameters
+        ----------
+        c : str
+            Character that we want to check.
+        html : str
+            Message body represented as html.
+        ind : int
+            Position of the character in html.
+
+        Returns
+        -------
+        bool
+            Indicates if the characteres are 'equals' taking into account the
+            special HTML characters.
+        int
+            Positon of the next character in html.
+
+        """
+        if c not in cf.SPECIAL_HTML_CHAR:
+            return c == html[ind], ind + 1
+        else:
+            new_pos = ind + len(cf.SPECIAL_HTML_CHAR[c])
+            return html.startswith(cf.SPECIAL_HTML_CHAR[c], ind), new_pos
+    
+    def __find_first_match(self, c, html, ind):
+        """
+        Finds the first character in the given html text which matches with 
+        the given character.
+
+        Parameters
+        ----------
+        c : str
+            Character that we want to match with.
+        html : str
+            Message body represented as html.
+        ind : int
+            Position from which we will look for the match.
+
+        Returns
+        -------
+        ind : int
+            Position of the character of html which matches with c.
+
+        """
+        eq, _ = self.__char_equal(c, html, ind)
+        while not(eq):
+            if html[ind] == '<' and not self.__is_vspace_tag(html, ind + 1):
+                ind = html.find('>', ind) + 1
+                if (ind < len(html) - 1 and html[ind] == ' ' and
+                    html[ind + 1] == '<' and html[ind] != c):
+                    ind += 1
+            elif html[ind] != '<':
+                ind += 1
+            
+            eq, _ = self.__char_equal(c, html, ind)
+                
+        return ind
+    
+    def __is_list_item(self, c, html, ind):
+        """
+        Checks if the character belongs to a list.
+
+        Parameters
+        ----------
+        c : str
+            Character of the plain text.
+        html : str
+            Message body represented as html.
+        ind : int
+            Position from which we will check it.
+
+        Returns
+        -------
+        is_list_item : bool
+            Indicates if the character is a list item.
+        ind : int
+            Position of the character of html after checking it.
+
+        """
+        is_list_item = False
+        if html[ind] == '<':
+            tag = self.__extract_html_tag(html, ind + 1)
+            is_list_item = self.__extract_html_tag(html, ind + 1) == 'li'
+        
+        while (html[ind] == '<' and tag in cf.TAGS_LIST):
+            ind = html.find('>', ind) + 1
+            if (ind < len(html) - 1 and html[ind] == ' ' and 
+                html[ind + 1] == '<' and html[ind] != c):
+                ind += 1
+            if html[ind] == '<':
+                tag = self.__extract_html_tag(html, ind + 1)
+                is_list_item = is_list_item or tag == 'li'
+                
+        return is_list_item, ind
+    
     def __remove_soft_breaks(self, plain, html):
         """
         Removes soft break lines of the message body by comparing its
@@ -143,39 +291,24 @@ class Preprocessor:
         pos = 0
         
         while pos < len(plain):
-            if (plain[pos] == '\r' and pos < len(plain) - 1 and 
-                plain[pos + 1] == '\n'):
+            if self.__carriage_return_followed_by_newline(pos, plain):
                 pos += 1
                 
             c = plain[pos]
             
-            while ((c == '\n' or c == ' ' or c == '*') and 
-                   html[ind] == '<' and not self.__is_known_tag(html, ind + 1)):
-                ind = html.find('>', ind) + 1
-                if (ind < len(html) - 1 and html[ind] == ' ' and 
-                    html[ind + 1] == '<' and html[ind] != c):
-                    ind += 1
+            if (c == '\n' or c == ' ' or c == '*'):
+                ind = self.__find_first_known_tag(c, html, ind)
                     
             if not(start_list_item):
-                while (c != html[ind] and not(c.isdigit()) and 
-                       (c not in cf.SPECIAL_CHAR) and (not c == '\n')):
-                    if html[ind] == '<' and not self.__is_vspace_tag(html, ind + 1):
-                        ind = html.find('>', ind) + 1
-                        if (ind < len(html) - 1 and html[ind] == ' ' and
-                            html[ind + 1] == '<' and html[ind] != c):
-                            ind += 1
-                    elif html[ind] != '<':
-                        ind += 1
+                if (not(c.isdigit()) and  (c not in cf.SPECIAL_CHAR) and c != '\n'):
+                    ind = self.__find_first_match(c, html, ind)
                         
-                while ((c == '-' or c == '.' or c.isdigit()) and html[ind] == '<' 
-                       and not self.__is_known_tag(html, ind + 1)):
-                    ind = html.find('>', ind) + 1
-                    if (ind < len(html) - 1 and html[ind] == ' ' and 
-                        html[ind + 1] == '<' and html[ind] != c):
-                        ind += 1
-                        
-                if (c == html[ind]):
-                    ind += 1
+                if (c == '-' or c == '.' or c.isdigit()):
+                    ind = self.__find_first_known_tag(c, html, ind)
+                    
+                eq, new_ind = self.__char_equal(c, html, ind)
+                if eq:
+                    ind = new_ind
                     cleaned_text += c
                 elif c == '\n':
                     if html[ind] == '<' and self.__is_break_line_tag(html, ind + 1):
@@ -192,30 +325,21 @@ class Preprocessor:
                 elif (c == '-' or c == '.' or c.isdigit()):
                     start_list_item = True
                     
-                    is_list_item = False
-                    if html[ind] == '<':
-                        tag = self.__extract_html_tag(html, ind + 1)
-                        is_list_item = is_list_item or tag == 'li'
-                    while (html[ind] == '<' and tag in cf.TAGS_LIST):
+                    is_list_item, ind = self.__is_list_item(c, html, ind)
+                    if is_list_item:
+                        cleaned_text += '\n'
+            else:
+                if (c != '*' and c != '\n'):
+                    while html[ind] == '<':
                         ind = html.find('>', ind) + 1
                         if (ind < len(html) - 1 and html[ind] == ' ' and 
                             html[ind + 1] == '<' and html[ind] != c):
                             ind += 1
-                        if html[ind] == '<':
-                            tag = self.__extract_html_tag(html, ind + 1)
-                            is_list_item = is_list_item or tag == 'li'
-                    if is_list_item:
-                        cleaned_text += '\n'
-            else:
-                while(html[ind] == '<' and c != '*' and c != '\n'):
-                    ind = html.find('>', ind) + 1
-                    if (ind < len(html) - 1 and html[ind] == ' ' and 
-                        html[ind + 1] == '<' and html[ind] != c):
-                        ind += 1
-                        
-                if c == html[ind]:
+                
+                eq, new_ind = self.__char_equal(c, html, ind)
+                if eq:
                     cleaned_text += c
-                    ind += 1
+                    ind = new_ind
                     start_list_item = False
                 elif (c == '*' and html[ind] == '<' and
                       self.__is_text_format_tag(html, ind + 1)):

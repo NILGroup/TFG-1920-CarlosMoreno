@@ -31,17 +31,20 @@ def main():
                     credentials = auth.get_credentials(config.SCOPES, config.CREDS))
     anls = None
     nextPageToken = None
+    
+    usu = input('Introduce the user name: ')
+    
     if (yes_no_question('Were there a previous execution with the same credentials?')):
         q = int(input('Introduce the remaining quota units: '))
         if (yes_no_question('Was it with the same user?')):
             ext = yes_no_question('Was the previously executed by extracting messages?')
             nextPageToken = input('Introduce NextPageToken: ')
             num_res = int(input('How many Gmail resources were extracted? '))
-            anls = Analyser(service, q, ext, num_res)
+            anls = Analyser(service, usu, q, ext, num_res)
         else:
-            anls = Analyser(service, q)
+            anls = Analyser(service, usu, q)
     else:
-        anls = Analyser(service)
+        anls = Analyser(service, usu)
         
     if (yes_no_question('Has the user an email signature?')):
         print('Introduce the signature and finish it with the word "STOP".\n')

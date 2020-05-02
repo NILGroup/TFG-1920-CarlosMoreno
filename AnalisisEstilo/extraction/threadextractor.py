@@ -15,7 +15,7 @@ class ThreadExtractor(Extractor):
     """
     Implements Extractor class
     """
-    def __init__(self, service, quota):
+    def __init__(self, service, usu, quota):
         """
         Class constructor.
 
@@ -23,6 +23,8 @@ class ThreadExtractor(Extractor):
         ----------
         service: Gmail resource
             Gmail API resource with an Gmail user session opened.
+        user_name: str
+            Gmail user name.
         quota: int
             Gmail API quota units available for message extraction.
 
@@ -31,7 +33,7 @@ class ThreadExtractor(Extractor):
         Constructed ThreadExtractor class.
 
         """
-        super().__init__(service, quota)
+        super().__init__(service, usu, quota)
         self.min_qu = qu.MIN_QUNITS_THRD
         self.list_key = 'threads'
 

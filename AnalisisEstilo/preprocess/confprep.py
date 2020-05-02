@@ -10,6 +10,8 @@ TAGS_FORMAT_TEXT = {'b', '/b', 'strong', '/strong', 'i', '/i', 'em', '/em',
                     'u', '/u', 's', '/s', 'del', '/del'}
 TAGS_LIST = {'ul', 'ol', 'li'}
 SPECIAL_CHAR = {'*', '-', '.', ' '}
+SPECIAL_HTML_CHAR = {'<' : '&lt;', '>' : '&gt;', '&' : '&amp;', '"': '&quot;',
+                     "'" : '&#39;'}
 
 CHAR_ERROR = 3
 

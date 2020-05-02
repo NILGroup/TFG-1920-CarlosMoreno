@@ -11,7 +11,7 @@ os.chdir('../')
 if not(os.getcwd() in sys.path):
     sys.path.append(os.getcwd())
 
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from stylemeasuring.stylemeter import StyleMeter
 from initdb import init_db
 from confanalyser import NLP
@@ -36,9 +36,7 @@ def measure_style():
     msg['id'] = msg['_id']
     del msg['_id']
     
-    stylemeter.measure_style(msg)
-    
-    return "Successfully measured."
+    return jsonify({'id' : stylemeter.measure_style(msg)})
 
 if __name__ == '__main__':
     init_db()

@@ -26,6 +26,8 @@ class Extractor(ABC):
     ----------
     service: Gmail resource
         Gmail API resource with an Gmail user session opened.
+    user_name: str
+        Gmail user name.
     quota: int
         Gmail API quota units available for message extraction. Represents the
         remaining quota units available to carry out the extraction operations.
@@ -44,7 +46,7 @@ class Extractor(ABC):
         list of the resource.
     
     """
-    def __init__(self, service, quota):
+    def __init__(self, service, usu, quota):
         """
         Class constructor.
 
@@ -52,6 +54,8 @@ class Extractor(ABC):
         ----------
         service: Gmail resource
             Gmail API resource with an Gmail user session opened.
+        usu: str
+            Gmail user name.
         quota: int
             Gmail API quota units available for message extraction.
 
@@ -62,6 +66,7 @@ class Extractor(ABC):
         """
         __metaclass__ = ABCMeta
         self.service = service
+        self.user_name = usu
         self.quota = quota
         self.quota_sec = qu.QUOTA_UNITS_PER_SECOND
         self.data_extractor = DataExtractor()
@@ -229,12 +234,18 @@ class Extractor(ABC):
                         m.save()
                         msgs_ids.append(m.msg_id)
                         
+                        with open(self.user_name + 'log.txt', 'a') as f:
+                            f.write(f'{extracted}.- Extracted {m.msg_id}.\n')
+                        
                     extracted += 1
-
+                
+                else:
+                    with open(self.user_name + 'log.txt', 'a') as f:
+                        f.write(f'REPEATED ID {m.msg_id}.\n')
                 i += 1
         
         with open('log.txt', 'a') as f:
-            f.write('\n\nEXTRACTION FINISHED:\n')
+            f.write('\nEXTRACTION FINISHED:\n')
             f.write(f'Extracted resources: {extracted}/{nmsg}\n')
             f.write(f'Remaining quota: {self.quota}\n')
                     

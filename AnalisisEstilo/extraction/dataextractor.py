@@ -259,18 +259,21 @@ class DataExtractor:
 
     def __get_text_content(self, msg_parts):
         """
-        Get the body of the message as a plain text and as a html text if they
+        Get the body of the message as plain text and as html text if they
         exist. This function visits the tree nodes following the pre-order 
         traversal until it finds what it is looking for.
 
         Parameters
         ----------
-        msg_parts: list.
+        msg_parts: list
             List of MIME message parts.
 
         Returns
         -------
-        None.
+        plain_found: bool
+            Indicates if the body of the message as plain text has been found.
+        html_found: bool
+            Indicates if the body of the message as html text has been found.
 
         """
         i = 0
@@ -278,13 +281,13 @@ class DataExtractor:
         plain_found = False
         html_found = False
     
-        while (not(plain_found) or not(html_found) and i < n):
+        while ((not(plain_found) or not(html_found)) and i < n):
             part = msg_parts[i]
 
             p_type = self.__get_part_type(part)
             if (p_type is not None):
                 if (p_type.startswith('multipart') and 'parts' in part):
-                    self.__get_text_content(part['parts'])
+                    plain_found, html_found = self.__get_text_content(part['parts'])
                 elif (self.__is_type('text/plain', part, p_type)):
                     self.__plain_text = self.__dec_b64(part['body']['data'])
                     self.__plain_encod = self.__get_Content_Encoding(part)
@@ -298,6 +301,8 @@ class DataExtractor:
                     html_found = True
     
             i += 1
+            
+        return plain_found, html_found
     
     def __get_message_text(self, message):
         """

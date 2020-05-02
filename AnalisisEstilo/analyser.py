@@ -48,6 +48,8 @@ class Analyser:
     ----------
     service: Gmail resource
         Gmail API resource with an Gmail user session opened.
+    user_name: str
+        Gmail user name.
     quota: int
         Gmail API quota units available for message extraction. Represents the
         remaining quota units available to carry out the extraction operations.
@@ -61,7 +63,7 @@ class Analyser:
         Number of the resource that is going to be extracted (messages or threads).
             
     """
-    def __init__(self, service, quota = qu.QUOTA_UNITS_PER_DAY, ext_msg = None,
+    def __init__(self, service, usu, quota = qu.QUOTA_UNITS_PER_DAY, ext_msg = None,
                  num_extracted = None):
         """
         Class constructor.
@@ -70,6 +72,8 @@ class Analyser:
         ----------
         service : Gmail resource
             Gmail API resource with an Gmail user session opened.
+        usu: str
+            Gmail user name.
         quota : int, optional
             Gmail API quota units available for message extraction. The default 
             is qu.QUOTA_UNITS_PER_DAY.
@@ -86,6 +90,7 @@ class Analyser:
 
         """
         self.service = service
+        self.user_name = usu
         self.quota = quota
         
         if (self.quota > qu.LABELS_GET):
@@ -104,11 +109,13 @@ class Analyser:
             if (((ext_msg is None) and cost_msg_ext <= cost_thrd_ext) or ext_msg):
                 with open('log.txt', 'a') as f:
                     f.write('Message extractor has been selected.\n')
-                self.extractor = MessageExtractor(self.service, self.quota)
+                self.extractor = MessageExtractor(self.service, self.user_name, 
+                                                  self.quota)
             else:
                 with open('log.txt', 'a') as f:
                     f.write('Thread extractor has been selected.\n')
-                self.extractor = ThreadExtractor(self.service, self.quota)
+                self.extractor = ThreadExtractor(self.service, self.user_name,
+                                                 self.quota)
                 self.nres = sent_lb['threadsTotal']
                 
             if ext_msg is not None:
@@ -333,7 +340,7 @@ class Analyser:
             
             discard = False
             if resp_dic['typoCode'] == TypoCode.typoFound.name:
-                print('Typographic error found.\n')
+                print(f"Typographic error found in {ide}.")
                 print('This is the text:\n\n')
                 print(resp_dic['message']['bodyPlain'])
                 discard = yes_no_question(cfa.DISC_MSG)
@@ -374,9 +381,16 @@ class Analyser:
         cor_msg = CorrectedMessage.objects(msg_id = ide).first().to_json()
         cor_msg = json.loads(cor_msg)
         response = requests.post(cfa.URL_MET, json = {'message' : cor_msg})
+        
         if response.status_code != 200:
             with open('logerror.txt', 'a') as f:
                 f.write(f"Metrics error with {cor_msg['_id']}.\n")
+                
+        else:
+            response_dic = json.loads(response.content)
+            if response_dic['id'] is not None:
+                with open(self.user_name + '.txt', 'a') as f:
+                    f.write(f"{response_dic['id']}\n")
     
     def analyse(self, nextPageToken = None, sign = None):
         """
@@ -408,7 +422,7 @@ class Analyser:
             self.__measure_style(ide)
         
         with open('log.txt', 'a') as f:
-            f.write('Analysis finished.\n')
+            f.write('\nANALYSIS FINISHED:\n')
             f.write(f'{len(ext_ids)} messages have been preprocessed.\n')
             f.write(f'{len(prep_ids)} messages have been typo-corrected.\n')
             f.write(f'{len(cor_ids)} messages have been measured.\n')

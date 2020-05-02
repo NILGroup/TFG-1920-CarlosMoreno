@@ -554,7 +554,8 @@ class StyleMeter:
 
         Returns
         -------
-        None.
+        str :
+            Identifier of the measured message.
 
         """
         if not(Metrics.objects(msg_id = cor_msg['id']).first()):
@@ -568,4 +569,6 @@ class StyleMeter:
             self.__copy_metadata(metrics, cor_msg)
             met = Metrics(**metrics)
             met.save()
+            
+            return metrics['id']
                 
