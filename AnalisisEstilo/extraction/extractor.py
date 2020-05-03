@@ -241,7 +241,7 @@ class Extractor(ABC):
                 
                 else:
                     with open(self.user_name + 'log.txt', 'a') as f:
-                        f.write(f'REPEATED ID {m.msg_id}.\n')
+                        f.write(f'REPEATED ID {msg_list[i]["id"]}.\n')
                 i += 1
         
         with open('log.txt', 'a') as f:

@@ -219,12 +219,12 @@ class Preprocessor:
         """
         eq, _ = self.__char_equal(c, html, ind)
         while not(eq):
-            if html[ind] == '<' and not self.__is_vspace_tag(html, ind + 1):
+            if html[ind] == '<':
                 ind = html.find('>', ind) + 1
                 if (ind < len(html) - 1 and html[ind] == ' ' and
                     html[ind + 1] == '<' and html[ind] != c):
                     ind += 1
-            elif html[ind] != '<':
+            else:
                 ind += 1
             
             eq, _ = self.__char_equal(c, html, ind)
