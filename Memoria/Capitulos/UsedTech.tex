@@ -1,4 +1,16 @@
 \chapter{Used technologies}
 \label{cap:usedtech}
 
-\section{Gmail API}\label{sect:gmailapi}
+\section{Gmail API}\label{sect:gmailapitech}
+In order to be able to read and send emails, it is necessary to access to the user's email data. For this reason, the different ways to obtain this information were studied. One of them is the Gmail API, which allows developers to perform all the actions we need in an easy way.
+
+Gmail API can be used in several programming languages such as Python, PHP, Go, Java, .NET, \ldots\phantom{ }Due to the greater number of examples in the starting guides of the Gmail API \citep{gmailAPI} and the previous knowledge that was already had of it, Python was chosen for the first contact with this technology.
+
+The following tries to be a step-by-step explanation of what is necessary to know to access the user's Gmail account, create a message, send an email previously created, create and update a draft, reply a received message (for this it is necessary to know how to create an email) and read important information of message threads and individual emails (such as who is the sender, who has received the message, the subject, the date, the email's body, the attached files, \ldots). Both the representations and the methods of this resources are studied to achieve this aim.
+
+\subsection{OAuth 2.0 Protocol}\label{ssect:oauth}
+As it will be seen later in this section, to be in possession of OAuth 2.0 client credentials from the Google API Console is required for having the appropriate permissions to use the Gmail API.
+
+The Google API Console, also known as Google Console Developer\footnote{\url{https://console.developers.google.com/}}, built into Google Cloud Platform, makes possible an authorized access to a user's Gmail data. In order to achieve it, having a Google account is a prerequisite because accessing to this platform will be necessary. Once this web has been accessed, at first we have to create a new development project by clicking in ``New Project'' in the control panel (which is the main tab of the Google Console Developer and the one that opens by default when you access it). When we have already created a project, we will enable the API we are going to work with, in this case the Gmail API. To do this we will look for it in the search engine that we can find in the library of APIs of this platform. Now we can apply for the credentials we need. Accessing to the ``Credentials'' tab and clicking on ``Create Credentials'' will lead us to an easy questionnaire, about what type of credentials we prefer, that we have to answer by basing on what type of application we are building. Then we must download the .json file and save it in the folder we are going to work in.
+
+Before starting the development of the implementation of the OAuth 2.0 protocol which will provides us a secure and trusted login system to access to the user's Gmail data, we must install the Google Client Library\footnote{\url{https://developers.google.com/gmail/api/downloads}} of our choice of language (we will use Python, so we have to install the libraries \textit{google-api-python-client}, \textit{google-auth-httplib2} and \textit{google-auth-oauthlib}).
