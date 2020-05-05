@@ -204,14 +204,11 @@ class Extractor(ABC):
         -------
         quota: int
             Remaining quota units of Gmail API.
-        msgs_ids: list
-            List of all of extracted message's identifiers.
 
         """
         extracted = 0
         self.init_time = time()
         actual_page = ''
-        msgs_ids = []
         while (extracted < nmsg and self.quota >= self.min_qu):
             msg_list = self.get_list(nextPage)
             actual_page = nextPage
@@ -232,7 +229,7 @@ class Extractor(ABC):
                     # Save the message in database
                     for m in extracted_msgs:
                         m.save()
-                        msgs_ids.append(m.msg_id)
+                        print(f"Extraction succesfull {m.msg_id}.")
                         
                         with open(self.user_name + 'log.txt', 'a') as f:
                             f.write(f'{extracted}.- Extracted {m.msg_id}.\n')
@@ -253,4 +250,4 @@ class Extractor(ABC):
                 f.write('Actual Page Token: ' + actual_page + '\n')
                 f.write('Next Page Token: '+ nextPage + '\n')
                 
-        return self.quota, msgs_ids
+        return self.quota

@@ -10,6 +10,7 @@ import base64
 from correction import Correction
 from correctedmessage import CorrectedMessage
 from typocode import TypoCode
+import json
 
 class TypoCorrector:
     """
@@ -54,8 +55,7 @@ class TypoCorrector:
         otherwise.
 
         """
-        return (tok.pos_ != 'SPACE' and tok.is_oov and 
-                (Correction.objects(text = tok.text).first() is None))
+        return (tok.pos_ != 'SPACE' and tok.is_oov)
     
     def __copy_data(self, prep_msg, msg_typo):
         """
@@ -251,6 +251,7 @@ class TypoCorrector:
         response = TypoCode.notAnalysed
         word = None
         tok_idx = None
+        msg_typo = {}
         
         if (not('bodyPlain' in prep_msg) and 
             not(CorrectedMessage.objects(msg_id = prep_msg['id']).first())):
@@ -258,8 +259,6 @@ class TypoCorrector:
                         prep_msg['bodyBase64Plain'].encode()).decode()
         # If the body is not an empty string
         if (len(prep_msg['bodyPlain']) > 0):
-            msg_typo = {}
-            
             msg_typo['bodyPlain'] = prep_msg['bodyPlain']
             msg_typo['doc'] = self.nlp(msg_typo['bodyPlain'])
             if 'corrections' in prep_msg:
@@ -269,7 +268,16 @@ class TypoCorrector:
             
             no_errors = True
             while (i < len(msg_typo['doc']) and no_errors):
-                no_errors = not(self.__is_there_errors(msg_typo['doc'][i]))
+                
+                if self.__is_there_errors(msg_typo['doc'][i]):
+                    cor = Correction.objects(text = msg_typo['doc'][i].text).first()
+                    no_errors = cor is not None
+                    
+                    if no_errors:
+                        cor = json.loads(cor.to_json())
+                        cor['text'] = cor['_id']
+                        del cor['_id']
+                        msg_typo['corrections'].append(cor)
                 
                 if no_errors:
                     i += 1
