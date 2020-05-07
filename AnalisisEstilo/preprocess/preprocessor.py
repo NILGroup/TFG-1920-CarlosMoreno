@@ -432,9 +432,12 @@ class Preprocessor:
         """
         match = search(cf.REPLY_PATTERN, text)
         if match is not None:
-            return text[:match.start()] + text[match.end():]
+            text = text[:match.start()] + text[match.end():]
         else:
-            return text
+            match = search(cf.REPLY_PATTERN2, text)
+            if match is not None:
+                text = text[:match.start()] + text[match.end():]
+        return text
         
     def __extract_body_msg(self, prep_msg, raw_msg):
         """

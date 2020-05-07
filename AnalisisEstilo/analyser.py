@@ -17,6 +17,7 @@ from preprocess.preprocessedmessage import PreprocessedMessage
 from typocorrection.typocode import TypoCode
 from typocorrection.correctedmessage import CorrectedMessage
 from sessiontypoerror import SessionTypoError
+# from stylemeasuring.metrics import Metrics
 
 def yes_no_question(question):
         """
@@ -233,6 +234,7 @@ class Analyser:
                 ses.text = typoError
                 ses.typo_error = True
                 ses.solution = {'text' : new_word}
+                ses.save()
                 
     def __init_correction(self, cor):
         """
@@ -326,10 +328,47 @@ class Analyser:
                 ses.text = typoError
                 ses.typo_error = False
                 ses.solution = ling_feat
+                ses.save()
             
             ling_feat['position'] = ind
             msg_typo['corrections'].append(ling_feat)
             return ind + 1
+        
+    def __solve_with_session_error(self, tyer, ind, msg_typo, typoError, token_idx):
+        """
+        Corrects the given token detected as a typographic error with the
+        solution stored in the session.
+        
+        Parameters
+        ----------
+        tyer: SessionTypoError
+            Solution previously applied.
+        ind: int
+            Index which indicates the position of the token which has the 
+            typographic error.
+        msg_typo: dict
+            Dictionary where the body of the message is stored.
+        typoError: str
+            Text of the token which has the typographic error.
+        token_idx: int
+            Integer which indicates the position of the first character of the
+            token recognised as a typographic error.
+        
+        Returns
+        -------
+        int: index of the next word which has to be analysed.
+        
+        """
+        if tyer.typo_error:
+            begining = msg_typo['bodyPlain'][:token_idx]
+            ending = msg_typo['bodyPlain'][token_idx + len(typoError):]
+            msg_typo['bodyPlain'] = begining + tyer.solution['text'] + ending
+        else:
+            tyer = json.loads(tyer.to_json())
+            tyer['solution']['position'] = ind
+            msg_typo['corrections'].append(tyer['solution'])
+            ind += 1
+        return ind
                 
     def __correct_token(self, ind, msg_typo, typoError, token_idx):
         """
@@ -356,15 +395,8 @@ class Analyser:
         tyer = SessionTypoError.objects(text = typoError).first()
         
         if tyer is not None:
-            if tyer.typo_error:
-                begining = msg_typo['bodyPlain'][:token_idx]
-                ending = msg_typo['bodyPlain'][token_idx + len(typoError):]
-                msg_typo['bodyPlain'] = begining + tyer.solution['text'] + ending
-            else:
-                tyer = json.loads(tyer.to_json())
-                tyer['solution']['position'] = ind
-                msg_typo['corrections'].append(tyer['solution'])
-                ind += 1
+            ind = self.__solve_with_session_error(tyer, ind, msg_typo, typoError,
+                                                  token_idx)
         else:
             ind = self.__req_token_correction(ind, msg_typo, typoError,
                                               token_idx)
@@ -395,8 +427,23 @@ class Analyser:
         else:
             resp_dic = json.loads(response.content)
             
+            tyer = SessionTypoError.objects(text = resp_dic['typoError']).first()
+            while (response.status_code == 200 and
+                   resp_dic['typoCode'] == TypoCode.typoFound.name and
+                   (tyer is not None)):
+                prep_msg = resp_dic['message']
+                ind = self.__solve_with_session_error(tyer, resp_dic['index'], 
+                                                prep_msg, resp_dic['typoError'],
+                                                resp_dic['token_idx'])
+                response = requests.post(cfa.URL_TYPO_CORRECT, json = {
+                                                    'message' : prep_msg,
+                                                    'index' : ind})
+                if response.status_code == 200:
+                    resp_dic = json.loads(response.content)
+            
             discard = False
-            if resp_dic['typoCode'] == TypoCode.typoFound.name:
+            if (response.status_code == 200 and 
+                resp_dic['typoCode'] == TypoCode.typoFound.name):
                 print(f"Typographic error found in {prep_msg['_id']}.")
                 print('This is the text:\n\n')
                 print(resp_dic['message']['bodyPlain'])
@@ -464,6 +511,9 @@ class Analyser:
         """
         init_db()
         SessionTypoError.drop_collection()
+        # PreprocessedMessage.drop_collection()
+        # CorrectedMessage.drop_collection()
+        # Metrics.drop_collection()
         
         self.quota = self.extractor.extract_sent_msg(self.nres, nextPageToken)
         

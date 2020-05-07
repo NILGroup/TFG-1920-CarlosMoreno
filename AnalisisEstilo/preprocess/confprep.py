@@ -39,3 +39,16 @@ MOMENT_PAT = r'El\s' + WEEK_PATTERN + r',\s' + DATE_PAT + r'\s(?:a\slas\s)?' + T
 EMAIL_PAT = r'[^@]+@[\w.-]+\.[a-zA-Z]{2,6}>?\)?'
 
 REPLY_PATTERN = MOMENT_PAT + r',\s' + EMAIL_PAT + r'\sescribió:'
+
+MONTH_31_PAT2 = r'(?:enero|marzo|mayo|julio|agosto|octubre|diciembre)'
+MONTH_30_PAT2 = r'(?:abril|junio|septiembre|noviembre)'
+
+#Leap years are not checked
+FEB_PAT2 = r'(?:[12]?\d)\sde\sfebrero'
+DATE_31_PAT2 = DAYS_31_PAT + r'\sde\s' + MONTH_31_PAT2
+DATE_30_PAT2 = DAYS_30_PAT + r'\sde\s' + MONTH_30_PAT2
+
+MONTH_DAY_PAT2 = r'(?:' + DATE_31_PAT2 + r'|' + DATE_30_PAT2 + r'|' + FEB_PAT2 + r')\.'
+DATE_PAT2 = MONTH_DAY_PAT2 + r'\sde\s(?:20|19)\d\d'
+
+REPLY_PATTERN2 = r'El\s' + DATE_PAT2 + r',\s' + TIME_PAT + EMAIL_PAT + r'\sescribió:'
