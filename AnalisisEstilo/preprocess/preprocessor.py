@@ -286,7 +286,7 @@ class Preprocessor:
         
         """
         cleaned_text = ""
-        ind = html.find('>') + 1
+        ind = 0
         start_list_item = False
         pos = 0
         
@@ -307,17 +307,20 @@ class Preprocessor:
                     ind = self.__find_first_known_tag(c, html, ind)
                     
                 eq, new_ind = self.__char_equal(c, html, ind)
-                if eq:
+                if (eq and c != '\n'):
                     ind = new_ind
+                    cleaned_text += c
+                elif c == ' ':
                     cleaned_text += c
                 elif c == '\n':
                     if html[ind] == '<' and self.__is_break_line_tag(html, ind + 1):
                         cleaned_text += c
                         ind = html.find('>', ind) + 1
-                    elif (html[ind] == ' ' and pos < len(plain) - 1 and 
-                          plain[pos + 1].isalpha()):
+                    elif html[ind] == ' ':
                         cleaned_text += html[ind]
                         ind += 1
+                    elif cleaned_text[-1] != '\n':
+                        cleaned_text += ' '
                 elif c == '*':
                     while (html[ind] == '<' and 
                            self.__is_text_format_tag(html, ind + 1)):
@@ -353,7 +356,7 @@ class Preprocessor:
                 
             pos += 1
             
-        return cleaned_text
+        return cleaned_text.replace('  ', ' ').replace('\n\n', '\n').strip()
         
     def __clean_decoded_text(self, text):
         """
@@ -458,12 +461,16 @@ class Preprocessor:
 
         """
         if raw_msg['depth'] > 0:
-            ind = raw_msg['bodyPlain'].find(cf.FOWARD_LINE)
+            ind = raw_msg['bodyPlain'].find(cf.FORWARD_LINE)
             if (ind >= 0):
                 # As we can't detect (without comparing it) which 
                 # part of the message is originally text of the 
                 # forwarded message, we delete all that part.
                 raw_msg['bodyPlain'] = raw_msg['bodyPlain'][:ind]
+            else:
+                ind = raw_msg['bodyPlain'].find(cf.FORWARD_LINE_ES)
+                if ind >= 0:
+                    raw_msg['bodyPlain'] = raw_msg['bodyPlain'][:ind]
             prep_msg['bodyPlain'] = EmailReplyParser.parse_reply(
                 raw_msg['bodyPlain'])
             prep_msg['bodyPlain'] = self.__remove_header_replied(
