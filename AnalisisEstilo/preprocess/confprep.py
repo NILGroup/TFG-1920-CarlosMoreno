@@ -35,7 +35,7 @@ DATE_PAT = MONTH_DAY_PAT + r'\s(?:20|19)\d\d'
 
 TIME_PAT = r'(?:(?:1?\d)|2[0-3]):[0-5]\d'
 
-MOMENT_PAT = r'El\s' + WEEK_PATTERN + r',\s' + DATE_PAT + r'\s(?:a\slas\s)?' + TIME_PAT
+MOMENT_PAT = r'El\s(?:' + WEEK_PATTERN + r',\s)?' + DATE_PAT + r'\s(?:a\slas\s)?' + TIME_PAT
 
 EMAIL_PAT = r'[^@]+@[\w.-]+\.[a-zA-Z]{2,6}>?\)?'
 
@@ -49,7 +49,9 @@ FEB_PAT2 = r'(?:[12]?\d)\sde\sfebrero'
 DATE_31_PAT2 = DAYS_31_PAT + r'\sde\s' + MONTH_31_PAT2
 DATE_30_PAT2 = DAYS_30_PAT + r'\sde\s' + MONTH_30_PAT2
 
-MONTH_DAY_PAT2 = r'(?:' + DATE_31_PAT2 + r'|' + DATE_30_PAT2 + r'|' + FEB_PAT2 + r')\.'
+MONTH_DAY_PAT2 = r'(?:' + DATE_31_PAT2 + r'|' + DATE_30_PAT2 + r'|' + FEB_PAT2 + r')'
 DATE_PAT2 = MONTH_DAY_PAT2 + r'\sde\s(?:20|19)\d\d'
 
 REPLY_PATTERN2 = r'El\s' + DATE_PAT2 + r',\s' + TIME_PAT + EMAIL_PAT + r'\s+escribió:'
+
+IMAGE_PATTERN = r'\[image:[^\]]+\]'

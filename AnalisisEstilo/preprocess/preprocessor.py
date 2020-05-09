@@ -9,6 +9,7 @@ from __future__ import print_function
 from email_reply_parser import EmailReplyParser
 import base64
 from re import search
+from re import finditer
 import preprocess.confprep as cf
 from preprocess.preprocessedmessage import PreprocessedMessage
 
@@ -218,7 +219,7 @@ class Preprocessor:
 
         """
         eq, _ = self.__char_equal(c, html, ind)
-        while not(eq):
+        while (ind < len(html) and not(eq)):
             if html[ind] == '<':
                 ind = html.find('>', ind) + 1
                 if (ind < len(html) - 1 and html[ind] == ' ' and
@@ -227,7 +228,8 @@ class Preprocessor:
             else:
                 ind += 1
             
-            eq, _ = self.__char_equal(c, html, ind)
+            if ind < len(html):
+                eq, _ = self.__char_equal(c, html, ind)
                 
         return ind
     
@@ -290,7 +292,7 @@ class Preprocessor:
         start_list_item = False
         pos = 0
         
-        while pos < len(plain):
+        while pos < len(plain) and ind < len(html):
             if self.__carriage_return_followed_by_newline(pos, plain):
                 pos += 1
                 
@@ -306,49 +308,55 @@ class Preprocessor:
                 if (c == '-' or c == '.' or c.isdigit()):
                     ind = self.__find_first_known_tag(c, html, ind)
                     
-                eq, new_ind = self.__char_equal(c, html, ind)
+                eq = False
+                if ind < len(html):
+                    eq, new_ind = self.__char_equal(c, html, ind)
                 if (eq and c != '\n'):
                     ind = new_ind
                     cleaned_text += c
                 elif c == ' ':
                     cleaned_text += c
                 elif c == '\n':
-                    if html[ind] == '<' and self.__is_break_line_tag(html, ind + 1):
+                    if (ind < len(html) and html[ind] == '<' and 
+                        self.__is_break_line_tag(html, ind + 1)):
                         cleaned_text += c
                         ind = html.find('>', ind) + 1
-                    elif html[ind] == ' ':
+                    elif ind < len(html) and html[ind] == ' ':
                         cleaned_text += html[ind]
                         ind += 1
                     elif cleaned_text[-1] != '\n':
                         cleaned_text += ' '
                 elif c == '*':
-                    while (html[ind] == '<' and 
+                    while (ind < len(html) and html[ind] == '<' and 
                            self.__is_text_format_tag(html, ind + 1)):
                         ind = html.find('>', ind) + 1
                 elif (c == '-' or c == '.' or c.isdigit()):
                     start_list_item = True
+                    is_list_item = False
                     
-                    is_list_item, ind = self.__is_list_item(c, html, ind)
+                    if ind < len(html):
+                        is_list_item, ind = self.__is_list_item(c, html, ind)
                     if is_list_item:
                         cleaned_text += '\n'
             else:
                 if (c != '*' and c != '\n'):
-                    while html[ind] == '<':
+                    while ind < len(html) and html[ind] == '<':
                         ind = html.find('>', ind) + 1
                         if (ind < len(html) - 1 and html[ind] == ' ' and 
                             html[ind + 1] == '<' and html[ind] != c):
                             ind += 1
-                
-                eq, new_ind = self.__char_equal(c, html, ind)
+                eq = False
+                if ind < len(html):
+                    eq, new_ind = self.__char_equal(c, html, ind)
                 if eq:
                     cleaned_text += c
                     ind = new_ind
                     start_list_item = False
-                elif (c == '*' and html[ind] == '<' and
+                elif (ind < len(html) and c == '*' and html[ind] == '<' and
                       self.__is_text_format_tag(html, ind + 1)):
                     ind = html.find('>', ind) + 1
                     start_list_item = False
-                elif (c == '\n' and html[ind] == '<' and
+                elif (ind < len(html) and c == '\n' and html[ind] == '<' and
                       self.__is_break_line_tag(html, ind + 1)):
                     cleaned_text += c
                     ind = html.find('>', ind) + 1
@@ -413,6 +421,7 @@ class Preprocessor:
             in other case.
             
         """
+        sign = sign.rstrip()
         ind = text.rfind(sign)
         if ind + len(sign) >= len(text) - cf.CHAR_ERROR:
             return text[:ind]
@@ -581,6 +590,33 @@ class Preprocessor:
 
         msg.charLength = prep['charLength']
         msg.save()
+        
+    def __remove_pasted_images(self, plain):
+        """
+        Removes the text which appears where an image was pasted in the body
+        of the message.
+
+        Parameters
+        ----------
+        plain : str
+            Plain text of the message.
+
+        Returns
+        -------
+        cleaned_text : str
+            Plain text without the text of the images.
+
+        """
+        it = finditer(cf.IMAGE_PATTERN, plain)
+        last_match = 0
+        cleaned_text = ''
+        
+        for match in it:
+            cleaned_text += plain[last_match:match.start()]
+            last_match = match.end()
+        cleaned_text += plain[last_match:len(plain)]
+        
+        return cleaned_text
                     
     def preprocess_message(self, raw_msg, sign = None):
         """
@@ -626,6 +662,8 @@ class Preprocessor:
             if 'bodyBase64Html' in raw_msg:
                 raw_msg['bodyHtml'] = base64.urlsafe_b64decode(
                     raw_msg['bodyBase64Html'].encode()).decode()
+            
+            raw_msg['bodyPlain'] = self.__remove_pasted_images(raw_msg['bodyPlain'])
             self.__extract_body_msg(prep_msg, raw_msg)
             
             if sign is not None:
@@ -634,7 +672,6 @@ class Preprocessor:
             
             prep_msg['bodyBase64Plain'] = base64.urlsafe_b64encode(
                 prep_msg['bodyPlain'].encode()).decode()
-                            
             
             self.__copy_metadata(prep_msg, raw_msg)
             prep_msg['charLength'] = len(prep_msg['bodyPlain'])
