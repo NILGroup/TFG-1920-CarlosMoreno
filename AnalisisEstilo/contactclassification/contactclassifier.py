@@ -70,7 +70,7 @@ def classify_contact(address, types_list):
     if ind == -1 and not(ClassifiedContact.objects(email = address)):
         print(f'The email address is {address}.')
         name = input("Introduce the conctact's name: ")
-    else:
+    elif ind != -1:
         name = address[:ind].strip()
         end = address.find('>')
         address = address[ind + 1:end].strip()

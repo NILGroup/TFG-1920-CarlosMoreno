@@ -2,7 +2,7 @@
 """
 Created on Mon May 11 19:11:24 2020
 
-@author: Carlos
+@author: Carlos Moreno Morera
 """
 
 import mongoengine as db
