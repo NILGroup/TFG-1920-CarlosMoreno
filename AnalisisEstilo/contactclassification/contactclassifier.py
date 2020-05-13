@@ -17,37 +17,29 @@ from contactclassification.classifiedcontact import ClassifiedContact
 
 os.chdir(initial_dir)
 
-def get_relationship_type(types_list):
+def get_relationship_type():
     """
     Asks the user about the type of relationship.
-    
-    Parameters
-    ----------
-    types_list: list
-        List of the different types of relationship.
         
     Returns
     -------
-    RelationshipType: type of relationship choosen by the user.
+    str: type of relationship choosen by the user.
     
     """
-    count = 0
-    print('What is the type of relationship with this contact?')
-    for t in types_list:
-        print(f"{count}.- {t.name}")
-        count += 1
+    for i in range(len(RelationshipType)):
+        print(f'{i}.- {RelationshipType(i).name}')
         
     chosen = False
     while not chosen:
         try:
             opt = int(input('Choose an option: '))
-            chosen = opt < len(types_list)
+            chosen = opt < len(RelationshipType)
         except ValueError:
             print('Invalid input.\n')
     
-    return types_list[opt]
+    return RelationshipType(opt).name
 
-def classify_contact(address, types_list):
+def classify_contact(address):
     """
     Classifies the given contact and saves it in the appropiate MongoDB table.
 
@@ -55,8 +47,6 @@ def classify_contact(address, types_list):
     ----------
     address : str
         Given contact.
-    types_list : list
-        List of the different types of relationship.
 
     Returns
     -------
@@ -85,22 +75,16 @@ def classify_contact(address, types_list):
         clasc.email = address
         clasc.name = name
         print(f'The email address is {address}.')
-        clasc.category = get_relationship_type(types_list).name
+        print('What is the type of relationship with this contact?')
+        clasc.category = get_relationship_type()
         clasc.save()
 
-def main():
-    types = []
-    for t in RelationshipType:
-        types.append(t)
-        
+def main():        
     init_db()
     for m in Metrics.objects():
-        for d in m.to:
-            classify_contact(d, types)
-        for d in m.cc:
-            classify_contact(d, types)
-        for d in m.bcc:
-            classify_contact(d, types)
+        for l in [m.to, m.cc, m.bcc]:
+            for d in l:
+                classify_contact(d)
             
 if __name__ == '__main__':
     main()
