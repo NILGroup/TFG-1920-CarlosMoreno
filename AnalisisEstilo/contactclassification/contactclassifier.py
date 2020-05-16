@@ -26,14 +26,14 @@ def get_relationship_type():
     str: type of relationship choosen by the user.
     
     """
-    for i in range(len(RelationshipType)):
+    for i in range(1, len(RelationshipType) + 1):
         print(f'{i}.- {RelationshipType(i).name}')
         
     chosen = False
     while not chosen:
         try:
             opt = int(input('Choose an option: '))
-            chosen = opt < len(RelationshipType)
+            chosen = opt > 0 and opt <= len(RelationshipType)
         except ValueError:
             print('Invalid input.\n')
     
