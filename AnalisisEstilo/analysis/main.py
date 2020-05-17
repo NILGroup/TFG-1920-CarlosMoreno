@@ -237,7 +237,8 @@ def kmeans_missing(X, k, max_iter):
     
 def study_kmeans_silhouette_score(normalized):
     """
-    Obtains the Silhouette score of the data and save it as an image.
+    Obtains the Silhouette score (by using K-Means algorithm) of the data and 
+    save it as an image.
     
     Parameters
     ----------
@@ -261,41 +262,98 @@ def study_kmeans_silhouette_score(normalized):
     plt.title('Silhouette score with K-Means for different k')
     plt.savefig('kmeans_silhouette_score.png')
     
-def dbanalisis(X, epsilon, metric):
+def dbanalysis(X, epsilon, metric):
     """
-    Función que ejecuta todo el análisis que conlleva
-    aplicar el algoritmo DBSCAN.
+    Executes DBSCAN algorithm.
     
     Parameters
     ----------
-    X: array
-        Sistema de entrada (en este caso,
-        1000 elementos de dos estados).
+    X: np.ndarray
+        An [n_samples, n_features] array of data to cluster.
     epsilon: float
-        Umbral de distancia del algoritmo DBSCAN.
-
-    metrica: str
-        Métrica a utilizar en el algoritmo DBSCAN.
+        Distance threshold for DBSCAN.
+    metric: str
+        Metric fo DBSCAN.
         
     Returns
     -------
-    float: Coeficiente de Silhouette.
-    int: Número de clusters en las etiquetas.
-    object: Resultado de aplicar DBSCAN con el input anterior.
+    silhouette: float
+        Silhouette score.
+    n_clusters_: int
+        Number of final clusters.
     
     """
-
-    # Clasificación mediante el algoritmo DBSCAN
-    n0 = 10 # Fijamos el número de elementos mínimos
+    n0 = 5 # Fijamos el número de elementos mínimos
     db = DBSCAN(eps=epsilon, min_samples=n0, metric=metric).fit(X)
     labels = db.labels_
     # Number of clusters in labels, ignoring noise if present.
     n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
-    silhouette = -1 # Prefijado a -1, que es el caso n_clusters_ == 1
-    if n_clusters_ > 1:  # n_clusters puede ser también 0 si set(labels)=={-1}
+    silhouette = -1
+    if n_clusters_ > 1:
         silhouette = silhouette_score(X, labels)
 
-    return silhouette, n_clusters_, db
+    return silhouette, n_clusters_
+
+def study_dbscan_silhouette_score(normalized, relationship):
+    """
+    Obtains the Silhouette score (by using DBSCAN algorithm) of the data and 
+    save it as an image.
+    
+    Parameters
+    ----------
+    normalized: pd.DataFrame
+        DataFrame which is going to be studied.
+    relationship : pd.DataFrame
+        DataFrame of the relationship type of each message.
+
+    Returns
+    -------
+    None.
+
+    """
+    X = normalized.to_numpy()
+    for t in RelationshipType:
+        category = relationship == t.name
+        missing_cat = ~np.isfinite(X[category])
+        mu = np.nanmean(X[category], 0, keepdims=1)
+        X[category] = np.where(missing_cat, mu, X[category])
+    
+    metrics = ['euclidean', 'manhattan']
+    
+    for m in metrics:
+        maxS = -1
+        epsiOpt = 0
+        silhouettes = []
+        num_clust = []
+        interval = np.arange(0.01, 1, 0.01)
+        
+        for epsilon in interval:
+            s, n = dbanalysis(X, epsilon, m)
+            silhouettes.append(s)
+            num_clust.append(n)
+            if maxS < s:
+                maxS = s
+                epsiOpt = epsilon
+
+        plt.figure(figsize=(13,4))
+        plt.subplot(1,3,1)
+        plt.plot(interval, silhouettes)
+        plt.plot([epsiOpt, epsiOpt], [-1.1, maxS+0.1], linestyle = "--")
+        plt.title(r'Silhouette score for different $\varepsilon$')
+        plt.xlabel(r"$\varepsilon$")
+        plt.ylabel("Silhouette score")
+        plt.grid()
+
+        plt.subplot(1,3,2)
+        plt.plot(interval, num_clust)
+        plt.plot([epsiOpt, epsiOpt], [0, max(num_clust)], linestyle = "--")
+        plt.title(r'Number of clusters for different $\varepsilon$')
+        plt.xlabel(r"$\varepsilon$")
+        plt.ylabel("Number of clusters")
+        plt.grid()
+
+        plt.tight_layout()
+        plt.savefig('dbscan_' + m + '_silhouette_score.png')
     
 def generate_colors():
     """
@@ -314,6 +372,21 @@ def generate_colors():
     return dic_colors
 
 def get_scatter_matrix(normalized, relationship):
+    """
+    Obtains the scatter matrix of the data set.
+
+    Parameters
+    ----------
+    normalized: pd.DataFrame
+        DataFrame which is going to be studied.
+    relationship : pd.DataFrame
+        DataFrame of the relationship type of each message.
+
+    Returns
+    -------
+    None.
+
+    """
     X = normalized.to_numpy()
     
     for t in RelationshipType:
@@ -349,6 +422,7 @@ def main():
     # normalized.to_csv('normalized.csv')
     # normalized = pd.read_csv('normalized.csv')
     study_kmeans_silhouette_score(normalized)
+    study_dbscan_silhouette_score(normalized, df['relationship'])
     get_scatter_matrix(normalized, df['relationship'])
     
 if __name__ == '__main__':
