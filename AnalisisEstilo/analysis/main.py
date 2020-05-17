@@ -25,9 +25,9 @@ from pandas.plotting import table
 import pandas as pd
 import json
 from pandas.plotting import scatter_matrix
-from sklearn import preprocessing
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
+from sklearn.cluster import DBSCAN
 
 os.chdir(initial_dir)
 
@@ -179,17 +179,123 @@ def describe_dataframe(df, name):
     table(plot, desc,loc='upper right')
     plt.savefig(name + '.png')
     
-def study_silhouette_score(normalized):
-    silhouette = np.zeros(cf.K_MAX - 2)
-    for k in range(2, cf.K_MAX): 
-        km = KMeans(init='random', n_clusters=k)
-        km.fit(normalized)
+def kmeans_missing(X, k, max_iter):
+    """
+    Performs K-Means clustering on data with missing values.
+
+    Parameters
+    ----------
+    X: np.ndarray
+        An [n_samples, n_features] array of data to cluster.
+    k: int
+        Number of clusters to form.
+    max_iter: int
+        Maximum number of iterations to perform.
+
+    Returns
+    -------
+    labels: np.ndarray
+        An [n_samples] vector of integer labels.
+    X_filled: np.ndarray
+        Copy of X with the missing values filled in.
+
+    """
+
+    # Initialize missing values to their column means
+    missing = ~np.isfinite(X)
+    mu = np.nanmean(X, 0, keepdims=1)
+    X_filled = np.where(missing, mu, X)
+    
+    i = 1
+    km = KMeans(init='random', n_clusters=k)
+    km.fit(X_filled)
+    prev_labels = km.labels_
+    prev_centroids = km.cluster_centers_
+    
+    X_filled[missing] = prev_centroids[prev_labels][missing]
+    converge = False
+    
+    while i < max_iter and not(converge):
+        # Execute K-Means with the previous centroids
+        km = KMeans(init = prev_centroids, n_clusters = k, n_init = 1)
+        km.fit(X_filled)
         
-        silhouette[k-2] = silhouette_score(normalized, km.labels_)
+        labels = km.labels_
+        centroids = km.cluster_centers_
+        
+        # Fill in the missing values based on their clusters centroids
+        X_filled[missing] = centroids[labels][missing]
+        
+        converge = np.all(labels == prev_labels)
+        
+        if not(converge):
+            prev_labels = labels
+            prev_centroids = centroids
+            i += 1
+
+    return labels, X_filled
+    
+def study_kmeans_silhouette_score(normalized):
+    """
+    Obtains the Silhouette score of the data and save it as an image.
+    
+    Parameters
+    ----------
+    normalized: pd.DataFrame
+        DataFrame which is going to be studied.
+        
+    Returns
+    -------
+    None.
+
+    """
+    np.random.seed(7)
+    silhouette = np.zeros(cf.K_MAX - 2)
+    X = normalized.to_numpy()
+    
+    for k in range(2, cf.K_MAX):
+        labels, X_filled = kmeans_missing(X, k, cf.MAX_ITER)
+        silhouette[k-2] = silhouette_score(X_filled, labels)
         
     plt.plot(range(2, cf.K_MAX), silhouette)
-    plt.title('Silhouette score for different k')
-    plt.savefig('silhouette_score.png')
+    plt.title('Silhouette score with K-Means for different k')
+    plt.savefig('kmeans_silhouette_score.png')
+    
+def dbanalisis(X, epsilon, metric):
+    """
+    Función que ejecuta todo el análisis que conlleva
+    aplicar el algoritmo DBSCAN.
+    
+    Parameters
+    ----------
+    X: array
+        Sistema de entrada (en este caso,
+        1000 elementos de dos estados).
+    epsilon: float
+        Umbral de distancia del algoritmo DBSCAN.
+
+    metrica: str
+        Métrica a utilizar en el algoritmo DBSCAN.
+        
+    Returns
+    -------
+    float: Coeficiente de Silhouette.
+    int: Número de clusters en las etiquetas.
+    object: Resultado de aplicar DBSCAN con el input anterior.
+    
+    """
+
+    # Clasificación mediante el algoritmo DBSCAN
+    n0 = 10 # Fijamos el número de elementos mínimos
+    db = DBSCAN(eps=epsilon, min_samples=n0, metric=metric).fit(X)
+    labels = db.labels_
+    # Number of clusters in labels, ignoring noise if present.
+    n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
+    silhouette = -1 # Prefijado a -1, que es el caso n_clusters_ == 1
+    if n_clusters_ > 1:  # n_clusters puede ser también 0 si set(labels)=={-1}
+        silhouette = silhouette_score(X, labels)
+
+    return silhouette, n_clusters_, db
     
 def generate_colors():
     """
@@ -202,11 +308,25 @@ def generate_colors():
         Dictionary which relates each relationship type with a colour.
 
     """
-    colors = np.linspace(0, 1, num = len(RelationshipType))
     dic_colors = {}
     for t in RelationshipType:
-        dic_colors[t.name] = str(colors[t.value - 1])
+        dic_colors[t.name] = str(cf.COLORS[t.value - 1])
     return dic_colors
+
+def get_scatter_matrix(normalized, relationship):
+    X = normalized.to_numpy()
+    
+    for t in RelationshipType:
+        category = relationship == t.name
+        missing_cat = ~np.isfinite(X[category])
+        mu = np.nanmean(X[category], 0, keepdims=1)
+        X[category] = np.where(missing_cat, mu, X[category])
+    
+    dic_colors = generate_colors()
+    colors = relationship.map(dic_colors)
+    scatter_matrix(pd.DataFrame(X), figsize = (100, 100), diagonal = 'hist', 
+                   color=colors)
+    plt.savefig('scatter_matrix.png')
 
 def main():
     init_db()
@@ -221,16 +341,15 @@ def main():
     for t in RelationshipType:
         describe_dataframe(df[df.relationship.eq(t.name)], t.name + '_description')
     
-    normalized = preprocessing.normalize(np.array(df.drop(columns = 
-                                                          ['_id', 'relationship'])).T).T
+    normalized = df.drop(columns = ['_id', 'relationship'])
+    cols = list(normalized.columns.values)
+    for c in cols:
+        normalized[c]=(df[c]-df[c].min())/(df[c].max()-df[c].min())
+        
     # normalized.to_csv('normalized.csv')
     # normalized = pd.read_csv('normalized.csv')
-    study_silhouette_score(normalized)
-    
-    dic_colors = generate_colors()
-    colors = df['relationship'].map(dic_colors)
-    scatter_matrix(normalized, figsize = (20, 20), diagonal = 'hist', color=colors)
-    plt.savefig('scatter_matrix.png')
+    study_kmeans_silhouette_score(normalized)
+    get_scatter_matrix(normalized, df['relationship'])
     
 if __name__ == '__main__':
     main()
