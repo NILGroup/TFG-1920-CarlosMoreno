@@ -14,3 +14,6 @@ MAX_ITER = 100
 
 COLORS = ['blue', 'red', 'green','purple', 'yellow', 'black', 'brown', 'orange',
           'lime', 'pink', 'magenta', 'cyan']
+
+N_COMPONENTS = 10
+MAX_DEPTH = 30

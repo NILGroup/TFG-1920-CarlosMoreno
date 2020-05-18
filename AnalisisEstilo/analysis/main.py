@@ -28,6 +28,11 @@ from pandas.plotting import scatter_matrix
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
 from sklearn.cluster import DBSCAN
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+from sklearn.tree import DecisionTreeClassifier, export_graphviz
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import cross_validate
 
 os.chdir(initial_dir)
 
@@ -235,13 +240,15 @@ def kmeans_missing(X, k, max_iter):
 
     return labels, X_filled
     
-def study_kmeans_silhouette_score(normalized):
+def study_kmeans_silhouette_score(name, normalized):
     """
     Obtains the Silhouette score (by using K-Means algorithm) of the data and 
     save it as an image.
     
     Parameters
     ----------
+    name: str
+        Name of the image which is going to be saved.
     normalized: pd.DataFrame
         DataFrame which is going to be studied.
         
@@ -250,7 +257,6 @@ def study_kmeans_silhouette_score(normalized):
     None.
 
     """
-    np.random.seed(7)
     silhouette = np.zeros(cf.K_MAX - 2)
     X = normalized.to_numpy()
     
@@ -258,9 +264,10 @@ def study_kmeans_silhouette_score(normalized):
         labels, X_filled = kmeans_missing(X, k, cf.MAX_ITER)
         silhouette[k-2] = silhouette_score(X_filled, labels)
         
+    plt.figure()
     plt.plot(range(2, cf.K_MAX), silhouette)
     plt.title('Silhouette score with K-Means for different k')
-    plt.savefig('kmeans_silhouette_score.png')
+    plt.savefig(name + 'kmeans_silhouette_score.png')
     
 def dbanalysis(X, epsilon, metric):
     """
@@ -294,13 +301,15 @@ def dbanalysis(X, epsilon, metric):
 
     return silhouette, n_clusters_
 
-def study_dbscan_silhouette_score(normalized, relationship):
+def study_dbscan_silhouette_score(name, normalized, relationship):
     """
     Obtains the Silhouette score (by using DBSCAN algorithm) of the data and 
     save it as an image.
     
     Parameters
     ----------
+    name: str
+        Name of the image which is going to be saved.
     normalized: pd.DataFrame
         DataFrame which is going to be studied.
     relationship : pd.DataFrame
@@ -353,7 +362,7 @@ def study_dbscan_silhouette_score(normalized, relationship):
         plt.grid()
 
         plt.tight_layout()
-        plt.savefig('dbscan_' + m + '_silhouette_score.png')
+        plt.savefig(name + 'dbscan_' + m + '_silhouette_score.png')
     
 def generate_colors():
     """
@@ -371,12 +380,14 @@ def generate_colors():
         dic_colors[t.name] = str(cf.COLORS[t.value - 1])
     return dic_colors
 
-def get_scatter_matrix(normalized, relationship):
+def get_scatter_matrix(name, normalized, relationship):
     """
     Obtains the scatter matrix of the data set.
 
     Parameters
     ----------
+    name: str
+        Name of the image which is going to be saved.
     normalized: pd.DataFrame
         DataFrame which is going to be studied.
     relationship : pd.DataFrame
@@ -399,7 +410,91 @@ def get_scatter_matrix(normalized, relationship):
     colors = relationship.map(dic_colors)
     scatter_matrix(pd.DataFrame(X), figsize = (100, 100), diagonal = 'hist', 
                    color=colors)
-    plt.savefig('scatter_matrix.png')
+    plt.savefig(name + 'scatter_matrix.png')
+    
+def pca_analysis(df, relationship):
+    """
+    Executes a PCA analysis with the given DataFrame.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame which is going to be studied.
+    relationship : pd.DataFrame
+        DataFrame of the relationship type of each message.
+
+    Returns
+    -------
+    None.
+
+    """
+    X = df.to_numpy()
+    
+    for t in RelationshipType:
+        category = relationship == t.name
+        missing_cat = ~np.isfinite(X[category])
+        mu = np.nanmean(X[category], 0, keepdims=1)
+        X[category] = np.where(missing_cat, mu, X[category])
+        
+    X = StandardScaler().fit_transform(X)
+    
+    for n in range(1, cf.N_COMPONENTS + 1):
+        pca = PCA(n_components = n)
+        pca.fit(X)
+        print("Varianza explicada: " + str(pca.explained_variance_ratio_))
+
+def classify_with_decission_tree(df, relationship, criteria, name):
+    X = df.to_numpy()
+    
+    for t in RelationshipType:
+        category = relationship == t.name
+        missing_cat = ~np.isfinite(X[category])
+        mu = np.nanmean(X[category], 0, keepdims=1)
+        X[category] = np.where(missing_cat, mu, X[category])
+        
+    X_train, X_test, y_train, y_test = train_test_split(X, relationship, 
+                                                        test_size=0.3)
+    
+    train_accuracy = []
+    test_accuracy = []
+    max_train = 0
+    max_test = 0
+    depth = 0
+    
+    for md in range(1, cf.MAX_DEPTH):
+        clf = DecisionTreeClassifier(criterion=criteria, max_depth=md)
+        scores = cross_validate(clf, X, relationship, scoring='accuracy', cv=10, 
+                                return_train_score=True)
+        
+        train_accuracy.append(np.mean(scores['train_score']))
+        test_accuracy.append(np.mean(scores['test_score']))
+        
+        if (0.9 < train_accuracy[-1] and 1 > train_accuracy[-1] and 
+            (max_test < test_accuracy[-1] or (max_test == test_accuracy[-1] and
+                                              max_train < train_accuracy[-1]))):
+            max_test = test_accuracy[-1]
+            max_train = train_accuracy[-1]
+            depth = md
+        
+    plt.figure()
+    # Draw lines
+    plt.plot(range(1, cf.MAX_DEPTH), train_accuracy, '-o', color="r",  label="Training")
+    plt.plot(range(1, cf.MAX_DEPTH), test_accuracy, '-o', color="g", label="Test")
+    
+    # Create plot
+    plt.title("Learning curve")
+    plt.xlabel("Parameter"), plt.ylabel("Accuracy Score"), plt.legend(loc="best")
+    plt.tight_layout()
+    plt.grid()
+    plt.savefig(name + criteria + '_learning_curve.png')
+    
+    clf = DecisionTreeClassifier(criterion=criteria, splitter="best",
+                             max_depth=depth)
+    clf = clf.fit(X, relationship)
+    export_graphviz(clf, out_file= name + criteria +'_tree.dot', 
+                    feature_names=df.columns, class_names=
+                    [t.name for t in RelationshipType], filled=True, rounded=True,  
+                     special_characters=True) 
 
 def main():
     init_db()
@@ -407,7 +502,7 @@ def main():
                        json.loads(Metrics.objects().to_json())])
     df.set_index('_id')
     transform_recipients_columns(df)
-    # df.to_csv('dataframe.csv')
+    # df.to_csv('dataframe.csv', index = False)
     # df = pd.read_csv('dataframe.csv')
     
     describe_dataframe(df, 'general_description')
@@ -419,11 +514,25 @@ def main():
     for c in cols:
         normalized[c]=(df[c]-df[c].min())/(df[c].max()-df[c].min())
         
-    # normalized.to_csv('normalized.csv')
+    # normalized.to_csv('normalized.csv', index = False)
     # normalized = pd.read_csv('normalized.csv')
-    study_kmeans_silhouette_score(normalized)
-    study_dbscan_silhouette_score(normalized, df['relationship'])
-    get_scatter_matrix(normalized, df['relationship'])
+    study_kmeans_silhouette_score('norm_', normalized)
+    study_dbscan_silhouette_score('norm_', normalized, df['relationship'])
+    get_scatter_matrix('norm_', normalized, df['relationship'])
+    
+    study_kmeans_silhouette_score('data_', df.drop(columns = ['_id', 'relationship']))
+    study_dbscan_silhouette_score('data_', df.drop(columns = ['_id', 'relationship']), 
+                                  df['relationship'])
+    get_scatter_matrix('data_', df.drop(columns = ['_id', 'relationship']), 
+                       df['relationship'])
+    
+    pca_analysis(normalized, df['relationship'])
+    pca_analysis(df.drop(columns = ['_id', 'relationship']), df['relationship'])
+    
+    for c in ['gini', 'entropy']:
+        classify_with_decission_tree(df.drop(columns = ['_id', 'relationship']),
+                                     df['relationship'], c, 'data_')
+        classify_with_decission_tree(normalized, df['relationship'], c, 'norm_')
     
 if __name__ == '__main__':
     main()
