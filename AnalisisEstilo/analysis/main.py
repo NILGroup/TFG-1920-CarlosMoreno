@@ -32,7 +32,9 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier, export_graphviz
 from sklearn.model_selection import train_test_split
-from sklearn.model_selection import cross_validate
+from sklearn.tree import _tree
+from analysis.treeanalysis import calculate_features_importance
+from analysis.treeanalysis import replace_nan, calculate_best_depth
 
 os.chdir(initial_dir)
 
@@ -320,12 +322,7 @@ def study_dbscan_silhouette_score(name, normalized, relationship):
     None.
 
     """
-    X = normalized.to_numpy()
-    for t in RelationshipType:
-        category = relationship == t.name
-        missing_cat = ~np.isfinite(X[category])
-        mu = np.nanmean(X[category], 0, keepdims=1)
-        X[category] = np.where(missing_cat, mu, X[category])
+    X = replace_nan(normalized, relationship)
     
     metrics = ['euclidean', 'manhattan']
     
@@ -398,13 +395,7 @@ def get_scatter_matrix(name, normalized, relationship):
     None.
 
     """
-    X = normalized.to_numpy()
-    
-    for t in RelationshipType:
-        category = relationship == t.name
-        missing_cat = ~np.isfinite(X[category])
-        mu = np.nanmean(X[category], 0, keepdims=1)
-        X[category] = np.where(missing_cat, mu, X[category])
+    X = replace_nan(normalized, relationship)
     
     dic_colors = generate_colors()
     colors = relationship.map(dic_colors)
@@ -428,13 +419,7 @@ def pca_analysis(df, relationship):
     None.
 
     """
-    X = df.to_numpy()
-    
-    for t in RelationshipType:
-        category = relationship == t.name
-        missing_cat = ~np.isfinite(X[category])
-        mu = np.nanmean(X[category], 0, keepdims=1)
-        X[category] = np.where(missing_cat, mu, X[category])
+    X = replace_nan(df, relationship)
         
     X = StandardScaler().fit_transform(X)
     
@@ -442,51 +427,93 @@ def pca_analysis(df, relationship):
         pca = PCA(n_components = n)
         pca.fit(X)
         print("Varianza explicada: " + str(pca.explained_variance_ratio_))
+        
+def tree_to_list(node, depth, tree_, feature_name, final_list):
+    """
+    Recursive method which transforms the given decision tree to a list.
+
+    Parameters
+    ----------
+    node : int
+        Node which is going to be transformed.
+    depth : int
+        Depth of the node.
+    tree_ : sklearn.tree._tree.Tree
+        Tree which is going to be trasnformed.
+    feature_name : list
+        List of strings with the names of the features of the initial DataFrame.
+    final_list : list
+        Result of the transformation.
+
+    Returns
+    -------
+    None.
+
+    """
+    if len(final_list) < depth:
+        final_list.append({})
+    if tree_.feature[node] != _tree.TREE_UNDEFINED:
+        if feature_name[node] in final_list[depth - 1]:
+            final_list[depth - 1][feature_name[node]] += 1
+        else:
+            final_list[depth - 1][feature_name[node]] = 1
+            
+        tree_to_list(tree_.children_left[node], depth + 1, tree_, feature_name,
+                     final_list)
+        tree_to_list(tree_.children_right[node], depth + 1, tree_, feature_name,
+                     final_list)
+
+def tree_to_json(tree, feature_names, name):
+    """
+    Transforms the given decision tree to a json and saves it.
+
+    Parameters
+    ----------
+    tree : sklearn.tree._classes.DecisionTreeClassifier
+        Tree which is going to be transformed.
+    feature_names : list
+        List of the names of the features of the initial DataFrame.
+    name : str
+        Name of the file which is going to be saved.
+
+    Returns
+    -------
+    None.
+
+    """
+    tree_ = tree.tree_
+    feature_name = [feature_names[i] if i != _tree.TREE_UNDEFINED else "undefined!"
+        for i in tree_.feature]
+    final_list = []
+    tree_to_list(0, 1, tree_, feature_name, final_list)
+    with open(name + '_tree.json', 'a') as f:
+        f.write(json.dumps(final_list))
 
 def classify_with_decission_tree(df, relationship, criteria, name):
-    X = df.to_numpy()
-    
-    for t in RelationshipType:
-        category = relationship == t.name
-        missing_cat = ~np.isfinite(X[category])
-        mu = np.nanmean(X[category], 0, keepdims=1)
-        X[category] = np.where(missing_cat, mu, X[category])
+    """
+    Generates the decision tree of the given data.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame which is going to be studied.
+    relationship : pd.DataFrame
+        DataFrame of the relationship type of each message.
+    criteria : str
+        Criteria for generating it ('gini' or 'entropy').
+    name: str
+        Name of the image which is going to be saved.
+
+    Returns
+    -------
+    None.
+
+    """
+    X = replace_nan(df, relationship)
         
     X_train, X_test, y_train, y_test = train_test_split(X, relationship, 
                                                         test_size=0.3)
-    
-    train_accuracy = []
-    test_accuracy = []
-    max_train = 0
-    max_test = 0
-    depth = 0
-    
-    for md in range(1, cf.MAX_DEPTH):
-        clf = DecisionTreeClassifier(criterion=criteria, max_depth=md)
-        scores = cross_validate(clf, X, relationship, scoring='accuracy', cv=10, 
-                                return_train_score=True)
-        
-        train_accuracy.append(np.mean(scores['train_score']))
-        test_accuracy.append(np.mean(scores['test_score']))
-        
-        if (0.9 < train_accuracy[-1] and 1 > train_accuracy[-1] and 
-            (max_test < test_accuracy[-1] or (max_test == test_accuracy[-1] and
-                                              max_train < train_accuracy[-1]))):
-            max_test = test_accuracy[-1]
-            max_train = train_accuracy[-1]
-            depth = md
-        
-    plt.figure()
-    # Draw lines
-    plt.plot(range(1, cf.MAX_DEPTH), train_accuracy, '-o', color="r",  label="Training")
-    plt.plot(range(1, cf.MAX_DEPTH), test_accuracy, '-o', color="g", label="Test")
-    
-    # Create plot
-    plt.title("Learning curve")
-    plt.xlabel("Parameter"), plt.ylabel("Accuracy Score"), plt.legend(loc="best")
-    plt.tight_layout()
-    plt.grid()
-    plt.savefig(name + criteria + '_learning_curve.png')
+    depth = calculate_best_depth(X, relationship, name, criteria)
     
     clf = DecisionTreeClassifier(criterion=criteria, splitter="best",
                              max_depth=depth)
@@ -494,7 +521,10 @@ def classify_with_decission_tree(df, relationship, criteria, name):
     export_graphviz(clf, out_file= name + criteria +'_tree.dot', 
                     feature_names=df.columns, class_names=
                     [t.name for t in RelationshipType], filled=True, rounded=True,  
-                     special_characters=True) 
+                     special_characters=True)
+    
+    tree_to_json(clf, df.columns, name + criteria)
+    calculate_features_importance(clf, df.columns, name + criteria)
 
 def main():
     init_db()
