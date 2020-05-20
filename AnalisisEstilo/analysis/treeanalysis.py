@@ -20,6 +20,7 @@ from analysis.confanalysis import MAX_DEPTH, COLORS
 from sklearn.tree import DecisionTreeClassifier, export_graphviz
 from sklearn.model_selection import cross_validate
 from sklearn.model_selection import train_test_split
+from analyser import yes_no_question
 
 os.chdir(initial_dir)
 
@@ -90,7 +91,7 @@ def tree_to_feature_importance(node, tree_, feature_name, feat_imp):
     else:
         return 0
         
-def calculate_features_importance(tree, feature_names, name):
+def calculate_features_importance(tree, feature_names, name = 'tree'):
     """
     Calculates the importance of each feature and saves this information in a
     json file.
@@ -102,7 +103,7 @@ def calculate_features_importance(tree, feature_names, name):
     feature_names : list
         List of the names of the features of the initial DataFrame.
     name : str
-        Name of the file which is going to be saved.
+        Name of the file which is going to be saved. The default value is 'tree'.
 
     Returns
     -------
@@ -132,7 +133,7 @@ def calculate_features_importance(tree, feature_names, name):
     plt.tight_layout()
     plt.savefig(name + '_pie.png')
         
-def calculate_best_depth(X, relationship, name, criteria):
+def calculate_best_depth(X, relationship, name = 'tree', criteria = 'entropy'):
     """
     Calculates the best depth based on the learning curve.
 
@@ -143,9 +144,10 @@ def calculate_best_depth(X, relationship, name, criteria):
     relationship : pd.DataFrame
         DataFrame of the relationship type of each message.
     criteria : str
-        Criteria for generating it ('gini' or 'entropy').
+        Criteria for generating it ('gini' or 'entropy'). The default value
+        is 'entropy'.
     name: str
-        Name of the image which is going to be saved.
+        Name of the image which is going to be saved. The default value is 'tree'.
 
     Returns
     -------
@@ -188,24 +190,129 @@ def calculate_best_depth(X, relationship, name, criteria):
             
     return depth
         
-def generate_decision_tree(df, relationship, name):
+def generate_decision_tree(df, relationship, name = 'tree'):
+    """
+    Generates a decision tree and study the importance of each feature in it.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Set of data.
+    relationship : pd.DataFrame
+        DataFrame of the relationship type of each message.
+    name : str
+        Name of the files which are going to be saved. The default value is 'tree'.
+
+    Returns
+    -------
+    None.
+
+    """
     X = replace_nan(df, relationship)
-    
-    X_train, X_test, y_train, y_test = train_test_split(X, relationship, 
-                                                        test_size=0.3)
     depth = calculate_best_depth(X, relationship, name, 'entropy')
     clf = DecisionTreeClassifier(criterion='entropy', splitter="best",
                              max_depth=depth)
-    
+    clf = clf.fit(X, relationship)
     export_graphviz(clf, out_file= name + '_tree.dot', 
                     feature_names=df.columns, class_names=
                     [t.name for t in RelationshipType], filled=True, rounded=True,  
                      special_characters=True)
     calculate_features_importance(clf, df.columns, name)
+    
+def get_deleted_features():
+    """
+    Asks for the features that the user wants to remove.
+
+    Returns
+    -------
+    del_col : list
+        List of the names of features that the user wants to remove.
+
+    """
+    del_col = []
+    c = input('Introduce the name of the column which is going to be deleted: ')
+    del_col.append(c)
+    while(yes_no_question('Do you want to delete more columns?')):
+        c = input('Introduce the name of the column which is going to be deleted: ')
+        del_col.append(c)
+        
+    with open('del_features.json', 'a') as f:
+        f.write(json.dumps(del_col))
+    return del_col
+
+def drop_unimportant_features(df, name = 'tree'):
+    """
+    Removes the features of the DataFrame which have an importance with value
+    0.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame from which the unimportant features are going to be removed.
+    name : str
+        Name of the file where the importance of each feature has been saved.
+        The default value is 'tree'.
+
+    Returns
+    -------
+    None.
+
+    """
+    feat_imp = None
+    
+    with open(name + '_feat_imp.json', 'r') as f:
+        feat_imp = json.loads(f.read())
+    
+    del_col = []
+    for c in df.columns:
+        if c not in feat_imp:
+            del_col.append(c)
+            
+    with open('unimportant_features.json', 'a') as f:
+        f.write(json.dumps(del_col))            
+    df.drop(columns = del_col, inplace = True)
 
 def main():
     df = pd.read_csv('dataframe.csv')
     normalized = pd.read_csv('normalized.csv')
+    num_del_feats = []
+    feat_imp = {}
+    initial_feats = len(normalized.columns)
+    
+    while(yes_no_question('Do yo want to continue?')):
+        num_del_feats.append(initial_feats - len(normalized.columns))
+        os.mkdir(str(len(normalized.columns)) + 'feat/')
+        os.chdir(str(len(normalized.columns)) + 'feat/')
+        
+        generate_decision_tree(normalized, df['relationship'])
+        drop_unimportant_features(normalized)
+        del_feat = get_deleted_features()
+        normalized.drop(columns = del_feat, inplace = True)
+        
+        with open('tree_feat_imp.json', 'r') as f:
+            feat_imp_aux = json.loads(f.read())
+            
+        for k in feat_imp_aux:
+            if k not in feat_imp:
+                feat_imp[k] = []
+            feat_imp[k].append(feat_imp_aux[k] * 100)
+        
+        os.chdir('../')
+    
+    color_ind = 0
+    plt.figure()
+    for k in feat_imp:
+        plt.plot(num_del_feats[:len(feat_imp[k])], feat_imp[k], '-o', 
+                 color=COLORS[color_ind], label=k)
+        color_ind += 1
+        
+    plt.title("Importance curve")
+    plt.xlabel("Number of deleted features")
+    plt.ylabel("Importance")
+    plt.legend(bbox_to_anchor = (1.04, 1), loc="upper left", prop={'size': 6})
+    plt.tight_layout()
+    plt.grid()
+    plt.savefig('importance_curve.png')
 
 if __name__ == '__main__':
     main()

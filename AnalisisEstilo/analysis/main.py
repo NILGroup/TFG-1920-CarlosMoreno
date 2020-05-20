@@ -31,7 +31,6 @@ from sklearn.cluster import DBSCAN
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier, export_graphviz
-from sklearn.model_selection import train_test_split
 from sklearn.tree import _tree
 from analysis.treeanalysis import calculate_features_importance
 from analysis.treeanalysis import replace_nan, calculate_best_depth
@@ -510,9 +509,6 @@ def classify_with_decission_tree(df, relationship, criteria, name):
 
     """
     X = replace_nan(df, relationship)
-        
-    X_train, X_test, y_train, y_test = train_test_split(X, relationship, 
-                                                        test_size=0.3)
     depth = calculate_best_depth(X, relationship, name, criteria)
     
     clf = DecisionTreeClassifier(criterion=criteria, splitter="best",
