@@ -124,7 +124,7 @@ def calculate_features_importance(tree, feature_names, name = 'tree'):
     labels = [k for k in features_importance]
     sizes = [features_importance[k] * 100 for k in features_importance]
     plt.figure()
-    patches, texts = plt.pie(sizes, colors=COLORS[:len(labels)], shadow=True,
+    patches, _ = plt.pie(sizes, colors=COLORS[:len(labels)], shadow=True,
                              startangle=90)
     plt.legend(patches, prop={'size': 6}, labels = ['%s, %1.1f %%' % (l, s) 
                                   for l, s in zip(labels, sizes)], loc="best")

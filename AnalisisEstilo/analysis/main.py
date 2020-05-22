@@ -184,7 +184,7 @@ def get_scatter_matrix(name, normalized, relationship):
                    color=colors)
     plt.savefig(name + 'scatter_matrix.png')
     
-def pca_analysis(df, relationship):
+def pca_analysis(df, relationship, name):
     """
     Executes a PCA analysis with the given DataFrame.
 
@@ -194,6 +194,8 @@ def pca_analysis(df, relationship):
         DataFrame which is going to be studied.
     relationship : pd.DataFrame
         DataFrame of the relationship type of each message.
+    name: str
+        Name of the image which is going to be saved.
 
     Returns
     -------
@@ -201,13 +203,42 @@ def pca_analysis(df, relationship):
 
     """
     X = replace_nan(df, relationship)
-        
     X = StandardScaler().fit_transform(X)
+    X = pd.DataFrame(data = X, columns = df.columns)
+    labels = df.columns
     
     for n in range(1, cf.N_COMPONENTS + 1):
         pca = PCA(n_components = n)
         pca.fit(X)
-        print("Varianza explicada: " + str(pca.explained_variance_ratio_))
+               
+        os.mkdir(name + 'PCA' + str(n) + '/')
+        os.chdir(name + 'PCA' + str(n) + '/')
+        with open('expvar.json', 'a') as f:
+            f.write(json.dumps(pca.explained_variance_ratio_.tolist()))
+        pd.DataFrame(pca.components_, columns = labels).to_csv(f'pca{n}.csv', 
+                                                                    index = False)
+        for i in range(n):
+            comi = pca.components_[i].copy()
+            comiabs = list(map(lambda x: abs(x), comi))
+            total = sum(comiabs)
+            comiabs = list(map(lambda x: (x/total) * 100, comiabs))
+            
+            plt.figure()
+            patches, _ = plt.pie(comiabs, colors=cf.COLORS[:len(labels)], shadow=True,
+                                     startangle=90)
+            
+            for j in range(len(comi)):
+                if comi[j] < 0:
+                    patches[j].set_hatch('/')
+            plt.legend(patches, prop={'size': 6}, labels = ['%s, %1.1f %%' % (l, s) 
+                                          for l, s in zip(labels, comiabs)], loc="best")
+            plt.axis('equal')
+            plt.title('Component with '+ '%.4f'%(pca.explained_variance_ratio_[i])
+                      + ' of explained variance ratio')
+            plt.tight_layout()
+            plt.savefig('comp' + str(i) + '_pie.png')
+            
+        os.chdir('../')
         
 def tree_to_list(node, depth, tree_, feature_name, final_list):
     """
@@ -334,8 +365,9 @@ def main():
     get_scatter_matrix('data_', df.drop(columns = ['_id', 'relationship']), 
                        df['relationship'])
     
-    pca_analysis(normalized, df['relationship'])
-    pca_analysis(df.drop(columns = ['_id', 'relationship']), df['relationship'])
+    pca_analysis(normalized, df['relationship'], 'norm_')
+    pca_analysis(df.drop(columns = ['_id', 'relationship']), df['relationship'],
+                 'data_')
     
     for c in ['gini', 'entropy']:
         classify_with_decission_tree(df.drop(columns = ['_id', 'relationship']),
