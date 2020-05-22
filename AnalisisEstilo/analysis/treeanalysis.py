@@ -19,7 +19,6 @@ from contactclassification.relationshiptype import RelationshipType
 from analysis.confanalysis import MAX_DEPTH, COLORS
 from sklearn.tree import DecisionTreeClassifier, export_graphviz
 from sklearn.model_selection import cross_validate
-from sklearn.model_selection import train_test_split
 from analyser import yes_no_question
 
 os.chdir(initial_dir)

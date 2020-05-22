@@ -21,19 +21,19 @@ from typocorrection.correctedmessage import CorrectedMessage
 import analysis.confanalysis as cf
 import numpy as np
 import matplotlib.pyplot as plt
-from pandas.plotting import table
 import pandas as pd
 import json
 from pandas.plotting import scatter_matrix
-from sklearn.cluster import KMeans
-from sklearn.metrics import silhouette_score
-from sklearn.cluster import DBSCAN
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier, export_graphviz
 from sklearn.tree import _tree
 from analysis.treeanalysis import calculate_features_importance
 from analysis.treeanalysis import replace_nan, calculate_best_depth
+from analysis.clustering import study_kmeans_silhouette_score
+from analysis.clustering import study_dbscan_silhouette_score
+from analysis.crossmatrixanalysis import generate_colors
+from analysis.descriptions import describe_dataframe
 
 os.chdir(initial_dir)
 
@@ -157,224 +157,6 @@ def transform_recipients_columns(df):
                                       row['to'], row['cc'], row['bcc'], row['_id'])
                                   , axis = 1)
     df.drop(columns = ['to', 'cc', 'bcc'], inplace = True)
-    
-def describe_dataframe(df, name):
-    """
-    Obtains the basic statistical descriptors for the given DataFrame.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        DataFrame from which is going to be obtained the information.
-    name : str
-        Name of the DataFrame.
-
-    Returns
-    -------
-    None.
-
-    """
-    desc = df.describe()
-    desc.to_csv(name + '.csv')
-
-    plot = plt.subplot(111, frame_on=False)
-
-    plot.xaxis.set_visible(False) 
-    plot.yaxis.set_visible(False) 
-
-    table(plot, desc,loc='upper right')
-    plt.savefig(name + '.png')
-    
-def kmeans_missing(X, k, max_iter):
-    """
-    Performs K-Means clustering on data with missing values.
-
-    Parameters
-    ----------
-    X: np.ndarray
-        An [n_samples, n_features] array of data to cluster.
-    k: int
-        Number of clusters to form.
-    max_iter: int
-        Maximum number of iterations to perform.
-
-    Returns
-    -------
-    labels: np.ndarray
-        An [n_samples] vector of integer labels.
-    X_filled: np.ndarray
-        Copy of X with the missing values filled in.
-
-    """
-
-    # Initialize missing values to their column means
-    missing = ~np.isfinite(X)
-    mu = np.nanmean(X, 0, keepdims=1)
-    X_filled = np.where(missing, mu, X)
-    
-    i = 1
-    km = KMeans(init='random', n_clusters=k)
-    km.fit(X_filled)
-    prev_labels = km.labels_
-    prev_centroids = km.cluster_centers_
-    
-    X_filled[missing] = prev_centroids[prev_labels][missing]
-    converge = False
-    
-    while i < max_iter and not(converge):
-        # Execute K-Means with the previous centroids
-        km = KMeans(init = prev_centroids, n_clusters = k, n_init = 1)
-        km.fit(X_filled)
-        
-        labels = km.labels_
-        centroids = km.cluster_centers_
-        
-        # Fill in the missing values based on their clusters centroids
-        X_filled[missing] = centroids[labels][missing]
-        
-        converge = np.all(labels == prev_labels)
-        
-        if not(converge):
-            prev_labels = labels
-            prev_centroids = centroids
-            i += 1
-
-    return labels, X_filled
-    
-def study_kmeans_silhouette_score(name, normalized):
-    """
-    Obtains the Silhouette score (by using K-Means algorithm) of the data and 
-    save it as an image.
-    
-    Parameters
-    ----------
-    name: str
-        Name of the image which is going to be saved.
-    normalized: pd.DataFrame
-        DataFrame which is going to be studied.
-        
-    Returns
-    -------
-    None.
-
-    """
-    silhouette = np.zeros(cf.K_MAX - 2)
-    X = normalized.to_numpy()
-    
-    for k in range(2, cf.K_MAX):
-        labels, X_filled = kmeans_missing(X, k, cf.MAX_ITER)
-        silhouette[k-2] = silhouette_score(X_filled, labels)
-        
-    plt.figure()
-    plt.plot(range(2, cf.K_MAX), silhouette)
-    plt.title('Silhouette score with K-Means for different k')
-    plt.savefig(name + 'kmeans_silhouette_score.png')
-    
-def dbanalysis(X, epsilon, metric):
-    """
-    Executes DBSCAN algorithm.
-    
-    Parameters
-    ----------
-    X: np.ndarray
-        An [n_samples, n_features] array of data to cluster.
-    epsilon: float
-        Distance threshold for DBSCAN.
-    metric: str
-        Metric fo DBSCAN.
-        
-    Returns
-    -------
-    silhouette: float
-        Silhouette score.
-    n_clusters_: int
-        Number of final clusters.
-    
-    """
-    n0 = 5 # Fijamos el número de elementos mínimos
-    db = DBSCAN(eps=epsilon, min_samples=n0, metric=metric).fit(X)
-    labels = db.labels_
-    # Number of clusters in labels, ignoring noise if present.
-    n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
-    silhouette = -1
-    if n_clusters_ > 1:
-        silhouette = silhouette_score(X, labels)
-
-    return silhouette, n_clusters_
-
-def study_dbscan_silhouette_score(name, normalized, relationship):
-    """
-    Obtains the Silhouette score (by using DBSCAN algorithm) of the data and 
-    save it as an image.
-    
-    Parameters
-    ----------
-    name: str
-        Name of the image which is going to be saved.
-    normalized: pd.DataFrame
-        DataFrame which is going to be studied.
-    relationship : pd.DataFrame
-        DataFrame of the relationship type of each message.
-
-    Returns
-    -------
-    None.
-
-    """
-    X = replace_nan(normalized, relationship)
-    
-    metrics = ['euclidean', 'manhattan']
-    
-    for m in metrics:
-        maxS = -1
-        epsiOpt = 0
-        silhouettes = []
-        num_clust = []
-        interval = np.arange(0.01, 1, 0.01)
-        
-        for epsilon in interval:
-            s, n = dbanalysis(X, epsilon, m)
-            silhouettes.append(s)
-            num_clust.append(n)
-            if maxS < s:
-                maxS = s
-                epsiOpt = epsilon
-
-        plt.figure(figsize=(13,4))
-        plt.subplot(1,3,1)
-        plt.plot(interval, silhouettes)
-        plt.plot([epsiOpt, epsiOpt], [-1.1, maxS+0.1], linestyle = "--")
-        plt.title(r'Silhouette score for different $\varepsilon$')
-        plt.xlabel(r"$\varepsilon$")
-        plt.ylabel("Silhouette score")
-        plt.grid()
-
-        plt.subplot(1,3,2)
-        plt.plot(interval, num_clust)
-        plt.plot([epsiOpt, epsiOpt], [0, max(num_clust)], linestyle = "--")
-        plt.title(r'Number of clusters for different $\varepsilon$')
-        plt.xlabel(r"$\varepsilon$")
-        plt.ylabel("Number of clusters")
-        plt.grid()
-
-        plt.tight_layout()
-        plt.savefig(name + 'dbscan_' + m + '_silhouette_score.png')
-    
-def generate_colors():
-    """
-    Generates a dictionary of colours which determines the colour of each
-    relationship type.
-
-    Returns
-    -------
-    dic_colors : dict
-        Dictionary which relates each relationship type with a colour.
-
-    """
-    dic_colors = {}
-    for t in RelationshipType:
-        dic_colors[t.name] = str(cf.COLORS[t.value - 1])
-    return dic_colors
 
 def get_scatter_matrix(name, normalized, relationship):
     """

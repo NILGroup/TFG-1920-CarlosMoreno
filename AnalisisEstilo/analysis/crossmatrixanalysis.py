@@ -17,7 +17,6 @@ import matplotlib.pyplot as plt
 from contactclassification.relationshiptype import RelationshipType
 from analysis.confanalysis import COLORS
 import seaborn as sns
-import numpy as np
 
 os.chdir(initial_dir)
 
@@ -84,8 +83,9 @@ def get_correlation_matrix(df, relationship):
 
     """
     X = replace_nan(df, relationship)
-    plt.figure()
-    cor = np.corrcoef(X)
+    X = pd.DataFrame(data = X, columns = df.columns)
+    plt.figure(figsize = (20, 20))
+    cor = X.corr()
     sns.heatmap(cor, annot=True, cmap=plt.cm.Reds)
     plt.savefig('correlation_matrix.png')
 
