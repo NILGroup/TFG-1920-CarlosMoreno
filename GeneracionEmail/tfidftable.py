@@ -9,7 +9,7 @@ from initdb import init_db
 from correctedmessage import CorrectedMessage
 import pandas as pd
 import base64
-from conftfid import NLP
+from conftfidf import NLP
 import numpy as np
 from mytoken import MyToken
 from math import log
@@ -45,16 +45,13 @@ def tf_vector(text, columns, df, ide, corrections = None):
     for c in columns:
         tf[c] = 0
     
-    tf['_id'] = ide
-    
     for token in doc:
         if token.pos_ != 'SPACE' and token.is_oov and (corrections is not None):
             cor = corrections[ind_cor]
             token = MyToken(**cor)
             ind_cor += 1
             
-        if not(token.is_punct or token.like_email or token.like_url or
-               token.is_stop):
+        if not(token.is_punct or token.like_email or token.like_url):
             word = token.text
             if token.lemma_:
                 word = token.lemma_
@@ -66,7 +63,10 @@ def tf_vector(text, columns, df, ide, corrections = None):
             tf[word] += 1
             
     max_f = max(tf.values())
-    tf = {k: v/max_f for k, v in tf.items()}
+    if max_f != 0:
+        tf = {k: v/max_f for k, v in tf.items()}
+    
+    tf['_id'] = ide
             
     return tf
 
