@@ -13,4 +13,61 @@ As it will be seen later in this section, to be in possession of OAuth 2.0 clien
 
 The Google API Console, also known as Google Console Developer\footnote{\url{https://console.developers.google.com/}}, built into Google Cloud Platform, makes possible an authorized access to a user's Gmail data. In order to achieve it, having a Google account is a prerequisite because accessing to this platform will be necessary. Once this web has been accessed, at first we have to create a new development project by clicking in ``New Project'' in the control panel (which is the main tab of the Google Console Developer and the one that opens by default when you access it). When we have already created a project, we will enable the API we are going to work with, in this case the Gmail API. To do this we will look for it in the search engine that we can find in the library of APIs of this platform. Now we can apply for the credentials we need. Accessing to the ``Credentials'' tab and clicking on ``Create Credentials'' will lead us to an easy questionnaire, about what type of credentials we prefer, that we have to answer by basing on what type of application we are building. Then we must download the .json file and save it in the folder we are going to work in.
 
-Before starting the development of the implementation of the OAuth 2.0 protocol which will provides us a secure and trusted login system to access to the user's Gmail data, we must install the Google Client Library\footnote{\url{https://developers.google.com/gmail/api/downloads}} of our choice of language (we will use Python, so we have to install the libraries \textit{google-api-python-client}, \textit{google-auth-httplib2} and \textit{google-auth-oauthlib}).
+Before starting the development of the implementation of the OAuth 2.0 protocol which will provide us a secure and trusted login system to access to the user's Gmail data, we must install the Google Client Library\footnote{\url{https://developers.google.com/gmail/api/downloads}} of our choice of language (we will use Python, so we have to install the libraries \textit{google-api-python-client}, \textit{google-auth-httplib2} and \textit{google-auth-oauthlib}).
+
+There are many ways to obtain the necessary permissions for accessing to the user's emails data following the OAuth 2.0 protocol. As this is a first contact with the Gmail API only with the intention of knowing the possibilities it offers to us and its advantages and disadvantages for future implementations, we are going to develop a simple script which is using a class very useful for local development and applications that are installed on a desktop operating system. The class \textit{InstalledAppFlow}, in \textit{google\_auth\_oauthlib.flow} \citep{oauthlib}, is a \textit{Flow} subclass (which belongs to the same library). Thanks to this last class we have mentioned, \textit{InstalledAppFlow} uses a \textit{requests\_oauthlib.OAuth2Session} instance at \textit{oauth2session} to perform all of the OAuth 2.0 logic. Besides it also inherits from \textit{Flow} the class method \textit{from\_client\_secrets\_file} which creates a \textit{Flow} instance from a Google client secrets file (this file will be the .json file that we obtained through the Google API Console) and a list of OAuth 2.0 Scopes \citep{oauth-scopes}.
+
+After constructing an \textit{InstalledAppFlow} by calling \textit{from\_client\_secrets\_file} as we have explained, we can invoke the class method \textit{run\_local\_server} which instructs the user to open the authorization URL in the browser and will try to automatically open it. This function will start a local web server to listen for the authorization response. Once there is a reply, the authorization server will redirect the user's browser to the local web server. As we can see in Figure \ref{fig:oauth}, the web server will get the authorization code from the response and shutdown, that code is then exchanged for a token.
+
+In summary, it is possible to obtain the necessary permissions from the user and to follow the OAuth 2.0 protocol, by executing these instructions (written in Python):
+
+\begin{python}
+	from google_auth_oauthlib.flow import InstalledAppFlow
+	
+	# Create a flow instance
+	flow = InstalledAppFlow.from_client_secrets_file('credentials.json', 
+	['https://mail.google.com/'])
+	# Obtain OAuth 2.0 credentials for the user
+	creds = flow.run_local_server(port = 0)
+\end{python}
+
+Now, we are able to call Gmail API by using the token (which is stored in the variable \textit{creds}). However, before starting working on the email data, we should save the OAuth 2.0 credentials since otherwise the user would need to go through the consent screen every time the application is opened. To prevent the latter from happening, to differentiate access from mail management and consequently to reuse as much code as possible, we have implemented the following class \textit{auth}, in \textit{auth.py}, with a main method \textit{get\_credentials}:
+
+\begin{pythonnum}
+	import pickle
+	import os.path
+	from google_auth_oauthlib.flow import InstalledAppFlow
+	from google.auth.transport.requests import Request
+	
+	class auth:
+	def __init__(self, SCOPES, CLIENT_SECRET_FILE):
+	self.SCOPES = SCOPES
+	self.CLIENT_SECRET_FILE = CLIENT_SECRET_FILE
+	
+	def get_credentials(self):
+	"""
+	Obtains valid credentials for accessing Gmail API
+	"""
+	creds = None
+	# The file token.pickle stores the user's access and refresh tokens
+	if os.path.exists('token.pickle'):
+	with open('token.pickle', 'rb') as token:
+	creds = pickle.load(token)
+	# If there are no (valid) credentials available, let the user log in
+	if not creds or not creds.valid:
+	if creds and creds.expired and creds.refresh_token:
+	creds.refresh(Request())
+	else:
+	flow = InstalledAppFlow.from_client_secrets_file(
+	self.CLIENT_SECRET_FILE, self.SCOPES)
+	creds = flow.run_local_server(port=0)
+	# Create token.pickle and save the credentials for the next run
+	with open('token.pickle', 'wb') as token:
+	pickle.dump(creds, token)
+	return creds
+	
+\end{pythonnum}
+
+As we can observe in line 17 within \textit{get\_credentials} method, at first we check if the file called \textit{token.pickle} exists, and in that case, it is opened and its information is stored in the variable \textit{creds}. Thus, we avoid to force the user to open the authorization screen. By contrast, as we have seen before, if it does not exists, we obtain the credentials by calling the class methods \textit{from\_client\_secrets\_file} and \textit{run\_local\_server} (it is written between lines 25 and 30).
+
+There is another case that is also reflected in the code above (in lines 23 and 24): the credentials are expired (it is possible to check it by executing \textit{creds.expired}) and they can be refreshed (the OAuth 2.0 refresh token is \textit{creds.refresh\_token}) \citep{oauth2.credentials}. In this situation, we will refresh the access token by invoking the method known as \textit{refresh} and by giving it a \textit{Request} object \citep{request-lib} from \textit{google.auth.transport.requests} as the function parameter which used to make HTTP requests.

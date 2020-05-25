@@ -33,6 +33,20 @@ As we will see in Section \ref{ssect:protvsapi}, due to the automatic server acc
 Finally, as this API is not the only means of accessing the user's mail data (we have studied other ways in previous sections), we will end with a brief description about the API usage limits (in Section \ref{ssect:apilimits}) to assess its use with respect to other methods of email access.
 
 \subsubsection{OAuth 2.0 Protocol}\label{sssect:oauth}
-Gmail API, as it also happens in the case of other Google APIs, uses OAuth 2.0 protocol \citep{oauth} to handle authentication and authorization.
+Open Authorization or OAuth \citep{oauth} is an open standard which allows simple authorization flows for web services or applications. It is a protocol defined in \cite{rfc6749} which allows the site's users to share their information with another site without providing their full identity. This mechanism is used by companies like Google, Facebook, Twitter and Microsoft to allow users to share information about their accounts with third-party applications or websites
+
+Gmail API, as it also happens in the case of other Google APIs, uses OAuth 2.0 protocol \citep{oauthforgoogle} to handle authentication and authorization. It will provide us a secure and trusted login system to access to the user's Gmail data.
+
+The basic working process of OAuth 2.0 protocol can bee seen in Figure \ref{fig:oauth}. As we can observe, at first our application carries out a request in which it sends a token. This token includes, among other things, a credential, which helps Google Servers  to identify the application, and a list of OAuth 2.0 Scopes \citep{oauth-scopes-google}, which are a ``mechanism  in OAuth 2.0 to limit an application's access to a user's account. An application can request one or more scopes. This information is then presented to the user in a consent screen, and the access token issued to the application will be limited to the scopes granted'' \citep{oauth-scopes}. We will use the Gmail API OAuth 2.0 Scope which allows us to read, compose, send, and delete emails.
+
+Once the user has logged in the Gmail account (authentication) and accepted all the necessary permissions that our application needs (authorization), our process receives an authorization code which is going to be exchanged for an access token \citep{oauth-exchange}. Then, we will be in possession of the OAuth 2.0 credentials for the user \citep{oauth2.credentials} which we are going to use for accessing the user's Gmail account.
+
+\begin{figure}[h]
+	\centering%
+	\includegraphics[width = 0.5\textwidth]{Imagenes/Bitmap/webflow.png}%
+	\caption{OAuth 2.0 for Web Server Applications and Installed Applications.}%
+	Image extracted from \cite{oauthforgoogle}
+	\label{fig:oauth}
+\end{figure}
 
 \subsection{Advantages and disadvantages of email protocols versus the use of Gmail API} \label{ssect:protvsapi}
