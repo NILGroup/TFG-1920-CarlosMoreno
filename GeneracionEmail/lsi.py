@@ -35,16 +35,38 @@ def get_TFIDF_table():
         tfidf.to_csv(TF_IDF_FILE, index = False)
         return tfidf
     
-def get_truncated_tfidf_and_truncated_svd(tfidf):
+def get_truncated_tfidf_and_truncated_svd(tfidf, truncate_again):
+    """
+    Obtains the truncated TF-IDF table and the class of the truncated SVD 
+    (Singular Value Descomposition). If they are not saved as a .csv and
+    .pickle files (respectively), they will be created.
+
+    Parameters
+    ----------
+    tfidf : pd.DataFrame
+        TF-IDF table.
+    truncate_again : bool
+        Indicates if it is necessary to calculate the truncated TF-IDF table
+        although it is saved.
+
+    Returns
+    -------
+    trun_tfidf : pd.DataFrame
+        Truncated TF-IDF table.
+    trun_svd : TruncatedSVD
+        Truncated SVD.
+
+    """
     trun_tfidf = None
     trun_svd = None
     
-    if os.path.isfile(TRUNC_TF_IDF_FILE) and os.path.isfile(TRUNC_SVD_FILE):
+    if (os.path.isfile(TRUNC_TF_IDF_FILE) and os.path.isfile(TRUNC_SVD_FILE) 
+        and not(truncate_again)):
         print('Loading truncated TF-IDF table...')
         trun_tfidf = pd.read_csv(TRUNC_TF_IDF_FILE)
         print(f'Shape of truncated TF-IDF table: {trun_tfidf.shape}.')
         print('Loading components of truncated SVD...')
-        with open(TRUNC_SVD_FILE, 'r') as f:
+        with open(TRUNC_SVD_FILE, 'rb') as f:
             trun_svd = pickle.load(f)
     else:
         print('Generating components of truncated SVD...')
@@ -65,7 +87,7 @@ def get_truncated_tfidf_and_truncated_svd(tfidf):
     return trun_tfidf, trun_svd
     
     
-def truncate_SVD(tfidf, tfidf_query):
+def truncate_SVD(tfidf, tfidf_query, truncate_again):
     """
     Truncates the Singular Value Descomposition of the given DataFrame.
 
@@ -75,6 +97,9 @@ def truncate_SVD(tfidf, tfidf_query):
         DataFrame which represents the TF-IDF table.
     tfidf_query : dict
         Dictionary which represents the TF-IDF vector of the query.
+    truncate_again : bool
+        Indicates if it is necessary to calculate the truncated TF-IDF table
+        although it is saved.
 
     Returns
     -------
@@ -87,7 +112,8 @@ def truncate_SVD(tfidf, tfidf_query):
         tfidf_query['_id'] = 'query'
         return tfidf.append(tfidf_query, ignore_index = True)
     
-    trun_tfidf, trun_svd = get_truncated_tfidf_and_truncated_svd(tfidf)
+    trun_tfidf, trun_svd = get_truncated_tfidf_and_truncated_svd(tfidf, 
+                                                                 truncate_again)
 
     trun_query = np.zeros(shape = (1, NUM_DIM))
     for i in range(NUM_DIM):
@@ -96,7 +122,8 @@ def truncate_SVD(tfidf, tfidf_query):
             trun_query[0][i] += tfidf_query[word] * trun_svd.components_[i][j]
             j += 1
             
-    trun_query = pd.DataFrame(trun_query)
+    trun_query = pd.DataFrame(trun_query, 
+                              columns = trun_tfidf.drop(columns = '_id').columns)
     trun_query['_id'] = 'query'
     print('Truncated query:')
     print(trun_query)
@@ -158,6 +185,8 @@ def latent_semantic_indexing(query):
     """
     tfidf = get_TFIDF_table()
     print(f'Shape of the TF-IDF table: {tfidf.shape}.')
+    
+    num_words = len(tfidf.columns)
         
     print("Calculating query's TF-IDF vector...")
     tf_query = tf_vector(query, tfidf.columns, tfidf, 'query')
@@ -171,7 +200,7 @@ def latent_semantic_indexing(query):
     print("Query's TF-IDF vector:")
     print(pd.DataFrame([tfidf_query.values()], columns = tfidf_query.keys()))
     
-    trun_tfidf = truncate_SVD(tfidf, tfidf_query)
+    trun_tfidf = truncate_SVD(tfidf, tfidf_query, num_words < len(tfidf.columns))
     trun_tfidf.set_index('_id', inplace = True)
     
     print('Looking for the document most similar to the query...')
@@ -183,13 +212,12 @@ def latent_semantic_indexing(query):
     similar_docs = []
     
     for index, row in trun_tfidf.iterrows():
-        sim = dot_product(q, row.drop('_id'))/(norm_q * norm(row.drop('_id')))
+        sim = dot_product(q, row)/(norm_q * norm(row))
         
         if sim >= max_sim:
             if sim > max_sim:
                 similar_docs.clear()
                 max_sim = sim
-            similar_docs.append(row['_id'])
+            similar_docs.append(index)
                 
     return similar_docs
-                

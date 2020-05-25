@@ -51,7 +51,8 @@ def tf_vector(text, columns, df, ide, corrections = None):
             token = MyToken(**cor)
             ind_cor += 1
             
-        if not(token.is_punct or token.like_email or token.like_url):
+        if not(token.is_punct or token.like_email or token.like_url or
+               (token.pos_ == 'SPACE')):
             word = token.text
             if token.lemma_:
                 word = token.lemma_
