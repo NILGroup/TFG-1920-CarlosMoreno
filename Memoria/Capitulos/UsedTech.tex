@@ -71,3 +71,57 @@ Now, we are able to call Gmail API by using the token (which is stored in the va
 As we can observe in line 17 within \textit{get\_credentials} method, at first we check if the file called \textit{token.pickle} exists, and in that case, it is opened and its information is stored in the variable \textit{creds}. Thus, we avoid to force the user to open the authorization screen. By contrast, as we have seen before, if it does not exists, we obtain the credentials by calling the class methods \textit{from\_client\_secrets\_file} and \textit{run\_local\_server} (it is written between lines 25 and 30).
 
 There is another case that is also reflected in the code above (in lines 23 and 24): the credentials are expired (it is possible to check it by executing \textit{creds.expired}) and they can be refreshed (the OAuth 2.0 refresh token is \textit{creds.refresh\_token}) \citep{oauth2.credentials}. In this situation, we will refresh the access token by invoking the method known as \textit{refresh} and by giving it a \textit{Request} object \citep{request-lib} from \textit{google.auth.transport.requests} as the function parameter which used to make HTTP requests.
+
+\subsection{Building a Gmail Resource} \label{ssect:gmailres}
+At this point, with the OAuth 2.0 credentials, we are able to call the Gmail API. For this purpose, it is necessary to construct a resource \citep[/v1/reference]{gmailAPI} for interacting with the API. The \textit{build} method, from \textit{googleapiclient.discovery} library \citep{build-module}, create that object. As we will see later, this resource will lead us to manage emails, drafts, threads and everything we will like to do with the user's Gmail data. This is why, using the \textit{auth.py} file explained in Section \ref{ssect:oauth}, we are going to start every user session with the instructions below (or their equivalents in the language we are using):
+
+\begin{python}
+	from googleapiclient.discovery import build
+	import auth
+	
+	SCOPES = ['https://mail.google.com/']
+	CLIENT_SECRET_FILE = 'credentials.json'
+	
+	# Creation of an auth instance
+	authInst = auth.auth(SCOPES, CLIENT_SECRET_FILE)
+	# Constructing the resource API object
+	service = build('gmail', 'v1', credentials = authInst.get_credentials())
+\end{python}
+
+Henceforth, we will use the \textit{service} variable to relate it with the resource object created by the \textit{build} method.
+
+\subsection{Users resource}\label{ssect:userres}
+The \textit{build} method could be called for obtaining any resource of any Google API (by giving it the suitable parameters). Our specific created \textit{service}\footnote{\url{http://googleapis.github.io/google-api-python-client/docs/dyn/gmail\_v1.html}} has an important instance method that we are going to invoke for every execution: the \textit{users()} method. It returns what is known as users resource \citep[/v1/reference/users]{gmailAPI}.
+
+The users resource has also instance methods, which return other Gmail API resources that we are going to need, such as \textit{drafts()} (see Section \ref{ssect:drafts}), \textit{labels()} (see Section \ref{ssect:labres}), \textit{messages()} (see Section \ref{ssect:msgres}) and \textit{threads()} (see Section \ref{ssect:threads}) which return drafts, labels, messages and threads resources respectively. Moreover, it possesses the three methods that we explain hereunder (we must remember that for being able to execute any method that we are going to explain in this and next sections, it is necessary to have the appropriate authorization with at least one of the required scopes that we can look up in its documentation):
+
+\begin{itemize}
+	\item\textit{getProfile(userId)}: it returns an object with a dictionary structure as it follows:
+	\begin{python}
+		{
+			'threadsTotal' : integer, # Total number of threads in the mailbox
+			'emailAddress' : string, # User's email address
+			'historyId' : string, # ID of the mailbox's current history record
+			'messagesTotal' : integer # Total number of messages in the mailbox
+		}
+	\end{python}
+	The parameter is a string with the user's email address. If we remember the authentication process, at no time we ask the user about the email address because we decided to let the Google API functions to handle all that procedure. Therefore we have no way to know this information. Nevertheless, the special string value \textit{'me'} can be used to indicate the authenticated user. For knowing the required scopes for invoking this function look up in \cite[/v1/reference/users/getProfile]{gmailAPI}.
+	\item\textit{stop(userId)}: stop receiving push notifications for the given user mailbox. As it happens with \textit{getProfile}, the parameter is a string with the user's email address, but it is possible to use the especial string value \textit{'me'}.
+	\item\textit{whatch(userId, body)}: set up or update a push notification watch on the given user mailbox.
+\end{itemize}
+
+As we are going to call only the \textit{getProfile} method, we have described on details this first function and we have just given an idea about what the rest of them do. Now, in next sections, we are going to explain all the resources we can create with the user resource.
+
+\subsection{Labels resource}\label{ssect:labres}
+As we have seen in the explanation of the users resource (Section \ref{ssect:userres}), we can obtain the labels resource \citep[/v1/reference/users/labels]{gmailAPI} by invoking \textit{labels()} instance method of our users resource, that is to say, by using our \textit{service} variable, the instruction \textit{service.users().labels()} will return the label resource.
+
+
+In order to obtain a label object, we will use the methods of this resource: create, delete, get, list, patch and update. In this manner, for example, we can store a label object by calling the next instructions:
+
+\begin{python}
+	labels = service.users().labels()
+	labelList = labels.list(userId = 'me').execute()
+	label = labels.get(id = labelList[0]['id'], userId = 'me')
+\end{python}
+
+It is necessary to use the \textit{get} method because, as we can look up in \cite[/v1/reference/users/labels/list]{gmailAPI}, the \textit{list} method only contains an \textit{id}, \textit{name}, \textit{messageListVisibility}, \textit{labelListVisibility} and \textit{type} of each label, whereas the \textit{get} method returns the label resource with all the information.
