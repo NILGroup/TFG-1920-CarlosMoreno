@@ -95,6 +95,8 @@ Internet Message Access Protocol (also known as IMAP) is an application protocol
 In contrast to Post Office Protocol, IMAP allows multiple clients to manage the same mailbox. This fact results from the main differences between these two protocols: IMAP does not remove email from server until the client specifically requests it (as POP removes them by default, it is impossible to accessing them from another device which has not the downloaded messages) and it does not download the messages to the user's computer (clients may optionally store a local copy of them). This last property gives raise to several advantages with regard to Post Office Protocol: the immediate notification of the arrival of a mail (due to it works in permanent connection mode) while POP checks if there are new e-mails every few minutes (which causes an appreciable rise in traffic and in the time the user has to wait to send a request to the server, because it is necessary to complete the download of all new messages first), it is possible to create shared folders with other users (it depends on the mail server), the e-mails do not take up memory in the user's local device while POP downloads them regardless of whether they are going to be read or not (effectively IMAP has to download a message when it is going to be read, but they are temporary files and only the e-mail headers are downloaded to manage the mailbox) and it allows the user to manage folders, templates and drafts in server in addition to be able to search a mail from keywords.
 
 \subsection{Gmail API}\label{ssect:gmailapi}
+Gmail is a free email service developed by the company Google. Users can access Gmail on the web itself and through third-party programs that synchronize email content via POP or IMAP protocols. It also has a mobile application to manage the user's email. Gmail began as a limited beta version on April 1, 2004 and completed its testing phase on July 7, 2009. As stated in \cite{gmailbbc}: ``Gmail is the world's most popular email service with 1.4 billion users''.
+
 As we will see in Section \ref{ssect:protvsapi}, due to the automatic server access, directly using the communication protocol for electronic mail transmission (SMTP) and for retrieving email messages from a mail server (POP or IMAP) will cause us security problems in accessing the user's email data. For this reason, we are going to make use of Gmail API. In this section we are going to study it. Thus in Section \ref{sssect:oauth}, we are going to study the necessary protocol for accessing the Gmail API and consequently for being able to get into the user's email data. Further on, we will require a resource (like a programming object) we can work with and represent all the Gmail structure (see Section \ref{sssect:usersres}). Once we count on this general resource, we have the necessary tools to be able to understand and handle the internal architecture of the Gmail API and the different means it provides in order to achieve our goal. Therefore, in Sections \ref{sssect:labres}, \ref{sssect:msgres}, \ref{sssect:threads} and \ref{sssect:drafts} we are going to delve into the essential resources for our purpose: labels, messages, threads and drafts, respectively.
 
 Finally, as this API is not the only means of accessing the user's mail data (we have studied other ways in previous sections), we will end with a brief description about the API usage limits (in Section \ref{sssect:apilimits}) to assess its use with respect to other methods of email access.
@@ -150,7 +152,7 @@ Labels resource is an object which allows us to access to the different email la
 The important fields we are going to need are the \textit{name}, the \textit{type} and the number of total messages and threads with the label (which are \textit{messagesTotal} and \textit{threadsTotal} fields, respectively). Labels with \textit{system} type, such as \textit{INBOX}, \textit{SENT}, \textit{DRAFTS} and \textit{UNREAD}, are internally created and cannot be added, modified or deleted.
 
 \subsubsection{Messages resource}\label{sssect:msgres}
-In most of the operations we are going to execute the correct management of messages will be essential. Therefore, knowing how the emails are represented in Gmail API and how to use them is imperative to understand how to work with this API. For this reason, in this section we are going to delve into the messages resource \citep[/v1/reference/users/messages]{gmailAPI} of the Gmail API. As we saw in Section \ref{ssect:userres}, we can access to this resource by invoking the \textit{messages()} instance method when we have a users resource.
+In most of the operations we are going to execute, the correct management of messages will be essential. Therefore, knowing how the emails are represented in Gmail API and how to use them is imperative to understand how to work with this API. For this reason, in this section we are going to delve into the messages resource \citep[/v1/reference/users/messages]{gmailAPI} of the Gmail API. As we saw in Section \ref{ssect:userres}, we can access to this resource by invoking the \textit{messages()} instance method when we have a users resource.
 
 As with the labels resource, the messages resource manages the set of all messages of the user's email. With the messages resource methods, we can obtain each of these ``user's messages'' which, regardless of which programming language is used, have a dictionary structure and their representation is what we can see down below:
 
@@ -230,16 +232,16 @@ One factor to be taken into account is the limitations of the Gmail API \citep[/
 	\centering
 	\begin{tabular}{|l c r|}
 		\hline
-		\textbf{Method} & \textbf{Section where the method is explained} & \textbf{Quota units} \\
+		\textbf{Method} & \textbf{Where the method is explained} & \textbf{Quota units} \\
 		\hline\hline
 		\textit{getProfile} & \ref{ssect:userres} & 1\\ \hline
 		\textit{labels.get} & \ref{ssect:labres} & 1\\ \hline
-		\textit{messages.get} & \ref{sssect:msgmethods} & 5\\ \hline
-		\textit{messages.list} & \ref{sssect:msgmethods} & 5\\ \hline
-		\textit{messages.send} & \ref{sssect:msgmethods} & 100\\ \hline
+		\textit{messages.get} & \ref{ssect:msgres} & 5\\ \hline
+		\textit{messages.list} & \ref{ssect:msgres} & 5\\ \hline
+		\textit{messages.send} & \ref{ssect:msgres} & 100\\ \hline
 		\textit{threads.get} & \ref{ssect:threads} & 10\\ \hline
 		\textit{threads.list} & \ref{ssect:threads} & 10\\ \hline
-		\textit{drafts.create} & \ref{ssect:drafts} & 10\\ \hline
+		\textit{drafts.create} & \citep[/v1/reference/users/drafts]{gmailAPI} & 10\\ \hline
 	\end{tabular}
 	\caption{Main methods' quota units}
 	\label{tab:quotaUnits}
@@ -248,3 +250,10 @@ One factor to be taken into account is the limitations of the Gmail API \citep[/
 However, both daily usage limit and per-user rate limit are acceptable for the type of software we want to build: 1,000,000,000 quota units per day and 250 quota units per user per second. Therefore there are no constraints (for our purpose) that avoid us to use this API.
 
 \subsection{Advantages and disadvantages of email protocols versus the use of Gmail API} \label{ssect:protvsapi}
+Without using the Gmail API, we may be able to access mail accounts by implementing the different email protocols that we have studied. Indeed, this implementation would allow us to access them regardless of the mail server, in other words, we would be able to work with any email account without the need of being a Gmail one. However, when we try to developed an application which is going to access to a user's email account, Google Servers detect it as a non-authorised login and block the authentication process. Then they send to the user a warning titled ``A login attempt has been blocked'' with the following information:
+
+``\textit{Someone just used your password to try to sign in to your account from a non-Google application. Although Google has blocked access, you should find out what happened. Check your account activity and make sure that only you have access to your account.}''
+
+Against this background, it is possible to change the user's security settings for allowing the automatic accessing to the account. However, it is not recommended (due to possible security issues) and creates a sense of insecurity for the user of the application that requires this configuration.
+
+In the other hand we have the Gmail API, which facilitates the access to email's data. Besides, its only disadvantage is to limit the daily usage of this technology by imposing quota units. However, this quota units are enough for achieving our aim. For these reasons, and because of the email accounts that we will study belongs to Gmail, the Gmail API has been chosen as the most suitable way for managing the user's email account.

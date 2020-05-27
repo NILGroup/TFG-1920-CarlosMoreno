@@ -1,15 +1,17 @@
 \chapter{Used technologies}
 \label{cap:usedtech}
 
-\section{Gmail API}\label{sect:gmailapitech}
+\section{How to work with Gmail API}\label{sect:gmailapitech}
 In order to be able to read and send emails, it is necessary to access to the user's email data. For this reason, the different ways to obtain this information were studied. One of them is the Gmail API, which allows developers to perform all the actions we need in an easy way.
 
 Gmail API can be used in several programming languages such as Python, PHP, Go, Java, .NET, \ldots\phantom{ }Due to the greater number of examples in the starting guides of the Gmail API \citep{gmailAPI} and the previous knowledge that was already had of it, Python was chosen for the first contact with this technology.
 
-The following tries to be a step-by-step explanation of what is necessary to know to access the user's Gmail account, create a message, send an email previously created, create and update a draft, reply a received message (for this it is necessary to know how to create an email) and read important information of message threads and individual emails (such as who is the sender, who has received the message, the subject, the date, the email's body, the attached files, \ldots). Both the representations and the methods of this resources are studied to achieve this aim.
+The following tries to be a step-by-step explanation of what is necessary to know to access the user's Gmail account, create a message, send an email previously created, create and update a draft, reply a received message (for this it is necessary to know how to create an email) and read important information of message threads and individual emails (such as who is the sender, who has received the message, the subject, the date, the email's body, the attached files, \ldots). Methods of Gmail API resources (explained in Section \ref{ssect:gmailapi}) are studied to achieve this aim.
 
-\subsection{OAuth 2.0 Protocol}\label{ssect:oauth}
-As it will be seen later in this section, to be in possession of OAuth 2.0 client credentials from the Google API Console is required for having the appropriate permissions to use the Gmail API.
+As we have seen in Section \ref{sssect:oauth}, in order to work with Gmail API, it is necessary to obtain the required OAuth 2.0 credentials. For this reason, we are going to developed an implementation which gets them (see Section \ref{ssect:oauth}). Then, with that credentials, we are going to build a Gmail resource (see section \ref{ssect:gmailres}), which is necessary for obtaining the rest of the resources that we have explained. Finally, in the rest of this Section, we are going to delve into the methods of each resource that we already know.
+
+\subsection{How to obtain OAuth 2.0 credentials}\label{ssect:oauth}
+As we have seen before (see Figure \ref{fig:oauth}), to be in possession of OAuth 2.0 client credentials from the Google API Console is required for having the appropriate permissions to use the Gmail API (this credential is the first request token that is sent to the Google Servers in the OAuth 2.0 exchange of information).
 
 The Google API Console, also known as Google Console Developer\footnote{\url{https://console.developers.google.com/}}, built into Google Cloud Platform, makes possible an authorized access to a user's Gmail data. In order to achieve it, having a Google account is a prerequisite because accessing to this platform will be necessary. Once this web has been accessed, at first we have to create a new development project by clicking in ``New Project'' in the control panel (which is the main tab of the Google Console Developer and the one that opens by default when you access it). When we have already created a project, we will enable the API we are going to work with, in this case the Gmail API. To do this we will look for it in the search engine that we can find in the library of APIs of this platform. Now we can apply for the credentials we need. Accessing to the ``Credentials'' tab and clicking on ``Create Credentials'' will lead us to an easy questionnaire, about what type of credentials we prefer, that we have to answer by basing on what type of application we are building. Then we must download the .json file and save it in the folder we are going to work in.
 
@@ -113,7 +115,7 @@ The users resource has also instance methods, which return other Gmail API resou
 As we are going to call only the \textit{getProfile} method, we have described on details this first function and we have just given an idea about what the rest of them do. Now, in next sections, we are going to explain all the resources we can create with the user resource.
 
 \subsection{Labels resource}\label{ssect:labres}
-As we have seen in the explanation of the users resource (Section \ref{ssect:userres}), we can obtain the labels resource \citep[/v1/reference/users/labels]{gmailAPI} by invoking \textit{labels()} instance method of our users resource, that is to say, by using our \textit{service} variable, the instruction \textit{service.users().labels()} will return the label resource.
+As we have seen, we can obtain the labels resource \citep[/v1/reference/users/labels]{gmailAPI} by invoking \textit{labels()} instance method of our users resource, that is to say, by using our \textit{service} variable, the instruction \textit{service.users().labels()} will return the label resource.
 
 
 In order to obtain a label object, we will use the methods of this resource: create, delete, get, list, patch and update. In this manner, for example, we can store a label object by calling the next instructions:
@@ -127,10 +129,7 @@ In order to obtain a label object, we will use the methods of this resource: cre
 It is necessary to use the \textit{get} method because, as we can look up in \cite[/v1/reference/users/labels/list]{gmailAPI}, the \textit{list} method only contains an \textit{id}, \textit{name}, \textit{messageListVisibility}, \textit{labelListVisibility} and \textit{type} of each label, whereas the \textit{get} method returns the label resource with all the information.
 
 \subsection{Messages resource}\label{ssect:msgres}
-In most of the operations we are going to execute the correct management of messages will be essential. Therefore, knowing how the emails are represented in Gmail API and how to use them is imperative to understand how to work with this API. For this reason, in this section we are going to delve into the messages resource of the Gmail API, its structure and its methods. As we saw in Section \ref{ssect:userres}, we can access to this resource by invoking the \textit{messages()} method when we have a users resource.
-
-\subsubsection{Methods}\label{sssect:msgmethods}
-As any other resource, the messages resource has different methods, many of whom we are going to need in the work. We will limit ourselves to describing the methods we may need to use:
+As any other resource, the messages resource has different methods, many of whom we are going to need in the work. Therefore, be aware of these methods and the operations that we are able to do with them is imperative for face our goals. For this reason, in this section we are going to delve into the messages resource methods. As we saw in Section \ref{ssect:userres}, we can access to this resource by invoking the \textit{messages()} method when we have a users resource. We will limit ourselves to describing the methods we may need to use:
 
 \begin{itemize}
 	\item\textit{attachments()}: returns the attachments resource (for more information about this resource, that we will not explain in detail, refer to \cite[/v1/reference/users/messages/attachments]{gmailAPI}).
@@ -166,31 +165,8 @@ As any other resource, the messages resource has different methods, many of whom
 \end{itemize}
 
 \subsection{Threads resource}\label{ssect:threads}
-When we access to our inbox, we are actually seeing the inbox threads instead of the messages resource. Every message, even if it is an only email without a reply, is enclosed in a thread resource \citep[/v1/reference/users/threads]{gmailAPI} which is essentially a list, perhaps unitary, of messages resources. In fact, as we can observe in the following resource representation, in its dictionary structure it has a list of messages resources:
-
-\begin{python}
-	{
-		'id' : string, # The identifier of the thread
-		'snippet' : string, # A short part of the text
-		'historyId' : unsigned long,
-		'messages' : [ users.messages resource ]
-	}
-\end{python}
-
-The most important methods of this resource are:
+In addition to messages, we will also manage the threads of the user. Because of it, knowing the main operation with them will be necessary. The most important methods of this resource are:
 \begin{itemize}
 	\item\textit{get(userId, id, format = 'full', metadataHeaders = None)}: if successful, this method returns the requested threads resource. In respect of the parameters, they are defined in the same way as in \textit{get} messages resource method (see Section \ref{sssect:msgmethods}) with the exception of the parameter \textit{format}, whose only difference is that it does not accept the \textit{'raw'} value. For knowing the required scopes for invoking this function look up in \cite[/v1/reference/users/threads/get]{gmailAPI}.
 	\item\textit{list(userId, includeSpamTrash = False, labelIds = None, maxResults = None, pageToken = None, q = None)}: if successful, it returns a dictionary structure analogous to the view in the \textit{list} message resource method (see Section \ref{sssect:msgmethods}). Needless to say, instead of returning a messages resource list it will give us a threads resource list, which does not contain the complete information of each thread (for example each element of the list has not a list of messages resource). Full thread data can be fetched using the previous method. The parameters of this method are defined in the same way as the \textit{list} messages resource method. For knowing the required scopes for invoking this function refer to \cite[/v1/reference/users/threads/list]{gmailAPI}.
 \end{itemize}
-
-\subsection{Drafts resource}\label{ssect:drafts}
-The last Gmail API resource we will study is the most easy to understand after knowing all the structures related with emails that we have explained in the above sections: the drafts resource \citep[/v1/reference/users/drafts]{gmailAPI}. Its representation is very simple:
-
-\begin{python}
-	{
-		'id' : string # The immutable identifier of the draft
-		'message' : users.messages resource
-	}
-\end{python}
-
-As we can observe, a draft is virtually a messages resource with an identifier. Indeed, in order to create a new draft with the \textit{DRAFT} label we must create a MIME message (see Section \ref{sssect:mime}) as we have to do when we want to send a new email by using the \textit{send} messages resource method. Then it is necessary to invoke the drafts resource method \textit{create(userId, body = None, media\_body = None, media\_mime\_type = None)} by giving the value \textit{'me'} and the message created to the first to parameters.
