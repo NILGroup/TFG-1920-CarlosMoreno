@@ -10,7 +10,11 @@ To be able to create messages and read the body of the emails, it is essential t
 
 MIME, whose acronym stands for Multipurpose Internet Mail Extensions \citep{wikimime}, is an Internet standard for the exchange of several file types (text, audio, video, etc.) which provides support to text with characters other than ASCII, non-text attachments, body messages with numerous parts (known as multi-part messages) and headers information with characters other than ASCII. It is defined in a series of request for comments (RFC): RFC 2045 \citep{rfc2045}, RFC 2046 \citep{rfc2046}, RFC 2047 \citep{rfc2047}, RFC 2049 \citep{rfc2049}, RFC 2077 \citep{rfc2077}, RFC 4288 \citep{rfc4288} and RFC 4289 \citep{rfc4289}.
 
+Virtually all e-mails written by people on the Internet and a considerable proportion of these automatically generated messages are transmitted in MIME format via SMTP (see Section \ref{ssect:smtp}). Internet e-mail messages are so closely associated with SMTP and MIME that they are usually called SMTP/MIME messages.
+
 The content types defined by the MIME standard are of great importance also outside the context of e-mails. Examples of this are some network protocols such as HTTP from the Web. HTTP requires data to be transmitted in an e-mail-type message context although the data may not be an e-mail itself.
+
+Nowadays, no e-mail program or Internet browser can be considered complete if it does not accept MIME in its various facets (text and file formats). 
 
 In this section we will learn how the MIME type nomenclature is (see Section \ref{sssect:MIMEtype}), which is necessary for being able to exchange a several file types. Then, we will illustrate the MIME structure of an email, consisting of MIME headers (see Section \ref{sssect:MIMEheaders}) and, finally, two common MIME message encoding (base64 and quoted-printable) are explained (see Sections \ref{sssect:base64} and \ref{sssect:quot-p}, respectively).
 
@@ -144,5 +148,103 @@ Labels resource is an object which allows us to access to the different email la
 \end{python}
 
 The important fields we are going to need are the \textit{name}, the \textit{type} and the number of total messages and threads with the label (which are \textit{messagesTotal} and \textit{threadsTotal} fields, respectively). Labels with \textit{system} type, such as \textit{INBOX}, \textit{SENT}, \textit{DRAFTS} and \textit{UNREAD}, are internally created and cannot be added, modified or deleted.
+
+\subsubsection{Messages resource}\label{sssect:msgres}
+In most of the operations we are going to execute the correct management of messages will be essential. Therefore, knowing how the emails are represented in Gmail API and how to use them is imperative to understand how to work with this API. For this reason, in this section we are going to delve into the messages resource \citep[/v1/reference/users/messages]{gmailAPI} of the Gmail API. As we saw in Section \ref{ssect:userres}, we can access to this resource by invoking the \textit{messages()} instance method when we have a users resource.
+
+As with the labels resource, the messages resource manages the set of all messages of the user's email. With the messages resource methods, we can obtain each of these ``user's messages'' which, regardless of which programming language is used, have a dictionary structure and their representation is what we can see down below:
+
+\begin{python}
+	{
+		'id' : string,
+		'threadId' : string,
+		'labelIds' : [ string ],
+		'snippet' : string,
+		'historyId' : unsigned long,
+		'internalDate' : long,
+		'payload' : {
+			'partId' : string,
+			'mimeType' : string,
+			'filename' : string,
+			'headers' : [
+			{
+				'name' : string,
+				'value' : string
+			}
+			],
+			'body' : {
+				'attachmentId' : string,
+				'size' : integer,
+				'data' : bytes
+			},
+			'parts' : [ (MessagePart) ]
+		},
+		'sizeEstimate' : integer,
+		'raw' : bytes
+	}
+\end{python}
+
+The more important keys of this data structure for this work are:
+\begin{itemize}
+	\item\textit{id}: an immutable string which identifies the message.
+	\item\textit{threadId}: we will explain the thread resource in Section \ref{sssect:threads} and we will see that a thread is composed of different messages that share common characteristics. The value of this field is a string which represent the identifier of the thread the message belongs to.
+	\item\textit{labelIds}: a list of the identifiers of labels (see Section \ref{sssect:labres}) applied to the message.
+	\item\textit{payload}: as we can see in the resource representation above, it has a dictionary data structure. The \textit{payload} field is the parsed email structure in the message parts. The more important keys of the \textit{payload} field are:
+	\begin{itemize}
+		\item\textit{mimeType}: the MIME type (see the explanation of \textit{Content-Type} header in Section \ref{sssect:MIMEheaders}) of the message part.
+		\item\textit{headers}: a list of headers. It contains the standard RFC 2822 \citep{rfc2822} email headers such as \textit{To}, \textit{From}, \textit{Subject} and \textit{Date}. Each header has a \textit{name} field, which is the name of the header (for example \textit{From}), and a \textit{value} field, which is the value of the header (following the same example as with the \textit{name} field: \textit{example@gmail.com} could be the value).
+		\item\textit{parts}: a list which contains the different MIME message child parts (we have gone into it in depth in the Section \ref{ssect:mime}).
+		\item\textit{body}: a dictionary structure which contains the body data of this part (see Section \ref{ssect:mime}) in case it does not contain MIME message parts (otherwise it will be empty). This structure should not be confused with an attached file. Each MIME part contains a body property regardless of MIME type of the part.
+	\end{itemize}
+	\item\textit{raw}: the entire email message in an RFC 2822 \citep{rfc2822} formatted and base64url (see Section \ref{sssect:base64}) encoded string.
+\end{itemize}
+
+\subsubsection{Threads resource}\label{sssect:threads}
+When we access to our inbox, we are actually seeing the inbox threads instead of the messages resource. Every message, even if it is an only email without a reply, is enclosed in a thread resource \citep[/v1/reference/users/threads]{gmailAPI} which is essentially a list, perhaps unitary, of messages resources. In fact, as we can observe in the following resource representation, each thread (which can be obtained thanks to the threads resource due to it manages the entire set of threads of a user's email), in its dictionary structure, has a list of messages resources:
+
+\begin{python}
+	{
+		'id' : string, # The identifier of the thread
+		'snippet' : string, # A short part of the text
+		'historyId' : unsigned long,
+		'messages' : [ users.messages resource ]
+	}
+\end{python}
+
+\subsubsection{Drafts resource}\label{sssect:drafts}
+The last Gmail API resource we will study is the most easy to understand after knowing all the structures related with emails that we have explained in the above sections: the drafts resource \citep[/v1/reference/users/drafts]{gmailAPI}. Its representation is very simple:
+
+\begin{python}
+	{
+		'id' : string # The immutable identifier of the draft
+		'message' : users.messages resource
+	}
+\end{python}
+
+As we can observe, a draft is virtually a messages resource with an identifier. Indeed, in order to create a new draft with the \textit{DRAFT} label we must create a MIME message (see Section \ref{ssect:mime}) as we have to do when we want to send a new email by using the \textit{send} messages resource method.
+
+\subsubsection{API Usage Limits} \label{sssect:apilimits}
+One factor to be taken into account is the limitations of the Gmail API \citep[/v1/reference/quota]{gmailAPI} which could become a drawback in the application development. It has a limit on the daily usage and on the per-user rate. In order to measure the usage rate, ``quota units'' are defined depending on the method invoked (main methods of each resource are explained in Section \ref{sect:gmailapitech}). In Table \ref{tab:quotaUnits} we can consult the value of some methods in quota units (we have selected the more important methods for our purpose, for the quota units of other methods it is recommended to refer to \cite[/v1/reference/quota]{gmailAPI}).
+
+\begin{table}[h]
+	\centering
+	\begin{tabular}{|l c r|}
+		\hline
+		\textbf{Method} & \textbf{Section where the method is explained} & \textbf{Quota units} \\
+		\hline\hline
+		\textit{getProfile} & \ref{ssect:userres} & 1\\ \hline
+		\textit{labels.get} & \ref{ssect:labres} & 1\\ \hline
+		\textit{messages.get} & \ref{sssect:msgmethods} & 5\\ \hline
+		\textit{messages.list} & \ref{sssect:msgmethods} & 5\\ \hline
+		\textit{messages.send} & \ref{sssect:msgmethods} & 100\\ \hline
+		\textit{threads.get} & \ref{ssect:threads} & 10\\ \hline
+		\textit{threads.list} & \ref{ssect:threads} & 10\\ \hline
+		\textit{drafts.create} & \ref{ssect:drafts} & 10\\ \hline
+	\end{tabular}
+	\caption{Main methods' quota units}
+	\label{tab:quotaUnits}
+\end{table}
+
+However, both daily usage limit and per-user rate limit are acceptable for the type of software we want to build: 1,000,000,000 quota units per day and 250 quota units per user per second. Therefore there are no constraints (for our purpose) that avoid us to use this API.
 
 \subsection{Advantages and disadvantages of email protocols versus the use of Gmail API} \label{ssect:protvsapi}

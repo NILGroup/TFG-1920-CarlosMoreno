@@ -125,3 +125,72 @@ In order to obtain a label object, we will use the methods of this resource: cre
 \end{python}
 
 It is necessary to use the \textit{get} method because, as we can look up in \cite[/v1/reference/users/labels/list]{gmailAPI}, the \textit{list} method only contains an \textit{id}, \textit{name}, \textit{messageListVisibility}, \textit{labelListVisibility} and \textit{type} of each label, whereas the \textit{get} method returns the label resource with all the information.
+
+\subsection{Messages resource}\label{ssect:msgres}
+In most of the operations we are going to execute the correct management of messages will be essential. Therefore, knowing how the emails are represented in Gmail API and how to use them is imperative to understand how to work with this API. For this reason, in this section we are going to delve into the messages resource of the Gmail API, its structure and its methods. As we saw in Section \ref{ssect:userres}, we can access to this resource by invoking the \textit{messages()} method when we have a users resource.
+
+\subsubsection{Methods}\label{sssect:msgmethods}
+As any other resource, the messages resource has different methods, many of whom we are going to need in the work. We will limit ourselves to describing the methods we may need to use:
+
+\begin{itemize}
+	\item\textit{attachments()}: returns the attachments resource (for more information about this resource, that we will not explain in detail, refer to \cite[/v1/reference/users/messages/attachments]{gmailAPI}).
+	\item\textit{get(userId, id, format = 'full', metadataHeaders = None)}: if successful, this method returns the requested messages resource. Its parameters are:
+	\begin{itemize}
+		\item\textit{id}: the identifier string of the message we are looking for.
+		\item\textit{userId}: the user's email address. As it happens with the \textit{getProfile} method of the users resource (see Section \ref{ssect:userres}), the special string value \textit{'me'} can be used to indicate the authenticated user.
+		\item\textit{format} (optional parameter): the format in which we want the message returned. This field can take the following punctual values: \textit{'full'} (returns the entirely email data with body content parsed in the \textit{payload} messages resource field and the \textit{raw} field is empty), \textit{'metadata'} (returns only an email message with its identifier, email headers and labels), \textit{'minimal'} (returns only an email message with its identifier and labels) and \textit{'raw'} (returns the entirely email message data with the body content in the \textit{raw} messages resource field as a base64url (see Section \ref{sssect:base64}) encoded string and the \textit{payload} field is empty).
+		\item\textit{metadataHeaders} (optional parameter): it is only used when the format parameter takes the punctual value of \textit{'metadata'}. It is a string list where we have to insert the headers we want to be included.
+	\end{itemize}
+	For knowing the required scopes for invoking this function refer to \cite[/v1/reference/users/messages/get]{gmailAPI}.
+	\item\textit{list(userId, includeSpamTrash = false, labelIds = None, maxResults = None, pageToken = None, q = None)}: returns a resource with the following structure:
+	\begin{python}
+		{
+			'messages' : [ users.messages resource ],
+			'nextPageToken' : string,
+			'resultSizeEstimate' : unsigned integer
+		}
+	\end{python}
+	As it happens with the \textit{list} method of the labels resource (see Section \ref{ssect:labres}), \textit{'messages'} list does not contain all of a message information (for obtaining the full email data we can use \textit{get} method). Each element of this list only contains the \textit{id} and \textit{threadId} field.
+	
+	The parameters of this method are:
+	\begin{itemize}
+		\item\textit{userId}: user's email address (we can use the special string value \textit{'me'}).
+		\item\textit{includeSpamTrash} (optional parameter): boolean parameter which determines if it includes messages with the labels \textit{SPAM} and \textit{TRASH} in the result of the operation.
+		\item\textit{labelIds} (optional parameter): it is a list which let us filter the messages by only returning emails with labels that match all of the identifiers that belong to this list.
+		\item\textit{maxResults} (optional parameter): an integer which determines the maximum number of messages to return.
+		\item\textit{pageToken} (optional parameter): string which specifies a page of results.
+		\item\textit{q} (optional parameter): string which let us do an specific query (with the same query format as the Gmail search box) and filter the messages by only returning emails that match with it.
+	\end{itemize}
+	For knowing the required scopes for invoking this function refer to \cite[/v1/reference/users/messages/list]{gmailAPI}.
+	\item\textit{send(userId, body = None, media\_body = None, media\_mime\_type = None)}: it sends the given message to the email addresses specified in the \textit{To}, \textit{Cc} and \textit{Bcc} headers. The first two parameters are the only ones we will use. The first (\textit{userId}) is the user's email address (we can use the special string value \textit{'me'}) and the second is the message we want to send in an RFC 2822 \citep{rfc2822} formatted. For knowing the required scopes for invoking this function refer to \cite[/v1/reference/users/messages/send]{gmailAPI}.
+\end{itemize}
+
+\subsection{Threads resource}\label{ssect:threads}
+When we access to our inbox, we are actually seeing the inbox threads instead of the messages resource. Every message, even if it is an only email without a reply, is enclosed in a thread resource \citep[/v1/reference/users/threads]{gmailAPI} which is essentially a list, perhaps unitary, of messages resources. In fact, as we can observe in the following resource representation, in its dictionary structure it has a list of messages resources:
+
+\begin{python}
+	{
+		'id' : string, # The identifier of the thread
+		'snippet' : string, # A short part of the text
+		'historyId' : unsigned long,
+		'messages' : [ users.messages resource ]
+	}
+\end{python}
+
+The most important methods of this resource are:
+\begin{itemize}
+	\item\textit{get(userId, id, format = 'full', metadataHeaders = None)}: if successful, this method returns the requested threads resource. In respect of the parameters, they are defined in the same way as in \textit{get} messages resource method (see Section \ref{sssect:msgmethods}) with the exception of the parameter \textit{format}, whose only difference is that it does not accept the \textit{'raw'} value. For knowing the required scopes for invoking this function look up in \cite[/v1/reference/users/threads/get]{gmailAPI}.
+	\item\textit{list(userId, includeSpamTrash = False, labelIds = None, maxResults = None, pageToken = None, q = None)}: if successful, it returns a dictionary structure analogous to the view in the \textit{list} message resource method (see Section \ref{sssect:msgmethods}). Needless to say, instead of returning a messages resource list it will give us a threads resource list, which does not contain the complete information of each thread (for example each element of the list has not a list of messages resource). Full thread data can be fetched using the previous method. The parameters of this method are defined in the same way as the \textit{list} messages resource method. For knowing the required scopes for invoking this function refer to \cite[/v1/reference/users/threads/list]{gmailAPI}.
+\end{itemize}
+
+\subsection{Drafts resource}\label{ssect:drafts}
+The last Gmail API resource we will study is the most easy to understand after knowing all the structures related with emails that we have explained in the above sections: the drafts resource \citep[/v1/reference/users/drafts]{gmailAPI}. Its representation is very simple:
+
+\begin{python}
+	{
+		'id' : string # The immutable identifier of the draft
+		'message' : users.messages resource
+	}
+\end{python}
+
+As we can observe, a draft is virtually a messages resource with an identifier. Indeed, in order to create a new draft with the \textit{DRAFT} label we must create a MIME message (see Section \ref{sssect:mime}) as we have to do when we want to send a new email by using the \textit{send} messages resource method. Then it is necessary to invoke the drafts resource method \textit{create(userId, body = None, media\_body = None, media\_mime\_type = None)} by giving the value \textit{'me'} and the message created to the first to parameters.
