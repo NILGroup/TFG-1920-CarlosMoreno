@@ -115,7 +115,7 @@ The users resource has also instance methods, which return other Gmail API resou
 As we are going to call only the \textit{getProfile} method, we have described on details this first function and we have just given an idea about what the rest of them do. Now, in next sections, we are going to explain all the resources we can create with the user resource.
 
 \subsection{Labels resource}\label{ssect:labres}
-As we have seen, we can obtain the labels resource \citep[/v1/reference/users/labels]{gmailAPI} by invoking \textit{labels()} instance method of our users resource, that is to say, by using our \textit{service} variable, the instruction \textit{service.users().labels()} will return the label resource.
+As we have studied, we can obtain the mentioned labels resource \citep[/v1/reference/users/labels]{gmailAPI} by invoking \textit{labels()} instance method of our users resource, that is to say, by using our \textit{service} variable, the instruction \textit{service.users().labels()} will return the label resource.
 
 
 In order to obtain a label object, we will use the methods of this resource: create, delete, get, list, patch and update. In this manner, for example, we can store a label object by calling the next instructions:
@@ -132,7 +132,7 @@ It is necessary to use the \textit{get} method because, as we can look up in \ci
 As any other resource, the messages resource has different methods, many of whom we are going to need in the work. Therefore, be aware of these methods and the operations that we are able to do with them is imperative for face our goals. For this reason, in this section we are going to delve into the messages resource methods. As we saw in Section \ref{ssect:userres}, we can access to this resource by invoking the \textit{messages()} method when we have a users resource. We will limit ourselves to describing the methods we may need to use:
 
 \begin{itemize}
-	\item\textit{attachments()}: returns the attachments resource (for more information about this resource, that we will not explain in detail, refer to \cite[/v1/reference/users/messages/attachments]{gmailAPI}).
+	\item\textit{attachments()}: returns the attachments resource (for more information about this resource refer to \cite[/v1/reference/users/messages/attachments]{gmailAPI}).
 	\item\textit{get(userId, id, format = 'full', metadataHeaders = None)}: if successful, this method returns the requested messages resource. Its parameters are:
 	\begin{itemize}
 		\item\textit{id}: the identifier string of the message we are looking for.
