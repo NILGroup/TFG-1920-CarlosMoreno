@@ -11,7 +11,20 @@ The first step when we are designing a system's architecture is to know its inpu
 
 In respect of the system's input, because of the nature of the problem we face, it is reasonable to think that it must be a single email. However, we do not have the corpus of emails to analyse. For this reason, our first step will be to extract the emails that will be analysed. Hence, our system's input is going to be the Gmail user for accessing to the information that we are interested in. Therefore, we are going to develop a system which receives a Gmail user as input and obtains different metrics of each message sent by the given user as output.
 
-Once we clearly known the input and output of our system, we need to define the different steps that a message have to take for being analysed.
+Once we clearly know the input and output of our system, we need to define the different steps that a message have to take for being analysed. In this way, we are going to design a pipeline architecture with four different phases (extraction, preprocess, typographic correction and measuring) as Figure \ref{fig:arch} shows. Thus, we divide the original job in 4 different and more simple tasks with distinct inputs and outputs required.
+
+\begin{figure}[h]
+	\centering%
+	\includegraphics[width = 1\textwidth]{Imagenes/Bitmap/architecture.png}%
+	\caption{Pipeline architecture of the style analyser}%
+	\label{fig:arch}
+\end{figure}
+
+As it is easy to deduce, each of these phases is going to be developed as a different module. This implementation will have the advantage that each module is going to be able to work independently from the other modules, which will allow them to work in parallel. That is to say, while a message is being extracted, other e-mails could be being preprocessed, corrected or measured if they have gone through the previous phases.Let us now briefly explain what each of the defined phases consists of.
+
+The first step, extraction phase, as the reader can imagine, consists of the extraction of each one of the sent messages of the given user. In this task, we are going to take advantage of all the studied concepts about the Gmail API (see Section \ref{ssect:gmailapi}) and make use of every resource it provides us. Besides, we will try to minimize the consumed quota units in each extraction, which means we will only make the requests to the Google Servers that are strictly necessary. This first step is not just the task of extracting the resource that represents each sent message from the user's account, but also the job of transforming it to the format that the preprocessing module needs. Hence, the input of this module will be the same input as that of the complete system (a Gmail user) and its output will be an extracted message ready for being preprocessed.
+
+As for the second step, the preprocessing phase, consists of the modifying the extracted message so that it can be interpreted by the natural language processing model to be used. Some of the changes that a message could suffer in this phase are: the removal of the signature, the disposal of the replied messages which appears under the text, the elimination of soft break lines that quoted-printable codification (see Section \ref{sssect:quot-p}) introduce in some messages, etc.
 
 \subsection{Extracting Module} \label{ssection:extmod}
 

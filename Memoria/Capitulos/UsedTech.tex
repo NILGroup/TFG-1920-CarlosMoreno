@@ -167,6 +167,45 @@ As any other resource, the messages resource has different methods, many of whom
 \subsection{Threads resource}\label{ssect:threads}
 In addition to messages, we will also manage the threads of the user. Because of it, knowing the main operation with them will be necessary. The most important methods of this resource are:
 \begin{itemize}
-	\item\textit{get(userId, id, format = 'full', metadataHeaders = None)}: if successful, this method returns the requested threads resource. In respect of the parameters, they are defined in the same way as in \textit{get} messages resource method (see Section \ref{sssect:msgmethods}) with the exception of the parameter \textit{format}, whose only difference is that it does not accept the \textit{'raw'} value. For knowing the required scopes for invoking this function look up in \cite[/v1/reference/users/threads/get]{gmailAPI}.
-	\item\textit{list(userId, includeSpamTrash = False, labelIds = None, maxResults = None, pageToken = None, q = None)}: if successful, it returns a dictionary structure analogous to the view in the \textit{list} message resource method (see Section \ref{sssect:msgmethods}). Needless to say, instead of returning a messages resource list it will give us a threads resource list, which does not contain the complete information of each thread (for example each element of the list has not a list of messages resource). Full thread data can be fetched using the previous method. The parameters of this method are defined in the same way as the \textit{list} messages resource method. For knowing the required scopes for invoking this function refer to \cite[/v1/reference/users/threads/list]{gmailAPI}.
+	\item\textit{get(userId, id, format = 'full', metadataHeaders = None)}: if successful, this method returns the requested threads resource. In respect of the parameters, they are defined in the same way as in \textit{get} messages resource method (see Section \ref{ssect:msgres}) with the exception of the parameter \textit{format}, whose only difference is that it does not accept the \textit{'raw'} value. For knowing the required scopes for invoking this function look up in \cite[/v1/reference/users/threads/get]{gmailAPI}.
+	\item\textit{list(userId, includeSpamTrash = False, labelIds = None, maxResults = None, pageToken = None, q = None)}: if successful, it returns a dictionary structure analogous to the view in the \textit{list} message resource method (see Section \ref{ssect:msgres}). Needless to say, instead of returning a messages resource list it will give us a threads resource list, which does not contain the complete information of each thread (for example each element of the list has not a list of messages resource). Full thread data can be fetched using the previous method. The parameters of this method are defined in the same way as the \textit{list} messages resource method. For knowing the required scopes for invoking this function refer to \cite[/v1/reference/users/threads/list]{gmailAPI}.
 \end{itemize}
+
+\section{spaCy}\label{sect:spacy}
+After extracting the user's e-mails, we should be able to analyse the body of the e-mails. To do this we will need a syntactic parser in order to separate the different texts in token (in other words, segment text into words, punctuation marks, etc.) and obtain different characteristics from them (such as their part of speech) for the purpose of being able to calculate the metrics explained in Section \ref{ssect:stymet}. To attain that objective, we are going to use the library spaCy.
+
+\subsection{spaCy versus others syntactic parsers}
+
+We have chosen spaCy as our syntactic parser against others for several reasons that we will explain below.
+
+\begin{figure}[h]
+	\centering%
+	\includegraphics[width = 0.75\textwidth]{Imagenes/Bitmap/spacyeval.png}%
+	\caption{Benchmarks of different syntactic parsers}%
+	Image extracted from \url{https://spacy.io/usage/facts-figures#benchmarks}
+	\label{fig:spacyeval}
+\end{figure}
+
+An evaluation published by \textit{Yahoo! Labs} and Emory University, as a part of a survey of current parsing technologies \citep{choi2015depends}, observed that ``spaCy is the fastest greedy parser'' and its accuracy is within 1\% of the best available (as we can see in Figure \ref{fig:spacyeval}). The few systems that are more accurate are 20 times slower or more.
+
+\cite{choi2015depends} results and subsequent discussions helped spaCy develop a novel psychologically-motivated technique to improve spaCy's accuracy, which they published in joint work with Macquarie University \citep{honnibal2015improved}.
+
+Besides, not only in general but in each particular task (tokenise, tag and parse), spaCy is the fastest if we compare it with other natural language processing libraries. This is shown in Figure \ref{fig:spacyspeed}, where we can observe both absolute timings (in ms) and relative performance (normalized to spaCy). Lower is better.
+
+\begin{figure}[h]
+	\centering%
+	\includegraphics[width = 0.85\textwidth]{Imagenes/Bitmap/spacyspeed.png}%
+	\caption{Per-document processing time of various NLP libraries}%
+	Image extracted from \url{https://spacy.io/usage/facts-figures#benchmarks}
+	\label{fig:spacyspeed}
+\end{figure}
+
+Finally, spaCy has three pretrained model pipelines for Spanish with a very high accuracy (see Figure \ref{fig:spacymodel}). These will help us to tokenise, tag and parse our messages in order to calculate the different style markers defined.
+
+\begin{figure}[h]
+	\centering%
+	\includegraphics[width = 0.85\textwidth]{Imagenes/Bitmap/spacymodel.png}%
+	\caption{Benchmark accuracies for the Spanish pretrained model pipelines}%
+	Image extracted from \url{https://spacy.io/usage/facts-figures#benchmarks}
+	\label{fig:spacymodel}
+\end{figure}
