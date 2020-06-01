@@ -95,16 +95,20 @@ Henceforth, we will use the \textit{service} variable to relate it with the reso
 \subsection{Users resource}\label{ssect:userres}
 The \textit{build} method could be called for obtaining any resource of any Google API (by giving it the suitable parameters). Our specific created \textit{service}\footnote{\url{http://googleapis.github.io/google-api-python-client/docs/dyn/gmail\_v1.html}} has an important instance method that we are going to invoke for every execution: the \textit{users()} method. It returns what is known as users resource \citep[/v1/reference/users]{gmailAPI}.
 
-The users resource has also instance methods, which return other Gmail API resources that we are going to need, such as \textit{drafts()} (see Section \ref{ssect:drafts}), \textit{labels()} (see Section \ref{ssect:labres}), \textit{messages()} (see Section \ref{ssect:msgres}) and \textit{threads()} (see Section \ref{ssect:threads}) which return drafts, labels, messages and threads resources respectively. Moreover, it possesses the three methods that we explain hereunder (we must remember that for being able to execute any method that we are going to explain in this and next sections, it is necessary to have the appropriate authorization with at least one of the required scopes that we can look up in its documentation):
+The users resource has also instance methods, which return other Gmail API resources that we are going to need, such as \textit{drafts()}, \textit{labels()} (see Section \ref{ssect:labres}), \textit{messages()} (see Section \ref{ssect:msgres}) and \textit{threads()} (see Section \ref{ssect:threads}) which return drafts, labels, messages and threads resources respectively. Moreover, it possesses the three methods that we explain hereunder (we must remember that for being able to execute any method that we are going to explain in this and next sections, it is necessary to have the appropriate authorization with at least one of the required scopes that we can look up in its documentation):
 
 \begin{itemize}
 	\item\textit{getProfile(userId)}: it returns an object with a dictionary structure as it follows:
 	\begin{python}
 		{
-			'threadsTotal' : integer, # Total number of threads in the mailbox
-			'emailAddress' : string, # User's email address
-			'historyId' : string, # ID of the mailbox's current history record
-			'messagesTotal' : integer # Total number of messages in the mailbox
+			# Total number of threads in the mailbox
+			'threadsTotal' : integer,
+			# User's email address
+			'emailAddress' : string,
+			# ID of the mailbox's current history record
+			'historyId' : string,
+			# Total number of messages in the mailbox
+			'messagesTotal' : integer
 		}
 	\end{python}
 	The parameter is a string with the user's email address. If we remember the authentication process, at no time we ask the user about the email address because we decided to let the Google API functions to handle all that procedure. Therefore we have no way to know this information. Nevertheless, the special string value \textit{'me'} can be used to indicate the authenticated user. For knowing the required scopes for invoking this function look up in \cite[/v1/reference/users/getProfile]{gmailAPI}.
