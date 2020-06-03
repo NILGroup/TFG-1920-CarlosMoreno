@@ -120,7 +120,7 @@ class MessageExtractor(Extractor):
 
         Returns
         -------
-        A list of MessageInfo objects.
+        A list of ExtractedMessage objects.
 
         """
         self.data_extractor.set_new_message(res)

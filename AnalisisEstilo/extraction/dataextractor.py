@@ -43,6 +43,7 @@ class DataExtractor:
         Sender of the message
     __references: str
         Identifiers of previous messages of the same thread.
+        
     """
     def __init__(self):
         """
@@ -87,7 +88,7 @@ class DataExtractor:
 
         Parameters
         ----------
-        part : MIME message part
+        part : dict
             MIME message part of which we want to know if there is data.
 
         Returns
@@ -172,8 +173,8 @@ class DataExtractor:
 
         Parameters
         ----------
-        part : MIME part
-            Message part we want to extract the Content-Transfer-Encoding MIME 
+        part : dict
+            MIME part we want to extract the Content-Transfer-Encoding MIME 
             message header.
 
         Returns
@@ -203,6 +204,7 @@ class DataExtractor:
         Returns
         -------
         str: type of the MIME message part.
+        
         """
         if ('mimeType' in part):
             return part['mimeType']
@@ -226,6 +228,7 @@ class DataExtractor:
         Returns
         -------
         bool: whether or not the given part has the type t.
+        
         """
         return p_type.startswith(t) and self.__is_there_data(part)
     
@@ -241,6 +244,7 @@ class DataExtractor:
         Returns
         -------
         str: Message body without soft break lines.
+        
         """
         new_text = ""
         i = 0
@@ -316,6 +320,7 @@ class DataExtractor:
         Returns
         -------
         None.
+        
         """
         pld = message['payload']
         mimetype = self.__get_headers(pld['headers'])

@@ -44,6 +44,8 @@ class Extractor(ABC):
     list_key: str (abstract attribute)
         Key of the dictionary given by the list request for accessing to the
         list of the resource.
+    html_converter: HTML2Text
+        Class that converts the HTML code in plain text.
     
     """
     def __init__(self, service, usu, quota):
@@ -183,7 +185,7 @@ class Extractor(ABC):
 
         Returns
         -------
-        A list of MessageInfo objects.
+        A list of ExtractedMessage objects.
 
         """
         pass

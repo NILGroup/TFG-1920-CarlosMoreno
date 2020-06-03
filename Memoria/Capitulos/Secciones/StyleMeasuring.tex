@@ -1,0 +1,87 @@
+As in our case we have used 31 lexical-syntactic features (due to previous studies, such as \cite{homem2011authorship}, yield encouraging results with lexical-syntactic features), following the classification of \cite{abbasi2008writeprints} (which categorised stylistic features as lexical, syntactic, structural, content-specific and idiosyncratic style markers), we will now divide them into 4 categories in which we have grouped them according to their usefulness in terms of what type of conclusions we can infer from each of them. These categories are: part of speech features (see Section \ref{ssect:posf}), punctuation features (see Section \ref{ssect:punctf}), vocabulary features (see Section \ref{ssect:vocabf}) and structural features (see Section \ref{ssect:strucf}). We must not confuse this latter category (which it belongs to the lexical features of the classification given in \cite{abbasi2008writeprints}) with the structural metrics explained in \cite{abbasi2008writeprints}.
+
+Some of the popular metrics which are not used in this work, belong to the structural, content-specific and idiosyncratic style markers of \cite{abbasi2008writeprints}, but there are others which belong to the same categories as the explained metrics (lexical and syntactic).
+
+The choice of the metrics presented below, some essentially simple, has been directed by the objective of finding easily explainable characteristics that set the parameters of the style of writing according to the recipient of the email, and then be able to use this study to develop, in future projects, systems of natural language generation of emails that take into account this factor. For this reason, some excessively complex metrics, although popular in stylometry, have been avoided and an attempt has been made to prioritize the explainability of the chosen features.
+
+\subsection{Part of Speech features}\label{ssect:posf}
+
+We will call our part of speech metrics as the syntactic features which have to do with the part of speech of each word of the e-mails. Following the suggestion of \cite{holmes1985analysis}, we count the number of nouns, verbs, adjectives, adverbs, pronouns, determinants, conjunctions and prepositions of each text. By calculating this, significant stylistic traits may be found, because as \cite{somers1966statistical} claims: ``A more cultivated intellectual habit of thinking can increase the number of substantives used, while a more dynamic empathy and attitude can be habitually expressed by means of an increased number of verbs. It is also possible to detect a number of idiosyncrasies in the use of prepositions, subordinations, conjunctions and articles''.
+
+In adding to this metrics, we calculate the verb-adjective ratio and the determinant-pronouns ratio, extracted from \cite{antosch1969diagnosis} and \cite{brainerd1974weighting}, respectively.
+
+\subsection{Punctuation features}\label{ssect:punctf}
+
+In order to extract conclusions from this syntactic features, and following the example of \cite{calix2008stylometry}, we calculate the amount of commas, periods, semi-colons, ellipsis and pair of brackets. With these metrics we can reach conclusions such as the structural complexity of a message (since, for example, juxtaposition structures appear in the presence of some of these scores), the division into sentences of the message or the need for clarification of the text transmitted (for example, by analysing the amount of brackets).
+
+\subsection{Vocabulary features}\label{ssect:vocabf}
+
+In terms of the vocabulary used, we work with the ``bag of words'' metrics, in other words, we note how many times each different word is used in a message. Of course this is not the only metric that we can categorise as a vocabulary feature and from which we can extract conclusions about the vocabulary used. There are many other which tries to set the parameters of, for instance, the difficult of the vocabulary or its richness. Besides, from the computing of the bag of words, we are able to easily obtain other style marker chosen which also belongs to this category of vocabulary features: the amount of different words in each text, proposed in \cite{ril2014determination} and in \cite{corney2001identifying}.
+
+As for the difficulty level, it determines the level of education that someone needs to have if they are to understand the text. There are several indices available to calculate this level, such as the proposed in \cite{dale1948formula}, the Gunning Fog Index \citep{wiki:gunning} or the Flesch-Kincaid index \citep{dubay2004principles}, although the latter is the most commonly documented and cited. The expression which determines the Flesch-Kincaid index is the following:
+
+$$
+I_{FK} = 1.599\lambda-1.015\beta-31.517
+$$
+
+Where $\lambda$ is the mean of one-syllable words per 100 words, and $\beta$ is the mean sentence length measured by the number of words. However, as our spaCy's pretrained Spanish model (see Section \ref{sect:spacy}) is not able to divide words by syllables, we determine $\lambda$ as the mean of words with two or less characters per 100 words.
+
+In respect of the richness of the vocabulary, we have chosen two different metrics. The first that we are going to explain is the one proposed by \cite{honore1979some}, which determines the richness of te vocabulary based on the total unrepeated words used in the text. The following formula defines it:
+
+$$
+R_H = \frac{100\log(M)}{M^2}
+$$
+
+Where $M$ is the number of different words in the text. However, as \cite{ril2014determination} claims, depending on the type of document being analysed, the calculation of $R_H$ has more or less validity (for instance, certain specialist articles, as their nature, requires constant repetition of words). As a consequence of this, another definition of richness of vocabulary is proposed by \cite{yule2014statistical}. This richness marker, that we are going to use as our second richness of vocabulary style marker, is called Yule's characteristic and defined with the following expression:
+
+$$
+K = \frac{10^4\left(\sum_{i = 1}^\infty i^2V_i-M\right)}{M^2}
+$$
+
+Where $M$ is the number of different words in the text and $V_i$ is the number of words that appear i times in the document.
+
+From Yule's Characteristic we are able to calculate the Simpson's Index (denoted as $D$), defined in \cite{simpson1949measurement}. This famous metric is understood as the measurement of diversity based on the change that the two members of an arbitrary chosen pair of word tokens will belong to the same type. To calculate $D$ it is necessary to divide the total number of identical pairs in the sample by the number of all possible pairs, that is to say, what the following expression defines:
+
+$$
+D = \frac{\sum_{i = 1}^\infty i(i-1)V_i}{M(M-1)}
+$$
+
+Where we are maintaining the Yule's Characteristic notation. However, as we have transmitted in advance, it is possible to calculate the Simpson's Index if we know the value of Yule's Characteristic. This relationship is defined by the following expression (and we are going to use it in the implementation in order to speed the computing):
+
+$$
+10^{-4}K=D\left(1-\frac{1}{M}\right)
+$$
+
+Vocabulary distribution can also be measured by using a concept linguists have borrowed from thermodynamics and applied to communication theory: entropy (used in \cite{holmes1985analysis}). In literary text it is true that with an increase in internal structure, entropy decreases, and with an increase in disorder or randomness, the measure of entropy increases. The expression for the entropy of a system (vocabulary in this case) is:
+
+$$
+H = -\sum_{i=1}^{\infty} p_i\log(p_i)
+$$
+
+Where $p_i$ is the probability of appearance of the ith lemma (found by dividing the number of occurrences of that lemma by the total number of words in the text). Due to the value will change according to how much text is analysed, the formula may be refined in order that works of different length may be compared. In this way, as it is proposed in \cite{holmes1985analysis}, the following expression determines absolute diversity for any length text as 100, while absolute uniformity remains zero:
+
+$$
+H=-100\sum_{i = 1}^{\infty}p_i\frac{\log(p_i)}{\log(M)}
+$$
+
+In addition to the words distribution features (which are the bag of words and the amount of different words), the level of difficulty, the richness of vocabulary (which is measured by the formula proposed in \cite{honore1979some} and the Yule's Characteristic), the diversity (represented by the Simpson's Index) and the internal structure of the vocabulary (which is measured by the entropy), we have defined other four style markers which also allow us to extract conclusions about some feature of the vocabulary of the message. First of these is the most popular and old style marker: the mean word length. Researches as \cite{ril2014determination} claim that it is ``directly connected with the richness of the author's vocabulary and measures his or her ability to use complex words'', due to it is considered that complex words are formed by three or more syllables that do not represent proper nouns, prefixes, suffixes or compound words. Thus, \cite{ril2014determination} propose an expression similar to the following one in order to calculate it:
+
+$$
+L_W = \frac{\sum_{i=1}^{\infty}i*C_i}{N}\cdot 100
+$$
+
+Where $C_i$ is the number of words with $i$ characters and $N$ is the number of words used. This formula is analogous to the expression proposed by \cite{ril2014determination}, except that with the one that we have presented the punctuation marks are removed from the numerator.
+
+The second of these writing style metrics is the measurement of words length frequency distribution, that is to say, how many words with one character appears in the document, with two characters and so on up to the length of the longest word. Despite of being strongly influenced by the language, it is used in researches as \cite{corney2001identifying} and \cite{kemp1976personal}, as it is claimed in\cite{allen1974methods}, ``Each writer, however, will have his own curve, so that although English (and German) texts in general peak at three letters, the writings of John Stuart Mill peak at two and those of Shakespeare peak at four''. Our interest will then focus on checking whether, in addition to depending on the author, this metric varies according to the recipient of the email.
+
+The rest of vocabulary features are related to the stop words present in the text. The simplest of those metrics is the style marker which consists of calculating the total number of stop words (denoted as $T_S$). On the other hand, as it is proposed in \cite{ril2014determination},  we will calculate the stop words ratio, which is defined with the following expression:
+
+$$
+S_W = \frac{T_S}{N}\cdot 100
+$$
+
+\subsection{Structural features}\label{ssect:strucf}
+
+We will denote by structural features those characteristics that we obtain directly from the construction of the analysed text. Some of these metrics are as simple as the total number of characters in the body of the email or the absolute number of words in the email, both used in researches such as in \cite{corney2001identifying} and \cite{ril2014determination}.
+
+Most of these features are sentence length dependent. Both \cite{tallentire1972appraisal} and \cite{kjetsaa1979and} agree that summary measures such as average sentence-lengths are of little use in stylometry studies but distributions of sentence-lengths can be useful, even on their own. Taking into account the above, we will find both the distribution of the length of the sentences (calculated in number of characters and number of words) and the average length of the sentences in a message found by the number of words, as it is proposed in \cite{corney2001identifying}. For the first one, we are going to store the number of sentence with length one, two, three and so on up to the length of the longest one, by measuring it  using both the number of characters and the number of words.

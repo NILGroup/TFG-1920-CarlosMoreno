@@ -95,7 +95,7 @@ class ThreadExtractor(Extractor):
 
         Returns
         -------
-        A list of MessageInfo objects.
+        A list of ExtractedMessage objects.
 
         """
         depth = 0

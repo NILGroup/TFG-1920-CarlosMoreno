@@ -17,6 +17,7 @@ from preprocess.preprocessedmessage import PreprocessedMessage
 from typocorrection.typocode import TypoCode
 from typocorrection.correctedmessage import CorrectedMessage
 from sessiontypoerror import SessionTypoError
+from math import ceil
 # from stylemeasuring.metrics import Metrics
 
 def yes_no_question(question):
@@ -48,20 +49,17 @@ class Analyser:
     
     Attributes
     ----------
-    service: Gmail resource
+    __service: Gmail resource
         Gmail API resource with an Gmail user session opened.
-    user_name: str
+    __user_name: str
         Gmail user name.
-    quota: int
+    __quota: int
         Gmail API quota units available for message extraction. Represents the
         remaining quota units available to carry out the extraction operations.
-    extractor: Extractor
+    __extractor: Extractor
         Object which performs the task of extracting sent messages 
         or sent threads from the user by accessing Gmail API.
-    typocorrector: TypoCorrector
-        Object which performs the task of correcting typographic errors from
-        preprocessed messages in order to being analysed then.
-    nres: int
+    __nres: int
         Number of the resource that is going to be extracted (messages or threads).
             
     """
@@ -91,17 +89,17 @@ class Analyser:
         Constructed Analyser class.
 
         """
-        self.service = service
-        self.user_name = usu
-        self.quota = quota
+        self.__service = service
+        self.__user_name = usu
+        self.__quota = quota
         
-        if (self.quota > qu.LABELS_GET):
-            self.extractor = None
+        if (self.__quota > qu.LABELS_GET):
+            self.__extractor = None
             
-            l = self.service.users().labels()
+            l = self.__service.users().labels()
             sent_lb = l.get(userId = 'me', id = 'SENT').execute()
-            self.nres = sent_lb['messagesTotal']
-            self.quota -= qu.LABELS_GET
+            self.__nres = sent_lb['messagesTotal']
+            self.__quota -= qu.LABELS_GET
 
             cost_msg_ext = self.__get_res_cost(qu.MSG_LIST, sent_lb['messagesTotal'], 
                                                qu.MSG_GET)
@@ -111,17 +109,17 @@ class Analyser:
             if (((ext_msg is None) and cost_msg_ext <= cost_thrd_ext) or ext_msg):
                 with open('log.txt', 'a') as f:
                     f.write('Message extractor has been selected.\n')
-                self.extractor = MessageExtractor(self.service, self.user_name, 
-                                                  self.quota)
+                self.__extractor = MessageExtractor(self.__service, self.__user_name, 
+                                                  self.__quota)
             else:
                 with open('log.txt', 'a') as f:
                     f.write('Thread extractor has been selected.\n')
-                self.extractor = ThreadExtractor(self.service, self.user_name,
-                                                 self.quota)
-                self.nres = sent_lb['threadsTotal']
+                self.__extractor = ThreadExtractor(self.__service, self.__user_name,
+                                                 self.__quota)
+                self.__nres = sent_lb['threadsTotal']
                 
             if ext_msg is not None:
-                self.nres -= num_extracted
+                self.__nres -= num_extracted
 
     def __get_res_cost(self, listcost, numres, getcost):
         """
@@ -141,7 +139,7 @@ class Analyser:
         int: cost of extracting the resource.
         
         """
-        return listcost * (numres // cfa.NUM_RESOURCE_PER_LIST + 1) + getcost * numres
+        return listcost * ceil(numres / cfa.NUM_RESOURCE_PER_LIST) + getcost * numres
     
     def __preprocess_message(self, ext_msg, sign):
         """
@@ -472,7 +470,7 @@ class Analyser:
 
         Parameters
         ----------
-        ide : str
+        cor_msg : str
             Message which is going to be analysed.
 
         Returns
@@ -490,7 +488,7 @@ class Analyser:
         else:
             response_dic = json.loads(response.content)
             if response_dic['id'] is not None:
-                with open(self.user_name + '.txt', 'a') as f:
+                with open(self.__user_name + '.txt', 'a') as f:
                     f.write(f"{response_dic['id']}\n")
     
     def analyse(self, nextPageToken = None, sign = None):
@@ -515,7 +513,7 @@ class Analyser:
         # CorrectedMessage.drop_collection()
         # Metrics.drop_collection()
         
-        self.quota = self.extractor.extract_sent_msg(self.nres, nextPageToken)
+        self.__quota = self.__extractor.extract_sent_msg(self.__nres, nextPageToken)
         
         for ext in ExtractedMessage.objects():
             self.__preprocess_message(ext.to_json(), sign)
