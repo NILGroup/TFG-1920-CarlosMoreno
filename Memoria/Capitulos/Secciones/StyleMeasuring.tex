@@ -1,8 +1,59 @@
-As in our case we have used 31 lexical-syntactic features (due to previous studies, such as \cite{homem2011authorship}, yield encouraging results with lexical-syntactic features), following the classification of \cite{abbasi2008writeprints} (which categorised stylistic features as lexical, syntactic, structural, content-specific and idiosyncratic style markers), we will now divide them into 4 categories in which we have grouped them according to their usefulness in terms of what type of conclusions we can infer from each of them. These categories are: part of speech features (see Section \ref{ssect:posf}), punctuation features (see Section \ref{ssect:punctf}), vocabulary features (see Section \ref{ssect:vocabf}) and structural features (see Section \ref{ssect:strucf}). We must not confuse this latter category (which it belongs to the lexical features of the classification given in \cite{abbasi2008writeprints}) with the structural metrics explained in \cite{abbasi2008writeprints}.
+Measuring module is in charge of calculating all the selected writing style metrics. In order to measure these features, it receives from the \textit{Analyser} class a corrected message with the following structure (which matches with the stored messages' structure):
+
+\begin{python}
+	{
+		'id' : string,
+		'threadId' : string,
+		'to' : [ string ],
+		'cc' : [ string ],
+		'bcc' : [ string ],
+		'sender' : string,
+		'depth' : int,               # How many messages precede it
+		'date' : long,               # Epoch ms
+		'subject' : string,
+		'bodyBase64Plain' : string,
+		'plainEncoding' : string,
+		'charLength' : int,
+		'corrections' : [
+		{
+			'text': str,
+			'is_punct': bool,
+			'is_right_punct': bool,
+			'is_left_punct': bool,
+			'like_url': bool,
+			'like_email': bool,
+			'lemma_': str,
+			'is_stop': bool,
+			'pos_': str,
+			'is_bracket': bool,
+			'position': int
+		}
+		]
+	}
+\end{python}
+
+\begin{figure}[p]
+	\centering%
+	\centerline{\includegraphics[height=0.85\paperheight]{Imagenes/Bitmap/metUML.png}}%
+	\caption{UML class diagram of the measuring module}%
+	\label{fig:umlmet}
+\end{figure}
+
+As we can see in Figure \ref{fig:umlmet}, the style measuring package has three different classes with a class diagram similar to that of the preprocess package. These three classes are: \textit{StyleMeterApp}, \textit{StyleMeter} and \textit{Metrics}.
+
+As with the two previous modules, this package implements a Flask web service which can be used through a POST HTTP request with the message as a \textit{json} in it. Having done so, the \textit{measure\_style} method of the \textit{StyleMeterApp} class will be invoked and send the given message structure to the \textit{StyleMeter} class by calling its only public method: \textit{measure\_style}.
+
+The main class of this UML package is the \textit{StyleMeter} class. It is in charge of calculating the style features. For this reason, it has different methods which implements the distinct style markers that it has to evaluate.
+
+As the reader is able to deduce after presenting the previous Sections, the \textit{Metrics} class will store in the database the results of measuring each message. The \textit{StyleMeter} class will use it once it has calculated all the style characteristics.
+
+We have used 31 lexical-syntactic features (due to previous studies, such as \cite{homem2011authorship}, yield encouraging results with lexical-syntactic features), following the classification of \cite{abbasi2008writeprints} (which categorised stylistic features as lexical, syntactic, structural, content-specific and idiosyncratic style markers), and we will now divide them into 4 categories in which we have grouped them according to their usefulness in terms of what type of conclusions we can infer from each of them. These categories are: part of speech features (see Section \ref{ssect:posf}), punctuation features (see Section \ref{ssect:punctf}), vocabulary features (see Section \ref{ssect:vocabf}) and structural features (see Section \ref{ssect:strucf}). We must not confuse this latter category (which it belongs to the lexical features of the classification given in \cite{abbasi2008writeprints}) with the structural metrics explained in \cite{abbasi2008writeprints}.
 
 Some of the popular metrics which are not used in this work, belong to the structural, content-specific and idiosyncratic style markers of \cite{abbasi2008writeprints}, but there are others which belong to the same categories as the explained metrics (lexical and syntactic).
 
 The choice of the metrics presented below, some essentially simple, has been directed by the objective of finding easily explainable characteristics that set the parameters of the style of writing according to the recipient of the email, and then be able to use this study to develop, in future projects, systems of natural language generation of emails that take into account this factor. For this reason, some excessively complex metrics, although popular in stylometry, have been avoided and an attempt has been made to prioritize the explainability of the chosen features.
+
+Finally, we are going to relate the explained style markers with their implementation (see Section \ref{ssect:relmet}).
 
 \subsection{Part of Speech features}\label{ssect:posf}
 
@@ -85,3 +136,78 @@ $$
 We will denote by structural features those characteristics that we obtain directly from the construction of the analysed text. Some of these metrics are as simple as the total number of characters in the body of the email or the absolute number of words in the email, both used in researches such as in \cite{corney2001identifying} and \cite{ril2014determination}.
 
 Most of these features are sentence length dependent. Both \cite{tallentire1972appraisal} and \cite{kjetsaa1979and} agree that summary measures such as average sentence-lengths are of little use in stylometry studies but distributions of sentence-lengths can be useful, even on their own. Taking into account the above, we will find both the distribution of the length of the sentences (calculated in number of characters and number of words) and the average length of the sentences in a message found by the number of words, as it is proposed in \cite{corney2001identifying}. For the first one, we are going to store the number of sentence with length one, two, three and so on up to the length of the longest one, by measuring it  using both the number of characters and the number of words.
+
+\subsection{Relationship between metrics and their implementation}\label{ssect:relmet}
+Every explained style markers is stored as an attribute of the \textit{Metrics} class. The relationship between them and the presented style features and the categorisation of these metrics, is exposed in Table \ref{tab:sty}.
+
+\begin{table}[h]
+	\begin{tabular}{|l|ll|}
+		\hline
+		\multicolumn{1}{|c|}{Feature Category} & \multicolumn{1}{l}{Field name} & \multicolumn{1}{l|}{Explanation}                    \\ \hline
+		\multirow{10}{*}{Part of speech}       & ADV                            & Number of adverbs                                   \\ \cline{2-3} 
+		& VERB                           & Number of verbs                                     \\ \cline{2-3} 
+		& ADJ                            & Number of adjectives                                \\ \cline{2-3} 
+		& ADP                            & Number of prepositions                              \\ \cline{2-3} 
+		& NOUN                           & Number of nouns                                     \\ \cline{2-3} 
+		& PRON                           & Number of pronous                                   \\ \cline{2-3} 
+		& DET                            & Number of determinants                              \\ \cline{2-3} 
+		& CONJ                           & Number of conjunctions                              \\ \cline{2-3} 
+		& verbAdjectiveRatio             & Verb-adjective ratio                                \\ \cline{2-3} 
+		& detPronRatio                   & Determinant-pronouns ratio                          \\ \hhline{|=|=|=|}
+		\multirow{5}{*}{Punctuation}           & numCommas                      & Number of commas                                    \\ \cline{2-3} 
+		& numDots                        & Number of periods                                   \\ \cline{2-3} 
+		& numSemiColon                   & Number of semi-colons                               \\ \cline{2-3} 
+		& num3Dots                       & Number of ellipsis                                  \\ \cline{2-3} 
+		& numBrackets                    & Number of pair of brackets                          \\ \hhline{|=|=|=|}
+		\multirow{11}{*}{Vocabulary}           & wordsAppearance                & Bag of words                                        \\ \cline{2-3} 
+		& numDifWords                    & Number of different words                           \\ \cline{2-3} 
+		& difficultyLevel                & Modified Flesch-Kincaid index ($I_{FK}$)                       \\ \cline{2-3} 
+		& richnessVocab                  & \cite{honore1979some} vocabulary richness ($R_H$)                                     \\ \cline{2-3} 
+		& richnessYule                   & Yule's characteristic ($K$)                               \\ \cline{2-3} 
+		& SimpsonIndex                   & Simpson's index ($D$)                                     \\ \cline{2-3} 
+		& entropy                        & Entropy ($H$)                                             \\ \cline{2-3} 
+		& meanWordLen                    & Mean word length ($L_W$)                                    \\ \cline{2-3} 
+		& wordLength                     & Word length distribution                            \\ \cline{2-3} 
+		& numStopWords                   & Number of stop words                                \\ \cline{2-3} 
+		& stopRatio                      & Percentage of stop words ($S_W$)                            \\ \hhline{|=|=|=|}
+		\multirow{5}{*}{Structural}            & charLength                     & Number of characters                                \\ \cline{2-3} 
+		& numWords                       & Number of words                                     \\ \cline{2-3} 
+		& sentLength                     & Sentence length distribution (number of characters) \\ \cline{2-3} 
+		& sentNumWords                   & Sentence length distribution (number of words)      \\ \cline{2-3} 
+		& meanSentLen                    & Average word count per sentence                     \\ \hline
+	\end{tabular}
+\caption{Classification of the style markers}\label{tab:sty}
+\end{table}
+
+There is only one attribute that we have not mentioned and does not appear in Table \ref{tab:sty}: \textit{metricsSentences}. This attribute is a list of as many items as there are sentences in the document and each of the has the following dictionary structure:
+
+\begin{python}
+{
+	'numStopWords': int,
+	'ADV': int,
+	'VERB': int,
+	'ADJ': int,
+	'ADP': int,
+	'NOUN': int,
+	'PRON': int,
+	'DET': int,
+	'CONJ': int,
+	'numCommas': int,
+	'numDots': int,
+	'numSemiColon': int,
+	'num3Dots': int,
+	'numBrackets': int,
+	'wordLength':
+	{
+		'1': int,
+		'2': int,
+		...
+	}
+	'charLength': int,
+	'numWords': int,
+	'stopRatio': float,
+	'meanWordLen': float
+}
+\end{python}
+
+With this dictionary, we calculate these metrics of each sentence, instead of evaluating them on the entire message.
