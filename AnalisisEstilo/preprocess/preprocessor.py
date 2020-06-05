@@ -123,7 +123,7 @@ class Preprocessor:
     
     def __carriage_return_followed_by_newline(self, pos, plain):
         """
-        Checks if the character of is a carriage return character followed 
+        Checks if the given character is a carriage return character followed 
         by a newline character.
         
         Parameters

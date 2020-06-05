@@ -19,8 +19,8 @@ class TypoCorrector:
     
     Attributes
     ----------
-    nlp: Spacy model
-        Spacy's trained model which will be used for correcting typographic errors.
+    __nlp: spaCy model
+        spaCy's trained model which will be used for correcting typographic errors.
             
     """
     
@@ -30,15 +30,15 @@ class TypoCorrector:
 
         Parameters
         ----------
-        nlp : spacy model
-            Spacy's trained model which will be used to processed.
+        nlp : spaCy model
+            spaCy's trained model which will be used to processed.
 
         Returns
         -------
         Constructed TypoCorrector class.
 
         """
-        self.nlp = nlp
+        self.__nlp = nlp
                                     
     def __is_there_errors(self, tok):
         """
@@ -127,7 +127,7 @@ class TypoCorrector:
                 'bodyBase64Plain' : string,
                 'plainEncoding' : string,    # Optional
                 'charLength' : int
-                'doc' : Spacy's Doc
+                'doc' : spaCy's Doc
                 'corrections' : [
                     {
                         'text': str,
@@ -260,7 +260,7 @@ class TypoCorrector:
         # If the body is not an empty string
         if (len(prep_msg['bodyPlain']) > 0):
             msg_typo['bodyPlain'] = prep_msg['bodyPlain']
-            msg_typo['doc'] = self.nlp(msg_typo['bodyPlain'])
+            msg_typo['doc'] = self.__nlp(msg_typo['bodyPlain'])
             if 'corrections' in prep_msg:
                 msg_typo['corrections'] = prep_msg['corrections']
             else:

@@ -18,8 +18,8 @@ class StyleMeter:
         
     Attributes
     ----------
-    nlp: Spacy model
-        Spacy's trained model which will be used for calculating all the style
+    __nlp: spaCy model
+        spaCy's trained model which will be used for calculating all the style
         metrics.
         
     """
@@ -30,8 +30,8 @@ class StyleMeter:
         
         Parameters
         ----------
-        nlp: Spacy model
-            Spacy's trained model which will be used for calculating all the
+        nlp: spaCy model
+            spaCy's trained model which will be used for calculating all the
             style metrics.
             
         Returns
@@ -39,35 +39,37 @@ class StyleMeter:
         Constructed StyleMeter class.
         
         """
-        self.nlp = nlp
+        self.__nlp = nlp
         
     def __get_structured_text(self, msg):
         """
         Adds to the msg dictionary a key 'doc', whose value will correspond with
-        the Spacy's Doc of the body of the message, and a key 'sentences', whose
+        the spaCy's Doc of the body of the message, and a key 'sentences', whose
         value will have the next structure:
             [
                 {
-                    doc: Spacy's Doc of the sentence
-                    words: [Spacy's Tokens]
+                    doc: spaCy's Doc of the sentence
+                    words: [spaCy's Tokens]
                 }
             ]
+                            
         Parameters
         ----------
         msg : dict
             Dictionary of the corrected message.
+            
         Returns
         -------
         None.
         
         """
-        msg['doc'] = self.nlp(msg['bodyPlain'])
+        msg['doc'] = self.__nlp(msg['bodyPlain'])
         sentences = [s.text for s in msg['doc'].sents]
         msg['sentences'] = []
 
         for s in sentences:
             msg['sentences'].append({})
-            msg['sentences'][-1]['doc'] = self.nlp(s)
+            msg['sentences'][-1]['doc'] = self.__nlp(s)
             msg['sentences'][-1]['words'] = [t for t in 
                                                 msg['sentences'][-1]['doc']]
         
@@ -129,7 +131,7 @@ class StyleMeter:
             Dictionary of the metrics of the sentence where the given token is.
         open_brackets: int
             Number of open and non-closed brackets found previously in the text.
-        t: Spacy's Token
+        t: spaCy's Token
             Token which is going to be analysed.
             
         Returns
@@ -169,9 +171,9 @@ class StyleMeter:
             Dictionary where the metrics are going to be stored.
         m_sent: dict
             Dictionary of the metrics of the sentence where the given token is.
-        words: dics
+        words: dict
             Dictionary which stores how many times each word appears.
-        t: Spacy's Token or MyToken class
+        t: spaCy's Token or MyToken class
             Token which is going to be analysed.
             
         Returns
@@ -232,7 +234,7 @@ class StyleMeter:
             Dictionary where the metrics are going to be stored.
         m_sent: dict
             Dictionary of the metrics of the sentence.
-        s: dics
+        s: dict
             Dictionary which stores sentence information.
             
         Returns
@@ -389,7 +391,7 @@ class StyleMeter:
         cor_msg: dict
             Dictionary which stores the information of the message whose
             typographic errors has been corrected.
-        doc: Spacy's doc
+        doc: spaCy's doc
         
         Returns
         -------
@@ -472,11 +474,11 @@ class StyleMeter:
                 'bodyBase64Plain' : string,
                 'plainEncoding' : string,    # Optional
                 'charLength' : int,
-                'doc' : Spacy's Doc,
+                'doc' : spaCy's Doc,
                 'sentences' : [
                     {
-                        doc: Spacy's Doc of the sentence
-                        words: [Spacy's Tokens]
+                        doc: spaCy's Doc of the sentence
+                        words: [spaCy's Tokens]
                     }
                 ],
                 'corrections' : [
