@@ -3,7 +3,7 @@
 
 In order to generate messages with the user's writing style, it is necessary to define parameters which will determine and describe it. For this purpose, we have developed a style analyser that extracts the messages written by the user and obtains the value of various metrics from them. Then it will be useful for analysing different user's emails and drawing conclusions about what parameters describe the writing style of each person more accurately.
 
-In this section we are going to explain the architecture of this analyser (see Section \ref{section:stylearch}) and each of the modules that compose it (they are explained in Sections \ref{section:extmod}, \ref{section:prepmod}, \ref{section:typomod}, \ref{section:measmod} and \ref{sect:analyserclass}). Finally, we are going to discuss the obtained results and analyse them for drawing a conclusion (this discussion can be looked up in \ref{section:resconc}).
+In this section we are going to explain the architecture of this analyser (see Section \ref{section:stylearch}) and each of the modules that compose it (they are explained in Sections \ref{section:extmod}, \ref{section:prepmod}, \ref{section:typomod}, \ref{section:measmod} and \ref{sect:analyserclass}). Finally, we are going to present the behaviour of the execution with the Gmail account that is going to be analysed (this discussion can be looked up in Section \ref{section:exebehav}).
 
 \section{Architecture} \label{section:stylearch}
 \input{Capitulos/Secciones/AnalyserArchitecture}
@@ -23,4 +23,5 @@ In this section we are going to explain the architecture of this analyser (see S
 \section{Analyser class}\label{sect:analyserclass}
 \input{Capitulos/Secciones/AnalyserMod}
 
-\section{Results and conclusions} \label{section:resconc}
+\section{Execution behaviour} \label{section:exebehav}
+After executing it with the Gmail account that is going to be analysed (the author's Gmail account), of the 1084 e-mails extracted, 921 were measured, which represents approximately the $84.96$\% of the total. In this execution, all the 1084 messages were correctly preprocessed, but 163 were discarded in the typographic correction phase. Some of them were discarded because, after the preprocess, they were missing text, whereas the rest of them did not pass this phase due to its language (there were e-mails written in English) or, a minority, because they had a not interested message body for the analysis of the writing style (for example we found some e-mails whose only text was an url).
