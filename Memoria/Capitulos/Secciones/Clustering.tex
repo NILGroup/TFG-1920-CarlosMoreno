@@ -1,0 +1,40 @@
+In an initial approach, we are interested in knowing how well metrics fit our twelve category classification. To achieve this, we have executed two popular clustering algorithm which are going to group our set of elements (composed of the different style features) in such a way that members of the same group (called a cluster) are more similar in one way or another. These algorithms are K-Means \citep{hartigan1975clustering} and DBSCAN \citep{ester1996density}.
+
+Both algorithms require a parameter (in the case of K-Means the parameter is the number of clusters and in the case of DBSCAN the threshold distance that determines a neighbourhood of elements) which has to be defined before their execution. To make the decision of the initial value of the parameter there are methods based on the internal and cluster dispersion obtained. For this purpose, measures are taken to help the decision, such as the Silhouette Coefficient \citep{rousseeuw1987silhouettes}. It is a method of interpretation and validation of consistency within clusters of data. The technique provides a succinct graphical representation of how well each object has been classified. The best value is 1 and the worst value is -1. Values near 0 indicate overlapping clusters. Negative values generally indicate that a sample has been assigned to the wrong cluster, as a different cluster is more similar. Likewise, we can obtain a general idea of the behaviour of the clustering by calculating the mean Silhouette Coefficient for all samples.
+
+Furthermore, we need to assess how much our classification resembles the clusters obtained after the execution of each of the algorithms. For this evaluation, we can use the adjusted Rand Index, which is a form of the Rand index \citep{rand1971objective} that conforms to the random grouping of elements. The adjusted Rand index is thus ensured to have a value close to 0.0 for random labelling independently of the number of clusters and samples and exactly 1.0 when the clusterings are identical (up to a permutation).
+
+Due to the presence of NaN values, we are not able to use the K-Means algorithm directly on the data. Instead of replacing the NaN values as we have explained in Section \ref{sect:DatPrep}, we are going to use a slight variation from the K-POD algorithm \citep{chi2016k}, which runs K-Means iteratively while it modifies the cells where the value is missing by assigning the value of the centroids. The algorithm that we are going to use, similar to the K-POD, is the one shown in Algorithm \ref{alg:kpod}, where we have two invoked functions. The first one is \textit{mean}, which returns the mean of the given array without taking into account the missing values. The second, \textit{KMeans}, is a function that applies the K-Means algorithm given a set of initial centroids (or it will generate them randomly), the number of clusters and the dataset. It returns an array as long as the number of rows of the given dataset which indicates the cluster index (through an integer) that each element belongs to and the coordinates (features values) of the centroid of each cluster (it will be a matrix with as many rows as the number of cluster and as many columns as the numbers of features).
+
+\begin{algorithm}
+\begin{algorithmic}[1]
+	\REQUIRE Data set $X$ (represented as a matrix whose columns are the features and whose rows are the different samples) with missing values, number of clusters $k$ and the maximum number of iterations to perform $maxiter$.
+	\ENSURE A vector $labels$ that indicates to which cluster each element belongs and a data set $X^\prime$ which is a copy of $X$ with the missing values filled in.
+	\STATE $X^\prime = X$
+	\STATE $missing = $ list of positions (pair of rows and columns) of the missing values of $X$
+	\FOR {$(row, column)$ in $missing$}
+	\STATE $X^\prime[row, column] = mean(X[, column])$
+	\ENDFOR
+	\STATE $i = 1$
+	\STATE $converge =$ \FALSE
+	\STATE $prevlabels, prevcentroids = KMeans(init = random, k, X^\prime)$
+	\STATE $X^\prime[missing] = prevcentroids$
+	\FOR {$(row, column)$ in $missing$}
+	\STATE $X^\prime[row, column] = prevcentroids[prevlabels[row]][column]$
+	\ENDFOR
+	\WHILE {$i < maxiter$ $\land$ $\lnot converge$}
+	\STATE $labels, centroids = KMeans(init = prevlabels, k, X^\prime)$
+	\FOR {$(row, column)$ in $missing$}
+	\STATE $X^\prime[row, column] = centroids[labels[row]][column]$
+	\ENDFOR
+	\STATE $converge =$ $(prevlabels == labels)$
+	\IF{$\lnot converge$}
+	\STATE $prevlabels = labels$
+	\STATE $prevcentroids = centroids$
+	\STATE $i = i + 1$
+	\ENDIF
+	\ENDWHILE
+	\RETURN $labels, X^\prime$
+\end{algorithmic}
+\caption{K-Means with missing values}\label{alg:kpod}
+\end{algorithm}

@@ -144,7 +144,7 @@ def dbanalysis(X, epsilon, metric):
         Number of final clusters.
     
     """
-    n0 = 5 # Fijamos el número de elementos mínimos
+    n0 = 3 # Fijamos el número de elementos mínimos
     db = DBSCAN(eps=epsilon, min_samples=n0, metric=metric).fit(X)
     labels = db.labels_
     # Number of clusters in labels, ignoring noise if present.
