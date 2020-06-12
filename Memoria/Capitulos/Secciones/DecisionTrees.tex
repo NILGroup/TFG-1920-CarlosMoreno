@@ -1,0 +1,11 @@
+One method of machine learning, although not mainly used for dimensional reduction (there are some researchers that have studied the feature selection using them as \cite{sugumaran2007feature} and \cite{cho2011decision}), that takes into account a given classification is Decision Trees. A Decision Tree \citep{rokach2008data} is a prediction model, which given a set of data, makes logical construction diagrams, very similar to rule-based prediction systems, which serve to represent and categorize a series of conditions that occur successively, for the resolution of a problem. There are many algorithms to implement them, we are going to use an optimised version of the CART algorithm \citep{breiman1984classification} with entropy as its criterion.
+
+The advantages of Decision Trees are that they take into account the defined categorisation, as it is a supervised machine learning classification method, and that they are very explainable. However, our purpose is to know the features that best describe the writing style based on the recipient, instead of classifying new messages. For this reason, we are going to make use of the structure of the constructed Decision Tree in order to measure the importance that each style metric has in it.
+
+A good intuition is to think that, in order to study the importance of a node, it is important to bear its depth in the tree in mind, because as lower is as more elements it differentiate. However, it will not be so useful if it just separate elements of the same class. Likewise, the number of samples that reach the node and its category is an important factor to keep in mind. Nevertheless, it will not be helpful if it maintains the proportion of each category in its child nodes. We are able to think many parameters that can have relevance in the definition of the importance of a node in the Decision Tree. In this case we are going to use the Gini Importance \citep{breiman2001random}, which is defined by the following expression:
+
+$$
+ni_j = w_jH_j - w_{left(j)}H_{left(j)} - w_{right(j)}H_{right(j)}
+$$
+
+Where $ni_j$ is the importance of node j, $w_j$ is the weighted number of samples reaching node j, $H_j$ is the entropy of node j, $left(j)$ is the child node from left split on node j and $right(j)$ is the child node from right split on node j.
