@@ -6,6 +6,12 @@ Of all the style markers used, our goal is to determine which ones vary and diff
 
 The first step in our analysis is to prepare the data. We have to categorise the different contacts depending on its relationship with the sender, choose the features that we are going to study and modify its values in order to have the data ready for being analysed. All of this is explained in Section \ref{sect:DatPrep}.
 
+Once we have a defined classification of each message, we are going to carry out a preliminary analysis of the style descriptors considered using clustering techniques (see Section \ref{sect:clust1}). This study will reveal us how our different categories will fit with the clusters given by these methods.
+
+As we will see, due to the big amount of style metrics, to describe the features and the different categories of contacts will be too difficult. For this reason, a dimension reduction will be required. There is a wide variety of dimension reduction techniques, but we are going to start with the most popular of them: Principal Component Analysis (see Section \ref{sect:pca}). With this method, we will obtain results that does not take into account our categories. In addition to it, each category will not be well balanced. For these reasons, it will be necessary to use a less common dimension reduction technique: Gini Importance of Decision Trees (see Section \ref{sect:dectrees}). After the application of this machine learning method, the system is going to be reduced to only eight dimensions.
+
+Finally, we will repeat the analysis with clustering techniques, but this time with the obtained eight dimensions (see Section \ref{sect:clust2}).
+
 \section{Data preparation: e-mail classification, metrics choice and correlation analysis}\label{sect:DatPrep}
 \input{Capitulos/Secciones/DataPreparing}
 
@@ -17,3 +23,6 @@ The first step in our analysis is to prepare the data. We have to categorise the
 
 \section{Dimension reduction using Decision Trees}\label{sect:dectrees}
 \input{Capitulos/Secciones/DecisionTrees}
+
+\section{Analysis of the chosen metrics using clustering techniques}\label{sect:clust2}
+\input{Capitulos/Secciones/Clustering2}

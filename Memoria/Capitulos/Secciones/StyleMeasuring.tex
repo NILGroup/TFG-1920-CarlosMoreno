@@ -1,4 +1,4 @@
-Measuring module is in charge of calculating all the selected writing style metrics. In order to measure these features, it receives from the \textit{Analyser} class a corrected message with the following structure (which matches with the stored messages' structure):
+The measuring module is in charge of calculating all the selected writing style metrics. In order to measure these features, it receives from the \textit{Analyser} class a corrected message with the following structure (which matches with the stored messages' structure):
 
 \begin{python}
 	{
@@ -43,13 +43,11 @@ As we can see in Figure \ref{fig:umlmet}, the style measuring package has three 
 
 As with the two previous modules, this package implements a Flask web service which can be used through a POST HTTP request with the message as a \textit{json} in it. Having done so, the \textit{measure\_style} method of the \textit{StyleMeterApp} class will be invoked and send the given message structure to the \textit{StyleMeter} class by calling its only public method: \textit{measure\_style}.
 
-The main class of this UML package is the \textit{StyleMeter} class. It is in charge of calculating the style features. For this reason, it has different methods which implements the distinct style markers that it has to evaluate.
+The main class of this UML package is the \textit{StyleMeter} class. It is in charge of calculating the style features. For this reason, it has different methods which implement the distinct style markers that it has to evaluate.
 
-As the reader is able to deduce after presenting the previous Sections, the \textit{Metrics} class will store in the database the results of measuring each message. The \textit{StyleMeter} class will use it once it has calculated all the style characteristics.
+As the reader is able to deduce after presenting the previous sections, the \textit{Metrics} class will store in the database the results of measuring each message. The \textit{StyleMeter} class will use it once it has calculated all the style characteristics.
 
-We have used 31 lexical-syntactic features (due to previous studies, such as \cite{homem2011authorship}, yield encouraging results with lexical-syntactic features), following the classification of \cite{abbasi2008writeprints} (which categorised stylistic features as lexical, syntactic, structural, content-specific and idiosyncratic style markers), and we will now divide them into 4 categories in which we have grouped them according to their usefulness in terms of what type of conclusions we can infer from each of them. These categories are: part of speech features (see Section \ref{ssect:posf}), punctuation features (see Section \ref{ssect:punctf}), vocabulary features (see Section \ref{ssect:vocabf}) and structural features (see Section \ref{ssect:strucf}). We must not confuse this latter category (which it belongs to the lexical features of the classification given in \cite{abbasi2008writeprints}) with the structural metrics explained in \cite{abbasi2008writeprints}.
-
-Some of the popular metrics which are not used in this work, belong to the structural, content-specific and idiosyncratic style markers of \cite{abbasi2008writeprints}, but there are others which belong to the same categories as the explained metrics (lexical and syntactic).
+We have used 31 lexical-syntactic features (due to previous studies, such as \cite{homem2011authorship}, yield encouraging results with lexical-syntactic features), following the classification of \cite{abbasi2008writeprints} (which categorised stylistic features as lexical, syntactic, structural, content-specific and idiosyncratic style markers), and we will now divide them into four categories in which we have grouped them according to their usefulness in terms of what type of conclusions we can infer from each of them. These categories are: part of speech features (see Section \ref{ssect:posf}), punctuation features (see Section \ref{ssect:punctf}), vocabulary features (see Section \ref{ssect:vocabf}) and structural features (see Section \ref{ssect:strucf}). We must not confuse this latter category (which belongs to the lexical features of the classification given in \cite{abbasi2008writeprints}) with the structural metrics explained in \cite{abbasi2008writeprints}. Some of the popular metrics which are not used in this work, belong to the structural, content-specific and idiosyncratic style markers of \cite{abbasi2008writeprints}, but there are others which belong to the same categories as the explained metrics (lexical and syntactic).
 
 The choice of the metrics presented below, some essentially simple, has been directed by the objective of finding easily explainable characteristics that set the parameters of the style of writing according to the recipient of the e-mail, and then be able to use this study to develop, in future projects, systems of natural language generation of e-mails that take into account this factor. For this reason, some excessively complex metrics, although popular in stylometry, have been avoided and an attempt has been made to prioritize the explainability of the chosen features.
 
@@ -59,7 +57,7 @@ Finally, we are going to relate the explained style markers with their implement
 
 We will call our part of speech metrics as the syntactic features which have to do with the part of speech of each word of the e-mails. Following the suggestion of \cite{holmes1985analysis}, we count the number of nouns, verbs, adjectives, adverbs, pronouns, determinants, conjunctions and prepositions of each text. By calculating this, significant stylistic traits may be found, because as \cite{somers1966statistical} claims: ``A more cultivated intellectual habit of thinking can increase the number of substantives used, while a more dynamic empathy and attitude can be habitually expressed by means of an increased number of verbs. It is also possible to detect a number of idiosyncrasies in the use of prepositions, subordinations, conjunctions and articles''.
 
-In adding to this metrics, we calculate the verb-adjective ratio and the determinant-pronouns ratio, extracted from \cite{antosch1969diagnosis} and \cite{brainerd1974weighting}, respectively.
+In addition to this metrics, we calculate the verb-adjective ratio and the determinant-pronouns ratio, extracted from \cite{antosch1969diagnosis} and \cite{brainerd1974weighting}, respectively.
 
 \subsection{Punctuation features}\label{ssect:punctf}
 
@@ -67,7 +65,7 @@ In order to extract conclusions from this syntactic features, and following the 
 
 \subsection{Vocabulary features}\label{ssect:vocabf}
 
-In terms of the vocabulary used, we work with the ``bag of words'' metrics, in other words, we note how many times each different word is used in a message. Of course this is not the only metric that we can categorise as a vocabulary feature and from which we can extract conclusions about the vocabulary used. There are many other which tries to set the parameters of, for instance, the difficult of the vocabulary or its richness. Furthermore, from the computing of the bag of words, we are able to easily obtain other style marker chosen which also belongs to this category of vocabulary features: the amount of different words in each text, proposed in \cite{ril2014determination} and in \cite{corney2001identifying}.
+In terms of the used vocabulary, we work with the ``bag of words'' metrics, in other words, we note how many times each different word is used in a message. Of course this is not the only metric that we can categorise as a vocabulary feature and from which we can extract conclusions about the vocabulary used. There are many others which try to set the parameters of, for instance, the difficult of the vocabulary or its richness. Furthermore, from the computing of the bag of words, we are able to easily obtain other style marker chosen which also belongs to this category of vocabulary features: the amount of different words in each text, proposed in \cite{ril2014determination} and in \cite{corney2001identifying}.
 
 As for the difficulty level, it determines the level of education that someone needs to have if they are to understand the text. There are several indices available to calculate this level, such as the proposed in \cite{dale1948formula}, the Gunning Fog Index \citep{wiki:gunning} or the Flesch-Kincaid index \citep{dubay2004principles}, although the latter is the most commonly documented and cited. The expression which determines the Flesch-Kincaid index is the following:
 
@@ -77,7 +75,7 @@ $$
 
 Where $\lambda$ is the mean of one-syllable words per 100 words, and $\beta$ is the mean sentence length measured by the number of words. However, as our spaCy's pretrained Spanish model (see Section \ref{sect:spacy}) is not able to divide words by syllables, we determine $\lambda$ as the mean of words with two or less characters per 100 words.
 
-In respect of the richness of the vocabulary, we have chosen two different metrics. The first that we are going to explain is the one proposed by \cite{honore1979some}, which determines the richness of te vocabulary based on the total unrepeated words used in the text. The following formula defines it:
+In respect of the richness of the vocabulary, we have chosen two different metrics. The first that we are going to explain is the one proposed by \cite{honore1979some}, which determines the richness of the vocabulary based on the total unrepeated words used in the text. The following formula defines it:
 
 $$
 R_H = \frac{100\log(M)}{M^2}
@@ -115,7 +113,7 @@ $$
 H=-100\sum_{i = 1}^{\infty}p_i\frac{\log(p_i)}{\log(M)}
 $$
 
-In addition to the words distribution features (which are the bag of words and the amount of different words), the level of difficulty, the richness of vocabulary (which is measured by the formula proposed in \cite{honore1979some} and the Yule's Characteristic), the diversity (represented by the Simpson's Index) and the internal structure of the vocabulary (which is measured by the entropy), we have defined other four style markers which also allow us to extract conclusions about some feature of the vocabulary of the message. First of these is the most popular and old style marker: the mean word length. Researches as \cite{ril2014determination} claim that it is ``directly connected with the richness of the author's vocabulary and measures his or her ability to use complex words'', due to it is considered that complex words are formed by three or more syllables that do not represent proper nouns, prefixes, suffixes or compound words. Thus, \cite{ril2014determination} propose an expression similar to the following one in order to calculate it:
+In addition to the words distribution features (which are the bag of words and the amount of different words), the level of difficulty, the richness of vocabulary (which is measured by the formula proposed in \cite{honore1979some} and the Yule's Characteristic), the diversity (represented by the Simpson's Index) and the internal structure of the vocabulary (which is measured by the entropy), we have defined other four style markers which also allow us to extract conclusions about some feature of the vocabulary of the message. The first of these is the most popular and old style marker: the mean word length. Researchers as \cite{ril2014determination} claim that it is ``directly connected with the richness of the author's vocabulary and measures his or her ability to use complex words'', due to it is considered that complex words are formed by three or more syllables that do not represent proper nouns, prefixes, suffixes or compound words. Thus, \cite{ril2014determination} propose an expression similar to the following one in order to calculate it:
 
 $$
 L_W = \frac{\sum_{i=1}^{\infty}i*C_i}{N}\cdot 100
@@ -123,7 +121,7 @@ $$
 
 Where $C_i$ is the number of words with $i$ characters and $N$ is the number of words used. This formula is analogous to the expression proposed by \cite{ril2014determination}, except that with the one that we have presented the punctuation marks are removed from the numerator.
 
-The second of these writing style metrics is the measurement of words length frequency distribution, that is to say, how many words with one character appears in the document, with two characters and so on up to the length of the longest word. Despite of being strongly influenced by the language, it is used in researches as \cite{corney2001identifying} and \cite{kemp1976personal}, as it is claimed in\cite{allen1974methods}, ``Each writer, however, will have his own curve, so that although English (and German) texts in general peak at three letters, the writings of John Stuart Mill peak at two and those of Shakespeare peak at four''. Our interest will then focus on checking whether, in addition to depending on the author, this metric varies according to the recipient of the e-mail.
+The second of these writing style metrics is the measurement of words length frequency distribution, that is to say, how many words with one character appear in the document, with two characters and so on up to the length of the longest word. Despite of being strongly influenced by the language, it is used in researches as \cite{corney2001identifying} and \cite{kemp1976personal}, as it is claimed in \cite{allen1974methods}: ``Each writer, however, will have his own curve, so that although English (and German) texts in general peak at three letters, the writings of John Stuart Mill peak at two and those of Shakespeare peak at four''. Our interest will then focus on checking whether, in addition to depending on the author, this metric varies according to the recipient of the e-mail.
 
 The rest of vocabulary features are related to the stop words present in the text. The simplest of those metrics is the style marker which consists of calculating the total number of stop words (denoted as $T_S$). On the other hand, as it is proposed in \cite{ril2014determination},  we will calculate the stop words ratio, which is defined with the following expression:
 
@@ -138,7 +136,7 @@ We will denote by structural features those characteristics that we obtain direc
 Most of these features are sentence length dependent. Both \cite{tallentire1972appraisal} and \cite{kjetsaa1979and} agree that summary measures such as average sentence-lengths are of little use in stylometry studies but distributions of sentence-lengths can be useful, even on their own. Taking into account the above, we will find both the distribution of the length of the sentences (calculated in number of characters and number of words) and the average length of the sentences in a message found by the number of words, as it is proposed in \cite{corney2001identifying}. For the first one, we are going to store the number of sentence with length one, two, three and so on up to the length of the longest one, by measuring it  using both the number of characters and the number of words.
 
 \subsection{Relationship between metrics and their implementation}\label{ssect:relmet}
-Every explained style markers is stored as an attribute of the \textit{Metrics} class. The relationship between them and the presented style features and the categorisation of these metrics, is exposed in Table \ref{tab:sty}.
+Every explained style markers is stored as an attribute of the \textit{Metrics} class. The relationship between them and the presented style features and the categorisation of these metrics is exposed in Table \ref{tab:sty}.
 
 \begin{table}[h]
 	\begin{tabular}{|l|ll|}
@@ -179,7 +177,7 @@ Every explained style markers is stored as an attribute of the \textit{Metrics} 
 \caption{Classification of the style markers}\label{tab:sty}
 \end{table}
 
-There is only one attribute that we have not mentioned and does not appear in Table \ref{tab:sty}: \textit{metricsSentences}. This attribute is a list of as many items as there are sentences in the document and each of the has the following dictionary structure:
+There is only one attribute that we have not mentioned and does not appear in Table \ref{tab:sty}: \textit{metricsSentences}. This attribute is a list of as many items as there are sentences in the document and each of them has the following dictionary structure:
 
 \begin{python}
 {
@@ -210,4 +208,4 @@ There is only one attribute that we have not mentioned and does not appear in Ta
 }
 \end{python}
 
-With this dictionary, we calculate these metrics of each sentence, instead of evaluating them on the entire message.
+With this dictionary, we calculate these metrics for each sentence, instead of evaluating them on the entire message.

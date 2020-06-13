@@ -69,11 +69,11 @@ As we have done with K-Means, we are going to execute the DBSCAN algorithm with 
 
 As in the case of the K-Means algorithm, we can find the maximum Silhouette Score with two clusters, which is not in line with our classification model. Furthermore, as we can see in Figure \ref{fig:dbscanari}, we find again values very close to zero in the Adjusted Rand Index analysis.
 
-\begin{figure}
+In conclusion, using the clustering techniques to classify the messages according to the selected metrics, as expected, we do not obtain significant results that fit our model or allow us to group the different e-mails in another way. One of the problems found to achieve this is the great amount of states that each element has, that is, the high number of dimensions of the system. We also find this inconvenience when we try to get the main statistics of the different features that describe the messages. Therefore, it is an issue that must be addressed (the reduction of dimensionality), especially trying that this reduction serves to adapt to the categorization carried out or to obtain a smaller number of parameters that define the writing style.
+
+\begin{figure}[h]
 	\centering%
 	\centerline{\includegraphics[width=0.5\textwidth]{Imagenes/Bitmap/Clustering/dbscanari.png}}%
 	\caption{Adjusted Rand Index of DBSCAN with euclidean metric}%
 	\label{fig:dbscanari}
 \end{figure}
-
-In conclusion, using the clustering techniques to classify the messages according to the selected metrics, as expected, we do not obtain significant results that fit our model or allow us to group the different e-mails in another way. One of the problems found to achieve this is the great amount of states that each element has, that is, the high number of dimensions of the system. We also find this inconvenience when we try to get the main statistics of the different features that describe the messages. Therefore, it is an issue that must be addressed (the reduction of dimensionality), especially trying that this reduction serves to adapt to the categorization carried out or to obtain a smaller number of parameters that define the writing style.
