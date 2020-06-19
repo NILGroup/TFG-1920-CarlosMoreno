@@ -1,0 +1,59 @@
+\section{Latent Semantic Indexing}\label{sect:lsi}
+Latent Semantic Indexing \citep{deerwester1990indexing, dumais1995latent}, as \cite{hofmann1999probabilistic} defines it, ``is an approach to automatic indexing and information retrieval that attempts to overcome these problems by mapping documents as well as terms to a representation in the so-called \textit{latent semantic space}''. In order to construct this (high dimensional vector) space, the Latent Semantic Indexing (LSI) makes use of two popular mathematical tools: the Terms Frequency-Inverse Document Frequency \citep{chowdhury2010introduction} and the Singular Value Decomposition \citep{golub1971singular}. These are studied in Sections \ref{ssect:tfidf} and \ref{ssect:svd}. Thus, Latent Semantic Indexing (LSI) has the required information for being able to get the result of a query with keywords with the purpose of obtaining the most similar document. The way of getting the suitable answer is explained in Section \ref{ssect:query}.
+
+\subsection{Terms Frequency-Inverse Document Frequency}\label{ssect:tfidf}
+The Terms Frequency-Inverse Document Frequency (TF-IDF), as \cite{tang2014email} claim, is a popular weighting scheme which expresses how relevant a word is to a document in a collection. The TF-IDF value increases proportionally to the number of times a word appears in the document, but is compensated by the frequency of the word in the document collection, which allows for handling the fact that some words are generally more common than others.
+
+Variations of the TF-IDF weighting scheme are frequently used by search engines as a fundamental tool to measure the relevance of a given document to a user's query, thus establishing an order or ranking of the document. TF-IDF can be successfully used for filtering so-called stop-words (words that are used in almost all documents), in different fields such as spam detection \citep{sasaki2005spam}.
+
+TF-IDF is the product of two measurements, Term Frequency (TF) and Inverse Document Frequency (IDF). There are several ways to determine the value of both. In the case of Term Frequency \citep{jones1972statistical}, the easiest way of calculating $tf(t, d)$ (that is to say the TF value of the term $t$ in document $d$) is counting the total number of times a term appears in an document (an e-mail in our work). Denoting the absolute frequency of the term $t$ in document $d$ by $f(t,d)$, other possibilities are the boolean frequencies (which returns the value of one if a term appears in the document and zero otherwise), logarithmically scaled frequency (defined by the expression $tf(t,d)=\log(1+f(t,d))$), term frequency adjusted for document length (defined by the formula $tf(t,d)=f(t,d)/N$ where $N$ is the number of words in $d$) and augmented frequency (to prevent a bias towards longer documents), which is defined by the following formula:
+
+$$
+tf(t,d)=\frac{f(t,d)}{\max\{ f(t,d):t\in d\}}
+$$
+
+The Term Frequency can be used without calculating the Inverse Document Frequency, such as the researchers \cite{cohen1996learning} and \cite{segal1999mailcat}.
+
+Inverse Document Frequency is a measure of whether or not the term is common in a document collection. It is obtained by dividing the total number of documents by the number of documents containing the term, and the logarithm of that ratio is taken:
+
+$$
+idf(t,D)=\log\frac{\lvert D\rvert}{\lvert\{ d\in D:t\in d\}\rvert}
+$$
+
+Where $D$ is the collection of documents. Of course there are other ways to calculate it, but this is the most common \citep{tang2014email}, used by researchers as \cite{drucker1999support}. The TF-IDF is calculated as $tfidf(t,d,D) = tf(t,d)\cdot idf(t,D)$. A high TF-IDF weight is achieved with a high frequency of termination (in the given document) and a small frequency of occurrence of the term in the entire collection of documents.
+
+Once we have calculated the TF-IDF value of all the terms of all the documents in the collection, we have the TF-IDF table, in which each row corresponds to a document and each column to a word. This term-frequency matrix could be modified using Singular Value Decomposition.
+
+\subsection{Singular Value Decomposition}\label{ssect:svd}
+
+In linear algebra, the Singular Value Decomposition (SVD) of a real or complex matrix is a factorization of the matrix with many applications in statistics and other disciplines \citep{stewart1993early}. It is performed on the matrix to determine patterns in the relationships between the terms and concepts contained in the text.
+
+If we denoted with $A$ the transpose term-frequency matrix generated using Term Frequency-Inverse Document Frequency with $m$ rows (which is the number of different words) and $n$ columns (number of different documents), the SVD approximates this matrix into three other matrix: an $m$ by $r$ (where $r$ is the rank of $A$) term-concept vector matrix $T$, an $r$ by $r$ singular values matrix $S$, and a $n$ by $r$ concept-document vector matrix $D$. They will satisfy the following conditions:
+
+\begin{enumerate}
+	\item $A\approx TSD^T$
+	\item $T^TT = Id_r$ ($Id_r$ is the identity matrix with $r$ rows and columns)
+	\item $D^TD = Id_r$
+	\item $S_{1,1}\geq S_{2,2}\geq S_{3,3}\geq\ldots\geq S_{r,r}>0$ and $S$ is a diagonal matrix.
+\end{enumerate}
+
+Thanks to the Eckart-Young-Mirsky \citep{stewart1993early} theorem, it is possible to truncate the diagonal matrix $S$ to another with a smaller rank, keeping the $k\ll r$ larger singular values, where $k$ is typically on the order 100 to 300 dimensions. The truncation operation preserves the most important semantic information in the text while reducing noise. Then we can present the following expression:
+
+$$
+A\approx A_k=T_kS_kD_k^T
+$$
+
+\subsection{LSI Querying}\label{ssect:query}
+The main objective of LSI is to calculate the similarity between documents. A query with different keywords may be a document, that is to say, we are able to evaluate the similarity between a query and each document of the TF-IDF table.
+
+Firstly, it is required to calculate the TF vector of the given query (as we have explained in Section \ref{ssect:tfidf}). Once we have it, and making use of the initial TF-IDF table, it is possible to obtain the TF-IDF vector of the given query without modifying the table.
+
+As we know the linear combination with which from the set of words we can build the $k$ components that make up the truncated TF-IDF matrix, we are able to calculate the value of each component from the TF-IDF vector of the query. Then we can define the similarity between two vectors (the query $q$ and any document $d$) as the cosine of the angle $\theta$ they form. This way if the vectors are the same, their angle is zero and its cosine one. We can calculate the cosine thanks to the expression of the dot product of two vectors: $q\cdot d=\lVert q\rVert\cdot\lVert d\rVert\cos\theta$. Taking into account that the dot product is the sum of the product of each component of the vector, we can obtain the following expression:
+
+$$
+\cos(q,d)=\frac{q\cdot d}{\lvert q\rvert\cdot\lvert d\rvert}=\frac{\sum_{i = 1}^kq_id_i}{\sqrt{\sum_{i = 1}^kq_i^2}\sqrt{\sum_{i = 1}^kd_i^2}}
+$$
+
+Where $v_i$ is the i-th component of the vector $v$.
+
+With this method, we can find the most similar document given a keywords query only by calculating the cosine of all the documents with the query and taking the text that has the highest value.

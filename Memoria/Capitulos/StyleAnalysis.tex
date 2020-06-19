@@ -2,11 +2,11 @@
 
 \chapterquote{``Data! data! data!'' he cried impatiently. ``I can't make bricks without clay.''}{The adventure of the Copper Beeches\\Arthur Conan Doyle (1892)}
 
-Of all the style markers used, our goal is to determine which ones vary and differ depending on the recipient of the message. With this in mind, in this chapter we are going to analyse the resulting values of measuring each message with the previously explained system.
+Of all the style metrics used, our goal is to determine which ones vary and differ depending on the recipient of the message. With this in mind, in this chapter we are going to analyse the resulting values of measuring each message with the previously explained system.
 
-The first step in our analysis is to prepare the data. We have to categorise the different contacts depending on its relationship with the sender, choose the features that we are going to study and modify its values in order to have the data ready for being analysed. All of this is explained in Section \ref{sect:DatPrep}.
+The first step in our analysis is to prepare the data. We have to categorise the different contacts depending on their relationship with the sender, choose the features that we are going to study and modify its values in order to have the data ready for being analysed. All of this is explained in Section \ref{sect:DatPrep}.
 
-Once we have a defined classification of each message, we are going to carry out a preliminary analysis of the style descriptors considered using clustering techniques (see Section \ref{sect:clust1}). This study will reveal us how our different categories will fit with the clusters given by these methods.
+Once we have a defined the classification of each message, we are going to carry out a preliminary analysis of the style descriptors considered using clustering techniques (see Section \ref{sect:clust1}). This study will reveal us how our different categories will fit with the clusters given by these methods.
 
 As we will see, due to the big amount of style metrics, to describe the features and the different categories of contacts will be too difficult. For this reason, a dimension reduction will be required. There is a wide variety of dimension reduction techniques, but we are going to start with the most popular of them: Principal Component Analysis (see Section \ref{sect:pca}). With this method, we will obtain results that does not take into account our categories. In addition to it, each category will not be well balanced. For these reasons, it will be necessary to use a less common dimension reduction technique: Gini Importance of Decision Trees (see Section \ref{sect:dectrees}). After the application of this machine learning method, the system is going to be reduced to only eight dimensions.
 

@@ -408,15 +408,18 @@ class StyleMeter:
         for s in cor_msg['sentences']:
             m_sent = metrics['metricsSentences'][ind_sent]
             for t in s['words']:
-                if t.pos_ != 'SPACE' and t.is_oov:
+                tok_oov = t.is_oov
+                got_cor = False
+                if t.pos_ != 'SPACE' and t.is_oov and ind_cor < len(cor_msg['corrections']):
                     cor = cor_msg['corrections'][ind_cor]
                     t = cfs.MyToken(**cor)
                     ind_cor += 1
+                    got_cor = True
                     
                 if t.is_punct:
                     open_brackets = self.__calculate_punct_metrics(metrics, m_sent, 
                                                                    open_brackets, t)
-                elif not(t.like_url or t.like_email):
+                elif not(t.like_url or t.like_email) and (not(tok_oov) or got_cor):
                     self.__calculate_word_metrics(metrics, m_sent, words, t)
             
             self.__calculate_sentence_metrics(metrics, m_sent, s)

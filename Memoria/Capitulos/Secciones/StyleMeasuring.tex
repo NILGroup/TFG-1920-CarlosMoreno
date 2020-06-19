@@ -53,17 +53,17 @@ The choice of the metrics presented below, some essentially simple, has been dir
 
 Finally, we are going to relate the explained style markers with their implementation (see Section \ref{ssect:relmet}) in the \textit{Metrics} class.
 
-\subsection{Part of Speech features}\label{ssect:posf}
+\subsection{Part of Speech metrics}\label{ssect:posf}
 
 We will call our part of speech metrics as the syntactic features which have to do with the part of speech of each word of the e-mails. Following the suggestion of \cite{holmes1985analysis}, we count the number of nouns, verbs, adjectives, adverbs, pronouns, determinants, conjunctions and prepositions of each text. By calculating this, significant stylistic traits may be found, because as \cite{somers1966statistical} claims: ``A more cultivated intellectual habit of thinking can increase the number of substantives used, while a more dynamic empathy and attitude can be habitually expressed by means of an increased number of verbs. It is also possible to detect a number of idiosyncrasies in the use of prepositions, subordinations, conjunctions and articles''.
 
 In addition to this metrics, we calculate the verb-adjective ratio and the determinant-pronouns ratio, extracted from \cite{antosch1969diagnosis} and \cite{brainerd1974weighting}, respectively.
 
-\subsection{Punctuation features}\label{ssect:punctf}
+\subsection{Punctuation metrics}\label{ssect:punctf}
 
-In order to extract conclusions from this syntactic features, and following the example of \cite{calix2008stylometry}, we calculate the amount of commas, periods, semi-colons, ellipsis and pair of brackets. With these metrics we can reach conclusions such as the structural complexity of a message (since, for example, juxtaposition structures appear in the presence of some of these scores), the division into sentences of the message or the need for clarification of the text transmitted (for example, by analysing the amount of brackets).
+In order to extract conclusions from this syntactic metrics, and following the example of \cite{calix2008stylometry}, we calculate the amount of commas, periods, semi-colons, ellipsis and pair of brackets. With these features we can reach conclusions such as the structural complexity of a message (since, for example, juxtaposition structures appear in the presence of some of these scores), the division into sentences of the message or the need for clarification of the text transmitted (for example, by analysing the amount of brackets).
 
-\subsection{Vocabulary features}\label{ssect:vocabf}
+\subsection{Vocabulary metrics}\label{ssect:vocabf}
 
 In terms of the used vocabulary, we work with the ``bag of words'' metrics, in other words, we note how many times each different word is used in a message. Of course this is not the only metric that we can categorise as a vocabulary feature and from which we can extract conclusions about the vocabulary used. There are many others which try to set the parameters of, for instance, the difficult of the vocabulary or its richness. Furthermore, from the computing of the bag of words, we are able to easily obtain other style marker chosen which also belongs to this category of vocabulary features: the amount of different words in each text, proposed in \cite{ril2014determination} and in \cite{corney2001identifying}.
 
@@ -107,7 +107,7 @@ $$
 H = -\sum_{i=1}^{\infty} p_i\log(p_i)
 $$
 
-Where $p_i$ is the probability of appearance of the ith lemma (found by dividing the number of occurrences of that lemma by the total number of words in the text). Due to the value will change according to how much text is analysed, the formula may be refined in order that works of different length may be compared. In this way, as it is proposed in \cite{holmes1985analysis}, the following expression determines absolute diversity for any length text as 100, while absolute uniformity remains zero:
+Where $p_i$ is the probability of appearance of the i-th lemma (found by dividing the number of occurrences of that lemma by the total number of words in the text). Due to the value will change according to how much text is analysed, the formula may be refined in order that works of different length may be compared. In this way, as it is proposed in \cite{holmes1985analysis}, the following expression determines absolute diversity for any length text as 100, while absolute uniformity remains zero:
 
 $$
 H=-100\sum_{i = 1}^{\infty}p_i\frac{\log(p_i)}{\log(M)}
@@ -129,14 +129,14 @@ $$
 S_W = \frac{T_S}{N}\cdot 100
 $$
 
-\subsection{Structural features}\label{ssect:strucf}
+\subsection{Structural metrics}\label{ssect:strucf}
 
-We will denote by structural features those characteristics that we obtain directly from the construction of the analysed text. Some of these metrics are as simple as the total number of characters in the body of the e-mail or the absolute number of words in the e-mail, both used in researches such as in \cite{corney2001identifying} and \cite{ril2014determination}.
+We will denote by structural metrics those features that we obtain directly from the construction of the analysed text. Some of these style markers are as simple as the total number of characters in the body of the e-mail or the absolute number of words in the e-mail, both used in researches such as in \cite{corney2001identifying} and \cite{ril2014determination}.
 
 Most of these features are sentence length dependent. Both \cite{tallentire1972appraisal} and \cite{kjetsaa1979and} agree that summary measures such as average sentence-lengths are of little use in stylometry studies but distributions of sentence-lengths can be useful, even on their own. Taking into account the above, we will find both the distribution of the length of the sentences (calculated in number of characters and number of words) and the average length of the sentences in a message found by the number of words, as it is proposed in \cite{corney2001identifying}. For the first one, we are going to store the number of sentence with length one, two, three and so on up to the length of the longest one, by measuring it  using both the number of characters and the number of words.
 
 \subsection{Relationship between metrics and their implementation}\label{ssect:relmet}
-Every explained style markers is stored as an attribute of the \textit{Metrics} class. The relationship between them and the presented style features and the categorisation of these metrics is exposed in Table \ref{tab:sty}.
+Every explained style metrics are stored as an attribute of the \textit{Metrics} class. The relationship between them and the presented style features and the categorisation of these style markers is exposed in Table \ref{tab:sty}.
 
 \begin{table}[h]
 	\begin{tabular}{|l|ll|}
@@ -174,7 +174,7 @@ Every explained style markers is stored as an attribute of the \textit{Metrics} 
 		& sentNumWords                   & Sentence length distribution (number of words)      \\ \cline{2-3} 
 		& meanSentLen                    & Average word count per sentence                     \\ \hline
 	\end{tabular}
-\caption{Classification of the style markers}\label{tab:sty}
+\caption{Classification of the style metrics}\label{tab:sty}
 \end{table}
 
 There is only one attribute that we have not mentioned and does not appear in Table \ref{tab:sty}: \textit{metricsSentences}. This attribute is a list of as many items as there are sentences in the document and each of them has the following dictionary structure:
