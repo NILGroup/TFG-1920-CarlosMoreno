@@ -1,10 +1,10 @@
-After extracting the user's e-mails, we should be able to analyse the body of the e-mails. To do this we will need a syntactic parser in order to separate the different texts in tokens (in other words, to segment text into words, punctuation marks, etc.) and obtain different characteristics from them (such as their part of speech) for the purpose of being able to calculate the metrics explained in Section \ref{ssect:stymet}. To attain that objective, we are going to use the library spaCy\footnote{\url{https://spacy.io/}}.
+After extracting the user's e-mails, we should be able to analyse the body of the e-mails. To do this we need a syntactic parser in order to separate the different texts in tokens (in other words, to segment text into words, punctuation marks, etc.) and obtain different characteristics from them (such as their part of speech) for the purpose of being able to calculate some of the metrics explained in Section \ref{ssect:stymet}. To attain that objective, we are going to use the library spaCy\footnote{\url{https://spacy.io/}}.
 
-In this section we are going to explain the reasons why we chose spaCy (see Section \ref{ssect:spacywhy}) and its usefulness in our work (see Section \ref{ssect:spacyut}).
+In this section we explain the reasons why we chose spaCy (see Section \ref{ssect:spacywhy}) and its usefulness in our work (see Section \ref{ssect:spacyut}).
 
 \subsection{spaCy versus others syntactic parsers}\label{ssect:spacywhy}
 
-We have chosen spaCy as our syntactic parser against others for several reasons, supported by published researches (such as the one carried out by \cite{choi2015depends}), that we will explain below.
+We have chosen spaCy as our syntactic parser against others for several reasons, supported by published researches (such as the one carried out by \cite{choi2015depends}), that we explain below.
 
 \begin{figure}[h]
 	\centering%
@@ -40,7 +40,7 @@ Finally, spaCy has three pretrained model pipelines for Spanish with a very high
 \end{figure}
 
 \subsection{spaCy's utilities}\label{ssect:spacyut}
-We can define spaCy as a Python natural language processing library specifically designed to be a useful library for implementing production-ready systems. For this reason, it has a lot of different utilities. However, we are only going to need the ones carried out by the \textit{Tokenizer} and the \textit{Sentencizer}.
+We can define spaCy as a Python natural language processing library specifically designed to be a useful library for implementing production-ready systems. For this reason, it has a lot of different utilities. However, we only need the ones carried out by the \textit{Tokenizer} and the \textit{Sentencizer}.
 
 The spaCy's \textit{Tokenizer} class is in charge of dividing the given message into the different words that constitute it and obtaining several features about them. We are interested in the attributes that we can observe in Table \ref{tab:attspacy}. In addition to its part of speech, it gives us more information (that we are not interested in it) depending on its lexical category, such as its gender, number, verb tense or, even, the type of adverb.
 

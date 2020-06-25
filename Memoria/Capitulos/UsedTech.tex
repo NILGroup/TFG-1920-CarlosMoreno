@@ -16,3 +16,10 @@ Once we have studied the state of the art, we explore the different technologica
 
 \section{MongoDB}\label{sect:mongo}
 \input{Capitulos/Secciones/Mongo}
+
+\section{Conclusions}
+In order to be able to extract messages from a user's Gmail account, it is important to know how the user can give us the required permission for being able to accessing to the account's information, and the different operations that we can execute with each of the Gmail API resource. The most important of them are the \textit{get} and \textit{list} methods that labels, messages and threads resource have. The second returns a list of the resource in the user's account and the first returns a specific resource, by giving its identifier.
+
+Once we have extracted the different e-mails, we need a tool for analysing their body (and helping us in the evaluation of the different metrics). For this task, we use the syntactic analyser spaCy. It is able to separate a text into tokens (words, punctuations marks, etc.) and obtain several features of each token, such as its part of speech or its base form.
+
+With these two tools, together with a web service framework as Flask and a database system as MongoDB, we are able to design and implement a system which can extract and analyse the different e-mails of a user account. In the next chapter, we explain how these technologies are integrated in our implementation with the purpose of developing a style analyser.
