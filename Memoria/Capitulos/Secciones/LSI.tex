@@ -12,12 +12,12 @@ $$
 tf(t,d)=\frac{f(t,d)}{\max\{ f(t,d):t\in d\}}
 $$
 
-The Term Frequency can be used without calculating the Inverse Document Frequency, such as the researchers \cite{cohen1996learning} and \cite{segal1999mailcat}.
+The Term Frequency can be used without calculating the Inverse Document Frequency, such as the researchers \cite{cohen1996learning} and \cite{segal1999mailcat} did.
 
 Inverse Document Frequency is a measure of whether or not the term is common in a document collection. It is obtained by dividing the total number of documents by the number of documents containing the term, and the logarithm of that ratio is taken:
 
 $$
-idf(t,D)=\log\frac{\lvert D\rvert}{\lvert\{ d\in D:t\in d\}\rvert}
+idf(t,D)=\log\left(\frac{\lvert D\rvert}{\lvert\{ d\in D:t\in d\}\rvert}\right)
 $$
 
 Where $D$ is the collection of documents. Of course there are other ways to calculate it, but this is the most common \citep{tang2014email}, used by researchers as \cite{drucker1999support}. The TF-IDF is calculated as $tfidf(t,d,D) = tf(t,d)\cdot idf(t,D)$. A high TF-IDF weight is achieved with a high frequency of termination (in the given document) and a small frequency of occurrence of the term in the entire collection of documents.

@@ -12,3 +12,14 @@ Finally, for the modelling of a recipient-based custom writing system, we need t
 \input{Capitulos/Secciones/ComputationalStylometry}
 \input{Capitulos/Secciones/LSI}
 
+\section{Conclusions}
+Electronic mail is a popular communication service whose message transmission and reception is defined with the protocols SMTP, POP and IMAP. The format of the e-mails is defined in MIME standard, which establishes a tree structure that contains the different information included in the message. Moreover, it describes the possible encodings used for the transmission.
+
+There are many free e-mail services. One of them is Gmail, which provides us an API in order to manage a user's account without the need of resorting to the implementation of e-mail protocols. It is a useful tool for our work, due to the fact that the e-mail account that we analyse belongs to Gmail. Besides, Gmail API provides us different resources to manage the messages, labels, drafts and threads of the user. Despite having some limitations in the number of operations we can daily do with this API (which, in practice, are not reachable limits for our work), it is the best and most comfortable option for our development.
+
+With Gmail API we can extract the e-mails from a user's account. With the purpose of measuring the writing style of each message, we use stylometric metrics. Computational stylometry is a field of study which tries to define the writing style through computational techniques. Many times it has been used in e-mails, which are a very particular texts due to its concise and summarised nature. Furthermore, there are many metrics defined by strylometrists, such as those which describes the richness of the vocabulary or the distribution of part-of-speech, that we can use in our work.
+
+If we extract all user's e-mails, we can look for one of them, given a keywords query, thanks to Latent Semantic Indexing algorithm. It consists of calculating the TF-IDF table and, then, applying a Singular Value Decomposition in order to truncate it. Next, we can compare the query with each e-mail truncated TF-IDF vector to obtain its similarity and get the most similar message.
+
+In order to understand the Gmail API operations and know the different tools that we can use for calculating the style metrics (among others purposes), we explain some useful technologies in the next chapter.
+

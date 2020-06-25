@@ -146,7 +146,7 @@ At this point, with the OAuth 2.0 credentials, we are able to call the Gmail API
 By using the OAuth 2.0 credentials, we are able to get in contact with the Google Servers and request what is known as users resource \citep[/v1/reference/users]{gmailAPI}, which holds all the necessary resources for our task, such as labels (see Section \ref{sssect:labres}), messages (see Section \ref{sssect:msgres}), threads (see Section \ref{sssect:threads}) and drafts (see Section \ref{sssect:drafts}). In practice, the users resource has instance methods which get in contact with Google Servers and return these other Gmail API resources that we are going to need (the methods' names are \textit{labels()}, \textit{messages()}, \textit{threads()} and \textit{drafts()}, respectively). Now, in next sections, we explain all the resources we can create with the user resource.
 
 \subsubsection{Labels resource}\label{sssect:labres}
-As we have seen in the explanation of the users resource (Section \ref{sssect:usersres}), we can obtain the labels resource \citep[/v1/reference/users/labels]{gmailAPI} by invoking \textit{labels()} instance method of our users resource. It manages the entire set of our e-mail labels, which  categorize messages and threads within the user's mailbox.
+As we have seen in the explanation of the users resource (Section \ref{sssect:usersres}), we can obtain the labels resource \citep[/v1/reference/users/labels]{gmailAPI} by invoking \textit{labels()} instance method of our users resource. It manages the entire set of e-mail labels, which  categorize messages and threads within the user's mailbox.
 
 Labels resource is an object which allows us to access to the different e-mail labels of the user, such as \textit{INBOX}, \textit{UNREAD} and \textit{SENT}. With the labels resource methods, we can obtain each of these ``user's labels'' which have a dictionary structure and their representation is what we can observe hereunder:
 
@@ -179,7 +179,7 @@ Labels resource is an object which allows us to access to the different e-mail l
 The important fields we are going to need are the \textit{name}, the \textit{type} and the number of total messages and threads with the label (which are \textit{messagesTotal} and \textit{threadsTotal} fields, respectively). Labels with \textit{system} type, such as \textit{INBOX}, \textit{SENT}, \textit{DRAFTS} and \textit{UNREAD}, are internally created and cannot be added, modified or deleted.
 
 \subsubsection{Messages resource}\label{sssect:msgres}
-In most of the operations we are going to execute, the correct management of messages will be essential. Therefore, knowing how the e-mails are represented in Gmail API and how to use them is imperative to understand how to work with this API. For this reason, in this section we are going to delve into the messages resource \citep[/v1/reference/users/messages]{gmailAPI} of the Gmail API. As we saw in Section \ref{sssect:usersres}, we can access to this resource by invoking the \textit{messages()} instance method when we have a users resource.
+In most of the e-mail operations we execute, the correct management of messages is essential. Therefore, knowing how the e-mails are represented in Gmail API and how to use them is imperative to understand how to work with this API. For this reason, in this section we  delve into the messages resource \citep[/v1/reference/users/messages]{gmailAPI} of the Gmail API. As we saw in Section \ref{sssect:usersres}, we can access to this resource by invoking the \textit{messages()} instance method when we have a users resource.
 
 As with the labels resource, the messages resource manages the set of all messages of the user's e-mail. With the messages resource methods, we can obtain each of these ``user's messages'' which, regardless of which programming language is used, have a dictionary structure and their representation is what we can see down below:
 
@@ -213,7 +213,7 @@ As with the labels resource, the messages resource manages the set of all messag
 	}
 \end{python}
 
-The more important keys of this data structure for this work are:
+The most important keys of this data structure for this work are:
 \begin{itemize}
 	\item\textit{id}: an immutable string which identifies the message.
 	\item\textit{threadId}: we will explain the thread resource in Section \ref{sssect:threads} and we will see that a thread is composed of different messages that share common characteristics. The value of this field is a string which represent the identifier of the thread the message belongs to.
@@ -229,7 +229,7 @@ The more important keys of this data structure for this work are:
 \end{itemize}
 
 \subsubsection{Threads resource}\label{sssect:threads}
-When we access to our inbox, we are actually seeing the inbox threads instead of the messages resource. Every message, even if it is an only e-mail without a reply, is enclosed in a thread resource \citep[/v1/reference/users/threads]{gmailAPI} which is essentially a list, perhaps unitary, of messages resources. In fact, as we can observe in the following resource representation, each thread (which can be obtained thanks to the threads resource due to it manages the entire set of threads of a user's e-mail), in its dictionary structure, has a list of messages resources:
+When we access to our inbox, we are actually seeing the inbox threads instead of the messages resource. Every message, even if it is an only e-mail without a reply, is enclosed in a thread resource \citep[/v1/reference/users/threads]{gmailAPI}, which is essentially a list, perhaps unitary, of messages resources. In fact, as we can observe in the following resource representation, each thread (which can be obtained thanks to the threads resource due to it manages the entire set of threads of a user's e-mail), in its dictionary structure, has a list of messages resources:
 
 \begin{python}
 	{
