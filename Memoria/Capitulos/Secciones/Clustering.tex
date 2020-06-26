@@ -34,22 +34,21 @@ In an initial approach, we are interested in knowing how well metrics fit our tw
 
 Both algorithms require a parameter (in the case of K-Means the parameter is the number of clusters and in the case of DBSCAN the threshold distance that determines a neighbourhood of elements) which has to be defined before their execution. To make the decision of the initial value of the parameter there are methods based on the internal and cluster dispersion obtained. For this purpose, measures are taken to help the decision, such as the Silhouette Coefficient \citep{rousseeuw1987silhouettes}. It is a method of interpretation and validation of consistency within clusters of data. The technique provides a succinct graphical representation of how well each object has been classified. The best value is 1 and the worst value is -1. Values near 0 indicate overlapping clusters. Negative values generally indicate that a sample has been assigned to the wrong cluster, as a different cluster is more similar. Likewise, we can obtain a general idea of the behaviour of the clustering by calculating the mean Silhouette Coefficient for all samples.
 
-Furthermore, we need to assess how much our classification resembles the clusters obtained after the execution of each of the algorithms. For this evaluation, we can use the Adjusted Rand Index, which is a form of the Rand index \citep{rand1971objective} that conforms to the random grouping of elements. The Adjusted Rand index is thus ensured to have a value close to 0.0 for random labelling independently of the number of clusters and samples and exactly 1.0 when the clusterings are identical (up to a permutation).
+Furthermore, we need to assess how much our classification resembles the clusters obtained after the execution of each of the algorithms. For this evaluation, we can use the Adjusted Rand Index (ARI), which is a form of the Rand index \citep{rand1971objective} that conforms to the random grouping of elements. The Adjusted Rand index is thus ensured to have a value close to 0.0 for random labelling independently of the number of clusters and samples and exactly 1.0 when the clusterings are identical (up to a permutation).
 
 Due to the presence of NaN values, we are not able to use the K-Means algorithm directly on the data. Instead of replacing the NaN values as we have explained in Section \ref{sect:DatPrep}, we are going to use a slight variation from the K-POD algorithm \citep{chi2016k}, which runs K-Means iteratively while it modifies the cells where the value is missing by assigning the value of the centroids. The algorithm that we are going to use, similar to the K-POD, is the one shown in Algorithm \ref{alg:kpod}, where we have two invoked functions. The first one is \textit{mean}, which returns the mean of the given array without taking into account the missing values. The second one, \textit{KMeans}, is a function that applies the K-Means algorithm given a set of initial centroids (or it will generate them randomly), the number of clusters and the dataset. It returns an array as long as the number of rows of the given dataset which indicates the cluster index (through an integer) that each element belongs to and the coordinates (features values) of the centroid of each cluster (it will be a matrix with as many rows as the number of cluster and as many columns as the numbers of features).
 
 Now that we have chosen the algorithm, we execute it with different $k$ parameter (the number of clusters). The rest of the input will be the normalised data with the NaN values and with a maximum of 100 iteration. With each $k$-dependent execution, we will calculate the Silhouette Score (which is the mean of the Silhouette Coefficient of all samples) and the Adjusted Rand Index given the real classification. As a result of this we obtain Figures \ref{fig:nkmeanssil} and \ref{fig:nkmeansari}.
 
 \begin{figure}
-	\hspace{-1cm}\begin{minipage}[b]{0.4\paperwidth}
+	\begin{minipage}[b]{0.37\paperwidth}
 	\centerline{\includegraphics[width=\textwidth]{Imagenes/Bitmap/Clustering/normkmeanssil.png}}%
-	\caption{Silhouette Score with K-Means for different $k$}%
+	\caption{Silhouette Score with K-Mean}%
 	\label{fig:nkmeanssil}
 	\end{minipage}
-	\hspace{0.4cm}
-	\begin{minipage}[b]{0.4\paperwidth}
+	\begin{minipage}[b]{0.37\paperwidth}
 		\centerline{\includegraphics[width=\textwidth]{Imagenes/Bitmap/Clustering/normkmeansrand.png}}%
-		\caption{Adjusted Rand Index with K-Means for different $k$}%
+		\caption{ARI with K-Means}%
 		\label{fig:nkmeansari}
 	\end{minipage}
 \end{figure}

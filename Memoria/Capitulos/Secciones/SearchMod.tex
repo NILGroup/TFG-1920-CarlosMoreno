@@ -2,7 +2,7 @@ The searching phase is in charge of finding the message in which the given set o
 
 However, LSI is a technique that requires a lot of memory and processing power. Both the generation of the TF-IDF table (see Section \ref{ssect:tfidf}) and the truncation of the singular value matrix have an expensive algorithmic complexity. To alleviate this problem it is possible to pre-calculate both TF-IDF table and the truncation of the singular values matrix. This way, when the user performs a query it is only necessary to read from a file the result of these operations.
 
-In order to calculate the TF-IDF table, we need to access the database where we store the last version of the messages from which the different metrics have been extracted. It will be necessary to analyse each of the different e-mails stored. To obtain the different TF-IDF vectors it is recommended to use the most frequent expression (as \cite{tang2014email} claim) to find this value given a $t$ term in a $d$ document of the $D$ document collection:
+In order to calculate the TF-IDF table, in our implementation, we access the database where we store the last version of the messages from which the different metrics have been extracted (in our case the \textit{CorrectedMessage}, which is the \textit{mongoengine.Document} related with the typographic correction module). It is necessary to analyse each of the different e-mails stored. To obtain the different TF-IDF vectors we make use of the most frequent expression (as \cite{tang2014email} claim) to find this value given a $t$ term in a $d$ document of the $D$ document collection:
 
 $$
 tfidf(t,d,D) = \frac{f(t,d)}{\max\{ f(t,d):t\in d\}}\cdot\log\left(\frac{\lvert D\rvert}{\lvert \{ d\in D: t\in d\}\rvert+1}\right)
@@ -10,4 +10,4 @@ $$
 
 Once we have the table, we calculate its Singular Value Decomposition and truncate the singular value matrix to reduce its size and achieve the semantic relationships between the terms we are looking for (as it is explained in Section \ref{ssect:svd}).
 
-Finally, we will take the input given by the user as keywords to generate the text message and make a query comparing the similarity between each message and the words provided by the user (as we have explained in Section \ref{ssect:query}). The output of the system will be the e-mail with the most similarity with all its information as the recipient and body of the message.
+Finally, we take the input given by the user as keywords to generate the text message and make a query comparing the similarity between each message and the words provided by the user (as we have explained in Section \ref{ssect:query}). The output of the system is the e-mail with the most similarity with all its information as the recipient and body of the message.

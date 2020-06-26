@@ -2,7 +2,7 @@ One method of machine learning, although not mainly used for dimensional reducti
 
 The advantages of Decision Trees are that they take into account the defined categorisation, as it is a supervised machine learning classification method, and that they are very explainable. However, our purpose is to know the features that best describe the writing style based on the recipient, instead of classifying new messages. For this reason, we are going to make use of the structure of the constructed Decision Tree in order to measure the importance that each style metric has in it.
 
-\begin{figure}
+\begin{figure}[h]
 	\centering%
 	\centerline{\includegraphics[width=0.7\textwidth]{Imagenes/Bitmap/DecisionTrees/learning28curve.png}}%
 	\caption{Learning curve with the 28 chosen features}%
@@ -27,16 +27,16 @@ $$
 nfi_i=\frac{fi_i}{\sum_{j\in F}fi_j}
 $$
 
-Where $nfi_i$ is the normalised feature importance and $F$ is the set of features. Once we have the expression required for the analysis of the importance of each feature, we are able to calculate the distribution of the importance of each style metric with our 28 chosen style markers. To build the Decision Tree, we have to decide the depth of it. To take this decision, we calculate the learning curve both in training set and test set, and obtain the curves that we can observe in Figure \ref{fig:learn28curve} (the normalised data was used for the calculation of learning curve, as well as in the construction of the Decision Tree). Thus, we will choose a depth that avoids the overlearning (which could be produced in values of depth with which the training accuracy score is 1) and the missing of information (depth with which the training accuracy score is less than 0.9). Our choice will be the depth whose training accuracy score is the interval $(0.9, 1)$ and its test accuracy score is maximum (in this case it is eleven, but later, when we had less features, it will follow this criteria).
-
-Making use of the explained expressions for the calculation of the normalised feature importance, we can go through the created tree with the chosen depth in order to obtain the distribution of this value. The result is shown in Figure \ref{fig:nfi28}.
-
-\begin{figure}
+\begin{figure}[t]
 	\centering%
 	\centerline{\includegraphics[width=0.8\textwidth]{Imagenes/Bitmap/DecisionTrees/pie28.png}}%
 	\caption{Distribution of normalised feature importance with 28 features}%
 	\label{fig:nfi28}
 \end{figure}
+
+Where $nfi_i$ is the normalised feature importance and $F$ is the set of features. Once we have the expression required for the analysis of the importance of each feature, we are able to calculate the distribution of the importance of each style metric with our 28 chosen style markers. To build the Decision Tree, we have to decide the depth of it. To take this decision, we calculate the learning curve both in training set and test set, and obtain the curves that we can observe in Figure \ref{fig:learn28curve} (the normalised data was used for the calculation of learning curve, as well as in the construction of the Decision Tree). Thus, we will choose a depth that avoids the overlearning (which could be produced in values of depth with which the training accuracy score is 1) and the missing of information (depth with which the training accuracy score is less than 0.9). Our choice will be the depth whose training accuracy score is the interval $(0.9, 1)$ and its test accuracy score is maximum (in this case it is eleven, but later, when we had less features, it will follow this criteria).
+
+Making use of the explained expressions for the calculation of the normalised feature importance, we can go through the created tree with the chosen depth in order to obtain the distribution of this value. The result is shown in Figure \ref{fig:nfi28}.
 
 As we can observe, the \textit{numSemiColon} characteristic does not appear in Figure \ref{fig:nfi28}, which means it has no importance in our constructed tree. Besides, \textit{verbAdjectiveRatio}, \textit{detPronRatio} and \textit{stopRatio} have the highest importance ratio and their related metrics (\textit{ADJ} and \textit{VERB}, \textit{DET} and \textit{PRON}, and \textit{numStopWords}, respectively) have a very small value. For this reason, we are able to claim that we can dispense with the related style features and \textit{numSemiColon} in order to describe the writing style. Therefore, we can construct another Decision Tree (by automatically taking a depth, as we have explained before) to calculate the importance ratio of each of the non-removed style markers. When we have the distribution of Gini Importance, we can remove again the non-important style metrics and those that have an extremely low importance ratio. By repeating this process, we are able to choose a small number of features which have a big importance ratio in the classification of the messages based on their recipients.
 
